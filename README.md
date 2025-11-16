@@ -591,6 +591,14 @@ Este bot é fornecido como está, sem suporte.
 
 Se não consegues configurar ou usar, **este bot não é para ti**.
 
+### 💼 Bots Personalizados
+
+Interessado num bot Discord personalizado para o teu servidor?
+
+📧 **Email:** business.gnobre@gmail.com
+
+*Desenvolvimento de bots Discord sob medida com funcionalidades customizadas para as tuas necessidades específicas.*
+
 ---
 
 ## 🎓 Recursos de Aprendizagem
