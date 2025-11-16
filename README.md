@@ -17,11 +17,11 @@ Bot Discord completo com sistema de economia, jogos, música, moderação, ticke
 - [Características](#-características)
 - [Requisitos](#-requisitos)
 - [Instalação](#-instalação)
-- [Configuração](#-configuração)
+- [Configuração](#%EF%B8%8F-configuração)
 - [Comandos](#-comandos)
 - [Estrutura](#-estrutura)
-- [Tecnologias](#-tecnologias)
-- [Avisos Legais](#-avisos-legais)
+- [Tecnologias](#%EF%B8%8F-tecnologias)
+- [Avisos Legais](#%EF%B8%8F-avisos-legais)
 
 ---
 
@@ -82,8 +82,8 @@ Precisas ter conhecimentos em:
 ### 1. Clonar o Repositório
 
 ```bash
-git clone https://github.com/Droppers02/Discord-Bot.git
-cd Discord-Bot
+git clone https://github.com/Droppers02/Discord-Community-Bot.git
+cd Discord-Community-Bot
 ```
 
 ### 2. Instalar Dependências Python
@@ -597,7 +597,7 @@ Interessado num bot Discord personalizado para o teu servidor?
 
 📧 **Email:** business.gnobre@gmail.com
 
-*Desenvolvimento de bots Discord sob medida com funcionalidades customizadas para as tuas necessidades específicas.*
+_Desenvolvimento de bots Discord sob medida com funcionalidades customizadas para as tuas necessidades específicas._
 
 ---
 
