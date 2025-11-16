@@ -385,6 +385,9 @@ class Tickets(commands.Cog):
     async def setup_tickets(self, interaction: discord.Interaction):
         """Configura painel de tickets"""
         
+        # Responder imediatamente para evitar timeout
+        await interaction.response.defer(ephemeral=True)
+        
         # Stats
         stats = await self.db.execute(
             "SELECT COUNT(*) FROM tickets WHERE status = 'closed'",
@@ -441,8 +444,8 @@ class Tickets(commands.Cog):
         if interaction.guild.icon:
             embed.set_thumbnail(url=interaction.guild.icon.url)
         
-        await interaction.response.send_message("✅ Painel configurado!", ephemeral=True)
-        await interaction.followup.send(embed=embed, view=TicketPanelView())
+        await interaction.followup.send("✅ Painel configurado!", ephemeral=True)
+        await interaction.channel.send(embed=embed, view=TicketPanelView())
     
     @app_commands.command(name="fecharticket", description="Fecha o ticket atual")
     async def close_ticket(self, interaction: discord.Interaction):
