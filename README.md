@@ -64,7 +64,7 @@ Bot Discord completo com sistema de economia, jogos, música, moderação, ticke
 
 ⚠️ **IMPORTANTE: Este bot NÃO é plug-and-play!**
 
-Você precisa ter conhecimentos em:
+Precisas ter conhecimentos em:
 
 - Python (básico a intermediário)
 - Discord API e discord.py
@@ -73,7 +73,7 @@ Você precisa ter conhecimentos em:
 - Linha de comando (terminal/cmd)
 - Configuração de tokens e IDs do Discord
 
-**Se você não tem estes conhecimentos, este bot NÃO é para você!**
+**Se não tens estes conhecimentos, este bot NÃO é para ti!**
 
 ---
 
@@ -529,7 +529,7 @@ Get-Content logs/bot.log -Wait -Tail 50
 ESTE SOFTWARE É FORNECIDO "COMO ESTÁ", SEM GARANTIAS DE QUALQUER TIPO.
 O AUTOR NÃO SE RESPONSABILIZA POR QUAISQUER DANOS CAUSADOS PELO USO DESTE BOT.
 
-VOCÊ É TOTALMENTE RESPONSÁVEL POR:
+ÉS TOTALMENTE RESPONSÁVEL POR:
 - Configurar o bot corretamente
 - Manter o token seguro
 - Cumprir os Termos de Serviço do Discord
@@ -589,13 +589,13 @@ Este é um projeto pessoal sem manutenção ativa.
 
 Este bot é fornecido como está, sem suporte.
 
-Se você não consegue configurar ou usar, **este bot não é para você**.
+Se não consegues configurar ou usar, **este bot não é para ti**.
 
 ---
 
 ## 🎓 Recursos de Aprendizagem
 
-Se você quer aprender a criar bots Discord:
+Se quiseres aprender a criar bots Discord:
 
 - **Discord.py Docs:** https://discordpy.readthedocs.io/
 - **Discord Developer Portal:** https://discord.com/developers/docs
@@ -617,6 +617,6 @@ Obrigado a todos que contribuíram para as bibliotecas usadas neste projeto:
 
 **Feito com ❤️ por Droppers**
 
-**Última atualização:** Dezembro 2024
+**Última atualização:** Novembro de 2025
 
 ---
