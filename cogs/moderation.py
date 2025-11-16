@@ -1,0 +1,513 @@
+"""
+Sistema de Moderação Completo para EPA BOT
+Inclui kick, ban, timeout, warn e logs de moderação
+"""
+
+import discord
+from discord.ext import commands
+from discord import app_commands
+from datetime import datetime, timedelta
+from typing import Optional
+import asyncio
+
+from utils.embeds import EmbedBuilder
+from utils.database import get_database
+
+
+class Moderation(commands.Cog):
+    """Sistema de moderação"""
+    
+    def __init__(self, bot):
+        self.bot = bot
+        self.logger = bot.logger
+    
+    async def cog_load(self):
+        """Carregado quando o cog é inicializado"""
+        self.db = await get_database()
+    
+    def has_mod_permissions():
+        """Decorador para verificar permissões de moderador"""
+        async def predicate(interaction: discord.Interaction) -> bool:
+            # Verificar se tem permissão de moderador ou a role específica
+            if interaction.user.guild_permissions.moderate_members:
+                return True
+            
+            mod_role_id = interaction.client.config.mod_role_id
+            if mod_role_id and discord.utils.get(interaction.user.roles, id=mod_role_id):
+                return True
+            
+            await interaction.response.send_message(
+                "❌ Não tens permissão para usar este comando!",
+                ephemeral=True
+            )
+            return False
+        
+        return app_commands.check(predicate)
+    
+    @app_commands.command(name="kick", description="Expulsa um membro do servidor")
+    @app_commands.describe(
+        membro="O membro a expulsar",
+        motivo="Motivo da expulsão"
+    )
+    @app_commands.checks.has_permissions(kick_members=True)
+    @app_commands.checks.bot_has_permissions(kick_members=True)
+    async def kick(
+        self,
+        interaction: discord.Interaction,
+        membro: discord.Member,
+        motivo: str = "Não especificado"
+    ):
+        """Expulsa um membro do servidor"""
+        
+        # Verificações de segurança
+        if membro.id == interaction.user.id:
+            await interaction.response.send_message("❌ Não podes expulsar-te a ti mesmo!", ephemeral=True)
+            return
+        
+        if membro.id == self.bot.user.id:
+            await interaction.response.send_message("❌ Não me posso expulsar a mim mesmo!", ephemeral=True)
+            return
+        
+        if membro.top_role >= interaction.user.top_role:
+            await interaction.response.send_message("❌ Não podes expulsar alguém com cargo igual ou superior!", ephemeral=True)
+            return
+        
+        if membro.top_role >= interaction.guild.me.top_role:
+            await interaction.response.send_message("❌ Não posso expulsar alguém com cargo igual ou superior ao meu!", ephemeral=True)
+            return
+        
+        try:
+            # Tentar enviar DM ao utilizador
+            try:
+                dm_embed = EmbedBuilder.moderation(
+                    title="Foste expulso",
+                    description=f"Foste expulso do servidor **{interaction.guild.name}**"
+                )
+                dm_embed.add_field(name="Motivo", value=motivo, inline=False)
+                dm_embed.add_field(name="Moderador", value=interaction.user.mention, inline=True)
+                await membro.send(embed=dm_embed)
+            except:
+                pass  # Utilizador pode ter DMs desativadas
+            
+            # Expulsar membro
+            await membro.kick(reason=f"{interaction.user}: {motivo}")
+            
+            # Registar no banco de dados
+            await self.db.log_moderation(
+                guild_id=str(interaction.guild.id),
+                user_id=str(membro.id),
+                moderator_id=str(interaction.user.id),
+                action="kick",
+                reason=motivo
+            )
+            
+            # Confirmar ação
+            embed = EmbedBuilder.moderation_log(
+                action="Kick",
+                user=membro,
+                moderator=interaction.user,
+                reason=motivo
+            )
+            
+            await interaction.response.send_message(embed=embed)
+            self.logger.info(f"{interaction.user} expulsou {membro} por: {motivo}")
+            
+        except discord.Forbidden:
+            await interaction.response.send_message("❌ Não tenho permissões para expulsar este membro!", ephemeral=True)
+        except Exception as e:
+            self.logger.error(f"Erro ao expulsar membro: {e}")
+            await interaction.response.send_message("❌ Erro ao expulsar membro!", ephemeral=True)
+    
+    @app_commands.command(name="ban", description="Bane um membro do servidor")
+    @app_commands.describe(
+        membro="O membro a banir",
+        motivo="Motivo do banimento",
+        apagar_dias="Dias de mensagens a apagar (0-7)"
+    )
+    @app_commands.checks.has_permissions(ban_members=True)
+    @app_commands.checks.bot_has_permissions(ban_members=True)
+    async def ban(
+        self,
+        interaction: discord.Interaction,
+        membro: discord.Member,
+        motivo: str = "Não especificado",
+        apagar_dias: app_commands.Range[int, 0, 7] = 0
+    ):
+        """Bane um membro do servidor"""
+        
+        # Verificações de segurança
+        if membro.id == interaction.user.id:
+            await interaction.response.send_message("❌ Não podes banir-te a ti mesmo!", ephemeral=True)
+            return
+        
+        if membro.id == self.bot.user.id:
+            await interaction.response.send_message("❌ Não me posso banir a mim mesmo!", ephemeral=True)
+            return
+        
+        if membro.top_role >= interaction.user.top_role:
+            await interaction.response.send_message("❌ Não podes banir alguém com cargo igual ou superior!", ephemeral=True)
+            return
+        
+        if membro.top_role >= interaction.guild.me.top_role:
+            await interaction.response.send_message("❌ Não posso banir alguém com cargo igual ou superior ao meu!", ephemeral=True)
+            return
+        
+        try:
+            # Tentar enviar DM ao utilizador
+            try:
+                dm_embed = EmbedBuilder.moderation(
+                    title="Foste banido",
+                    description=f"Foste banido do servidor **{interaction.guild.name}**"
+                )
+                dm_embed.add_field(name="Motivo", value=motivo, inline=False)
+                dm_embed.add_field(name="Moderador", value=interaction.user.mention, inline=True)
+                await membro.send(embed=dm_embed)
+            except:
+                pass
+            
+            # Banir membro
+            await membro.ban(
+                reason=f"{interaction.user}: {motivo}",
+                delete_message_days=apagar_dias
+            )
+            
+            # Registar no banco de dados
+            await self.db.log_moderation(
+                guild_id=str(interaction.guild.id),
+                user_id=str(membro.id),
+                moderator_id=str(interaction.user.id),
+                action="ban",
+                reason=motivo
+            )
+            
+            # Confirmar ação
+            embed = EmbedBuilder.moderation_log(
+                action="Ban",
+                user=membro,
+                moderator=interaction.user,
+                reason=motivo
+            )
+            
+            if apagar_dias > 0:
+                embed.add_field(name="Mensagens apagadas", value=f"Últimos {apagar_dias} dias", inline=True)
+            
+            await interaction.response.send_message(embed=embed)
+            self.logger.info(f"{interaction.user} baniu {membro} por: {motivo}")
+            
+        except discord.Forbidden:
+            await interaction.response.send_message("❌ Não tenho permissões para banir este membro!", ephemeral=True)
+        except Exception as e:
+            self.logger.error(f"Erro ao banir membro: {e}")
+            await interaction.response.send_message("❌ Erro ao banir membro!", ephemeral=True)
+    
+    @app_commands.command(name="unban", description="Remove o ban de um utilizador")
+    @app_commands.describe(
+        user_id="ID do utilizador a desbanir",
+        motivo="Motivo do desbanimento"
+    )
+    @app_commands.checks.has_permissions(ban_members=True)
+    @app_commands.checks.bot_has_permissions(ban_members=True)
+    async def unban(
+        self,
+        interaction: discord.Interaction,
+        user_id: str,
+        motivo: str = "Não especificado"
+    ):
+        """Remove o ban de um utilizador"""
+        
+        try:
+            user_id_int = int(user_id)
+            user = await self.bot.fetch_user(user_id_int)
+            
+            # Verificar se está banido
+            try:
+                await interaction.guild.fetch_ban(user)
+            except discord.NotFound:
+                await interaction.response.send_message(f"❌ {user.mention} não está banido!", ephemeral=True)
+                return
+            
+            # Remover ban
+            await interaction.guild.unban(user, reason=f"{interaction.user}: {motivo}")
+            
+            # Registar no banco de dados
+            await self.db.log_moderation(
+                guild_id=str(interaction.guild.id),
+                user_id=str(user.id),
+                moderator_id=str(interaction.user.id),
+                action="unban",
+                reason=motivo
+            )
+            
+            embed = EmbedBuilder.success(
+                title="✅ Utilizador desbanido",
+                description=f"**{user}** foi desbanido com sucesso!"
+            )
+            embed.add_field(name="Moderador", value=interaction.user.mention, inline=True)
+            embed.add_field(name="Motivo", value=motivo, inline=True)
+            
+            await interaction.response.send_message(embed=embed)
+            self.logger.info(f"{interaction.user} desbaniu {user} por: {motivo}")
+            
+        except ValueError:
+            await interaction.response.send_message("❌ ID de utilizador inválido!", ephemeral=True)
+        except Exception as e:
+            self.logger.error(f"Erro ao desbanir: {e}")
+            await interaction.response.send_message("❌ Erro ao desbanir utilizador!", ephemeral=True)
+    
+    @app_commands.command(name="timeout", description="Coloca um membro em timeout")
+    @app_commands.describe(
+        membro="O membro a colocar em timeout",
+        duracao="Duração em minutos (máx: 40320 = 28 dias)",
+        motivo="Motivo do timeout"
+    )
+    @app_commands.checks.has_permissions(moderate_members=True)
+    @app_commands.checks.bot_has_permissions(moderate_members=True)
+    async def timeout(
+        self,
+        interaction: discord.Interaction,
+        membro: discord.Member,
+        duracao: app_commands.Range[int, 1, 40320],
+        motivo: str = "Não especificado"
+    ):
+        """Coloca um membro em timeout"""
+        
+        # Verificações de segurança
+        if membro.id == interaction.user.id:
+            await interaction.response.send_message("❌ Não podes colocar-te em timeout!", ephemeral=True)
+            return
+        
+        if membro.id == self.bot.user.id:
+            await interaction.response.send_message("❌ Não me posso colocar em timeout!", ephemeral=True)
+            return
+        
+        if membro.top_role >= interaction.user.top_role:
+            await interaction.response.send_message("❌ Não podes colocar em timeout alguém com cargo igual ou superior!", ephemeral=True)
+            return
+        
+        if membro.top_role >= interaction.guild.me.top_role:
+            await interaction.response.send_message("❌ Não posso colocar em timeout alguém com cargo igual ou superior ao meu!", ephemeral=True)
+            return
+        
+        try:
+            # Calcular tempo de timeout
+            timeout_until = discord.utils.utcnow() + timedelta(minutes=duracao)
+            
+            # Aplicar timeout
+            await membro.timeout(timeout_until, reason=f"{interaction.user}: {motivo}")
+            
+            # Registar no banco de dados
+            await self.db.log_moderation(
+                guild_id=str(interaction.guild.id),
+                user_id=str(membro.id),
+                moderator_id=str(interaction.user.id),
+                action="timeout",
+                reason=motivo,
+                duration=duracao
+            )
+            
+            # Formatar duração
+            if duracao < 60:
+                duration_str = f"{duracao} minutos"
+            elif duracao < 1440:
+                hours = duracao // 60
+                duration_str = f"{hours} hora(s)"
+            else:
+                days = duracao // 1440
+                duration_str = f"{days} dia(s)"
+            
+            embed = EmbedBuilder.moderation_log(
+                action="Timeout",
+                user=membro,
+                moderator=interaction.user,
+                reason=motivo,
+                duration=duration_str
+            )
+            
+            await interaction.response.send_message(embed=embed)
+            self.logger.info(f"{interaction.user} colocou {membro} em timeout por {duration_str}: {motivo}")
+            
+        except discord.Forbidden:
+            await interaction.response.send_message("❌ Não tenho permissões para colocar este membro em timeout!", ephemeral=True)
+        except Exception as e:
+            self.logger.error(f"Erro ao aplicar timeout: {e}")
+            await interaction.response.send_message("❌ Erro ao aplicar timeout!", ephemeral=True)
+    
+    @app_commands.command(name="untimeout", description="Remove o timeout de um membro")
+    @app_commands.describe(
+        membro="O membro a remover o timeout",
+        motivo="Motivo da remoção"
+    )
+    @app_commands.checks.has_permissions(moderate_members=True)
+    @app_commands.checks.bot_has_permissions(moderate_members=True)
+    async def untimeout(
+        self,
+        interaction: discord.Interaction,
+        membro: discord.Member,
+        motivo: str = "Não especificado"
+    ):
+        """Remove o timeout de um membro"""
+        
+        if not membro.is_timed_out():
+            await interaction.response.send_message(f"❌ {membro.mention} não está em timeout!", ephemeral=True)
+            return
+        
+        try:
+            await membro.timeout(None, reason=f"{interaction.user}: {motivo}")
+            
+            embed = EmbedBuilder.success(
+                title="✅ Timeout removido",
+                description=f"O timeout de {membro.mention} foi removido!"
+            )
+            embed.add_field(name="Moderador", value=interaction.user.mention, inline=True)
+            embed.add_field(name="Motivo", value=motivo, inline=True)
+            
+            await interaction.response.send_message(embed=embed)
+            self.logger.info(f"{interaction.user} removeu timeout de {membro}")
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao remover timeout: {e}")
+            await interaction.response.send_message("❌ Erro ao remover timeout!", ephemeral=True)
+    
+    @app_commands.command(name="warn", description="Avisa um membro")
+    @app_commands.describe(
+        membro="O membro a avisar",
+        motivo="Motivo do aviso"
+    )
+    @app_commands.checks.has_permissions(moderate_members=True)
+    async def warn(
+        self,
+        interaction: discord.Interaction,
+        membro: discord.Member,
+        motivo: str
+    ):
+        """Avisa um membro"""
+        
+        if membro.id == interaction.user.id:
+            await interaction.response.send_message("❌ Não podes avisar-te a ti mesmo!", ephemeral=True)
+            return
+        
+        if membro.bot:
+            await interaction.response.send_message("❌ Não podes avisar bots!", ephemeral=True)
+            return
+        
+        try:
+            # Adicionar aviso ao banco de dados
+            await self.db.add_warning(
+                guild_id=str(interaction.guild.id),
+                user_id=str(membro.id),
+                moderator_id=str(interaction.user.id),
+                reason=motivo
+            )
+            
+            # Obter total de avisos
+            warnings = await self.db.get_warnings(str(interaction.guild.id), str(membro.id))
+            total_warnings = len(warnings)
+            
+            # Tentar enviar DM
+            try:
+                dm_embed = EmbedBuilder.warning(
+                    title="⚠️ Aviso recebido",
+                    description=f"Recebeste um aviso no servidor **{interaction.guild.name}**"
+                )
+                dm_embed.add_field(name="Motivo", value=motivo, inline=False)
+                dm_embed.add_field(name="Moderador", value=interaction.user.mention, inline=True)
+                dm_embed.add_field(name="Total de avisos", value=f"**{total_warnings}**", inline=True)
+                await membro.send(embed=dm_embed)
+            except:
+                pass
+            
+            # Confirmar
+            embed = EmbedBuilder.warning(
+                title="⚠️ Aviso aplicado",
+                description=f"{membro.mention} recebeu um aviso!"
+            )
+            embed.add_field(name="Motivo", value=motivo, inline=False)
+            embed.add_field(name="Moderador", value=interaction.user.mention, inline=True)
+            embed.add_field(name="Total de avisos", value=f"**{total_warnings}**", inline=True)
+            
+            await interaction.response.send_message(embed=embed)
+            self.logger.info(f"{interaction.user} avisou {membro}: {motivo}")
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao avisar membro: {e}")
+            await interaction.response.send_message("❌ Erro ao aplicar aviso!", ephemeral=True)
+    
+    @app_commands.command(name="warnings", description="Mostra os avisos de um membro")
+    @app_commands.describe(membro="O membro para ver os avisos")
+    async def warnings(
+        self,
+        interaction: discord.Interaction,
+        membro: discord.Member
+    ):
+        """Mostra os avisos de um membro"""
+        
+        try:
+            warnings = await self.db.get_warnings(str(interaction.guild.id), str(membro.id))
+            
+            if not warnings:
+                embed = EmbedBuilder.info(
+                    title="📋 Avisos",
+                    description=f"{membro.mention} não tem avisos ativos!"
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+            
+            embed = EmbedBuilder.warning(
+                title=f"⚠️ Avisos de {membro.display_name}",
+                description=f"Total de avisos: **{len(warnings)}**"
+            )
+            embed.set_thumbnail(url=membro.display_avatar.url)
+            
+            for i, warn in enumerate(warnings[:10], 1):  # Mostrar apenas os 10 mais recentes
+                moderator = interaction.guild.get_member(int(warn['moderator_id']))
+                mod_name = moderator.display_name if moderator else "Moderador desconhecido"
+                
+                embed.add_field(
+                    name=f"Aviso #{i}",
+                    value=f"**Motivo:** {warn['reason']}\n**Moderador:** {mod_name}\n**Data:** {warn['created_at'][:10]}",
+                    inline=False
+                )
+            
+            if len(warnings) > 10:
+                embed.set_footer(text=f"Mostrando 10 de {len(warnings)} avisos")
+            
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao obter avisos: {e}")
+            await interaction.response.send_message("❌ Erro ao obter avisos!", ephemeral=True)
+    
+    @app_commands.command(name="clear", description="Apaga mensagens em massa")
+    @app_commands.describe(quantidade="Número de mensagens a apagar (1-100)")
+    @app_commands.checks.has_permissions(manage_messages=True)
+    @app_commands.checks.bot_has_permissions(manage_messages=True)
+    async def clear(
+        self,
+        interaction: discord.Interaction,
+        quantidade: app_commands.Range[int, 1, 100]
+    ):
+        """Apaga mensagens em massa"""
+        
+        try:
+            await interaction.response.defer(ephemeral=True)
+            
+            deleted = await interaction.channel.purge(limit=quantidade)
+            
+            embed = EmbedBuilder.success(
+                title="🗑️ Mensagens apagadas",
+                description=f"**{len(deleted)}** mensagens foram apagadas!"
+            )
+            embed.add_field(name="Moderador", value=interaction.user.mention, inline=True)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            self.logger.info(f"{interaction.user} apagou {len(deleted)} mensagens em {interaction.channel}")
+            
+        except discord.Forbidden:
+            await interaction.followup.send("❌ Não tenho permissões para apagar mensagens!", ephemeral=True)
+        except Exception as e:
+            self.logger.error(f"Erro ao apagar mensagens: {e}")
+            await interaction.followup.send("❌ Erro ao apagar mensagens!", ephemeral=True)
+
+
+async def setup(bot):
+    await bot.add_cog(ModerationCog(bot))
