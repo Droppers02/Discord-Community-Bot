@@ -1,2 +1,2 @@
-providers.google
-providers.ffmpeg
+[phases.setup]
+aptPkgs = ["ffmpeg"]
