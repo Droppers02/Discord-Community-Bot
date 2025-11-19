@@ -36,7 +36,7 @@ Bot Discord completo com sistema de economia, jogos, música, moderação, ticke
 - **🎫 Tickets** - Sistema profissional de suporte com categorias e gestão
 - **🛡️ Moderação** - Ferramentas completas (kick, ban, warn, timeout, etc.)
 - **📊 Monitoramento** - Status do bot, servidor e utilizadores
-- **🔧 Utilidades** - Ferramentas úteis para o servidor
+- **🔧 Utilidades Avançadas** - Lembretes, Polls, Anúncios, Auto-roles (3 painéis), Verificação 2FA
 
 ### 🚀 Funcionalidades Avançadas
 
@@ -427,12 +427,24 @@ https://discord.com/api/oauth2/authorize?client_id=CLIENT_ID&permissions=8&scope
 /userinfo [@user]        - Info do utilizador
 ```
 
-### 🔧 Utilidades
+### 🔧 Utilidades Básicas
 
 ```
-/poll <pergunta>         - Criar votação
-/avatar [@user]          - Ver avatar
-/servericon              - Ícone do servidor
+/avatar [@user]          - Ver avatar de um utilizador
+/userinfo [@user]        - Informações de utilizador
+/serverinfo              - Informações do servidor
+/botinfo                 - Informações do bot
+```
+
+### 🔧 Utilidades Avançadas
+
+```
+/lembrete                - Criar lembrete (simples ou recorrente)
+/meus_lembretes          - Ver lembretes ativos
+/poll                    - Criar poll interativa (até 5 opções)
+/anuncio                 - [ADMIN] Agendar anúncio
+/setup_autoroles         - [ADMIN] Configurar 3 painéis de roles
+/setup_verificacao       - [ADMIN] Sistema de verificação 2FA
 ```
 
 ### 👑 Admin
@@ -462,9 +474,10 @@ EPA-BOT/
 │   ├── tickets.py      # Sistema de tickets
 │   ├── moderation.py   # Moderação
 │   ├── monitoring.py   # Monitoramento
-│   ├── utilidades.py   # Utilitários
-│   ├── fun.py          # Comandos divertidos
-│   └── help.py         # Sistema de ajuda
+│   ├── utilidades.py          # Utilitários básicos
+│   ├── utilities_advanced.py  # Lembretes, Polls, Auto-roles, 2FA
+│   ├── fun.py                 # Comandos divertidos
+│   └── help.py                # Sistema de ajuda
 │
 ├── utils/              # Utilitários
 │   ├── database.py     # Gestão de database

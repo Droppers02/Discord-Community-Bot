@@ -147,8 +147,8 @@ class HelpCog(commands.Cog):
         admin_commands = [
             "• `/setup_tickets` - Configura o painel de tickets com categorias",
             "• `/rename <novo_nome>` - Renomeia um ticket (apenas staff)",
-            "• `/setup_autoroles` - Configura painel de auto-roles",
-            "• `/setup_verificacao` - Configura sistema de verificação",
+            "• `/setup_autoroles` - Configura 3 painéis de auto-roles (Jogos, Plataformas, DM)",
+            "• `/setup_verificacao` - Configura sistema de verificação 2FA (matemática + código DM)",
             "• `/anuncio <canal> <mensagem> <tempo>` - Agendar anúncios",
             "• `/eco_add <utilizador> <quantia>` - Adiciona EPA Coins",
             "• `/eco_remove <utilizador> <quantia>` - Remove EPA Coins",
@@ -178,6 +178,10 @@ class HelpCog(commands.Cog):
                   "🔹 **Social:** Sistema de níveis, XP e reputação automático\n"
                   "🔹 **Música:** Playlists personalizadas e votação para skip\n"
                   "🔹 **Tickets:** 5 categorias, 1 ticket/user, formato 🎫┃user-0001\n"
+                  "🔹 **Utilidades:** Lembretes, Polls, Anúncios, Auto-roles (3 painéis), 2FA\n"
+                  "🔹 **Verificação:** Sistema 2FA (matemática + código DM de 8 dígitos)",
+            inline=False
+        )
                   "🔹 **Moderação:** Sistema completo com logs e avisos\n"
                   "🔹 **Monitorização:** Status, latência e estatísticas em tempo real\n"
                   "🔹 **Backup:** Sistema automático de backup (24h)\n"

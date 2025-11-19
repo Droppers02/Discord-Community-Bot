@@ -33,21 +33,32 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 - **Verificação Automática** - Sistema de tasks periódicas
 - **Múltiplos Canais** - Agendar para qualquer canal
 
-### 🎮 Auto-Roles Completo (23 Roles!)
+### 🎮 Auto-Roles em 3 Painéis (30 Roles!)
 
-- **Painel Permanente** - Botões sempre disponíveis
+- **3 Painéis Separados** - Melhor organização visual
+- **Painel 1: Jogos (Azul)** - 15 roles de jogos populares
+  - Gacha, CSGO, Valorant, Overwatch, LoL, Anime, Ark, Runeterra
+  - GTA V RP, Rocket League, Marvel Rivals, Minecraft, DBD, Fortnite, Roblox
+- **Painel 2: Plataformas (Verde)** - 4 plataformas de gaming
+  - PlayStation, Xbox, PC, Mobile
+- **Painel 3: DM (Laranja)** - 3 preferências de mensagens
+  - Podem enviar DM, Perguntar para DM, Não enviar DM
+- **Botões Cinzentos** - Estilo secondary em todos os botões
 - **Toggle Automático** - Adicionar/Remover com um clique
-- **23 Roles de Jogos** - Gacha, CSGO, Valorant, Overwatch, LoL, Anime, Ark, Runeterra, GTA V RP, Rocket League, Marvel Rivals, Minecraft, Dead by Daylight, Fortnite, Roblox
-- **4 Roles de Plataformas** - PlayStation, Xbox, PC, Mobile
-- **3 Roles de DM** - Podem DM, Perguntar, Não DM
-- **Comando /setup_autoroles** - Configuração rápida
-- **IDs Configurados** - Canal: 869989783856877618
+- **Persistent Views** - Botões funcionam após restart
+- **Comando /setup_autoroles** - Cria os 3 painéis automaticamente
+- **IDs Configurados** - Canal recomendado: 869989783856877618
 
-### ✅ Sistema de Verificação
+### ✅ Sistema de Verificação 2FA
 
-- **Verificação por Botão** - Sistema simples e eficaz
+- **Verificação em 2 Fases** - Segurança contra bots
+- **Fase 1: Desafio Matemático** - Conta aleatória (soma ou subtração)
+- **Fase 2: Código DM** - Código de 8 dígitos enviado por mensagem privada
 - **Role Automática** - ID: 870001773648171178
-- **Welcome Message** - Mensagem personalizada após verificação
+- **Welcome Message** - Mensagem personalizada após verificação completa
+- **Logs Detalhados** - Rastreio de cada fase do processo
+- **Proteção de DM** - Aviso se utilizador tem DMs desativadas
+- **Comando /setup_verificacao** - Configuração com embed informativo
 - **Comando /setup_verificacao** - Configuração instantânea
 - **Canal Dedicado** - ID: 688416170998497347
 

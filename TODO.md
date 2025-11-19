@@ -86,8 +86,12 @@ Lista de tarefas, melhorias e correções planeadas para versões futuras.
 - [x] Polls/votações avançadas
 - [x] Sistema de anúncios agendados
 - [x] Welcome messages customizáveis
-- [x] Auto-roles por reação
-- [x] Sistema de verificação (captcha)
+- [x] Auto-roles em 3 painéis separados (Jogos, Plataformas, DM)
+- [x] Sistema de verificação 2FA (desafio matemático + código DM)
+- [ ] Sistema de sugestões da comunidade
+- [ ] Sistema de giveaways automatizado
+- [ ] Comandos de utilidade para timestamps
+- [ ] Sistema de notas pessoais
 
 ### Interface & UX
 
