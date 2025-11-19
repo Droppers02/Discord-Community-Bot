@@ -506,8 +506,18 @@ class CodeVerificationModal(discord.ui.Modal):
         
         try:
             bot_logger.info(f"🔍 [2FA] {member} prestes a receber role de verificado (ID: {verified_role_id})")
-            await member.add_roles(verified_role)
-            bot_logger.info(f"✅ [2FA] {member} recebeu role de verificado com sucesso")
+            bot_logger.info(f"🔍 [2FA] Roles antes de adicionar: {[role.name for role in member.roles]}")
+            
+            await member.add_roles(verified_role, reason="Verificação 2FA completa")
+            
+            # Verificar se a role foi realmente adicionada
+            await asyncio.sleep(1)
+            member_refreshed = await guild.fetch_member(member.id)
+            has_role = verified_role in member_refreshed.roles
+            
+            bot_logger.info(f"✅ [2FA] add_roles() executado para {member}")
+            bot_logger.info(f"🔍 [2FA] Roles após adicionar (verificado): {[role.name for role in member_refreshed.roles]}")
+            bot_logger.info(f"🔍 [2FA] Tem a role '{verified_role.name}'? {has_role}")
             
             # Obter canal de autoroles da config
             autoroles_channel_id = config.get("channels", {}).get("autoroles_channel", 0)
@@ -587,26 +597,21 @@ class VerificationView(discord.ui.View):
         # Responder imediatamente para não dar timeout
         await interaction.response.defer(ephemeral=True)
         
-        # Aguardar 2 segundos e fazer refresh do membro
-        await asyncio.sleep(2)
+        bot_logger.info(f"🔍 [2FA] {interaction.user} clicou no botão de verificação")
         
-        # Refrescar o membro para ter os dados mais recentes
-        member = await interaction.guild.fetch_member(interaction.user.id)
-        member_roles = [role.name for role in member.roles]
-        
-        bot_logger.info(f"🔍 [2FA DEBUG] {member} clicou no botão de verificação")
-        bot_logger.info(f"🔍 [2FA DEBUG] Roles atuais do utilizador (após 2s + fetch): {member_roles}")
-        bot_logger.info(f"🔍 [2FA DEBUG] Tem role de verificado? {verified_role in member.roles}")
-        
-        # Se já tem a role, remover para forçar re-verificação
+        # Verificar se já tem a role (verificação inicial rápida)
+        member = interaction.user
         if verified_role in member.roles:
+            bot_logger.info(f"⚠️ [2FA] {member} já tem a role '{verified_role.name}'. Removendo...")
             try:
-                await member.remove_roles(verified_role, reason="Re-verificação 2FA iniciada")
-                bot_logger.info(f"⚠️ [2FA] Role removida de {member} para re-verificação")
+                await member.remove_roles(verified_role, reason="Iniciou verificação 2FA - role será restaurada após completar")
+                bot_logger.info(f"✅ [2FA] Role '{verified_role.name}' removida de {member}")
                 await interaction.followup.send(
                     "⚠️ Role de membro removida! Complete a verificação para a recuperar.",
                     ephemeral=True
                 )
+                # Aguardar para a remoção ser aplicada
+                await asyncio.sleep(1)
             except discord.Forbidden:
                 await interaction.followup.send(
                     "❌ Não tenho permissões para remover roles!",
