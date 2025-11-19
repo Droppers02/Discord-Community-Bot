@@ -179,14 +179,11 @@ class HelpCog(commands.Cog):
                   "🔹 **Música:** Playlists personalizadas e votação para skip\n"
                   "🔹 **Tickets:** 5 categorias, 1 ticket/user, formato 🎫┃user-0001\n"
                   "🔹 **Utilidades:** Lembretes, Polls, Anúncios, Auto-roles (3 painéis), 2FA\n"
-                  "🔹 **Verificação:** Sistema 2FA (matemática + código DM de 8 dígitos)",
-            inline=False
-        )
+                  "🔹 **Verificação:** Sistema 2FA (matemática + código DM de 8 dígitos)\n"
                   "🔹 **Moderação:** Sistema completo com logs e avisos\n"
                   "🔹 **Monitorização:** Status, latência e estatísticas em tempo real\n"
                   "🔹 **Backup:** Sistema automático de backup (24h)\n"
                   "🔹 **Base de Dados:** SQLite com migração automática\n"
-                  "🔹 **Utilidades:** Lembretes, Polls, Anúncios, Auto-roles, Verificação\n"
                   "🔹 **Custom Roles:** Cria roles personalizadas na loja!\n"
                   "🔹 **Autor:** Droppers 🇵🇹",
             inline=False
