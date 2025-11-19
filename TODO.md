@@ -82,12 +82,12 @@ Lista de tarefas, melhorias e correções planeadas para versões futuras.
 
 ### Utilidades
 
-- [ ] Sistema de lembretes recorrentes
-- [ ] Polls/votações avançadas
-- [ ] Sistema de anúncios agendados
-- [ ] Welcome messages customizáveis
-- [ ] Auto-roles por reação
-- [ ] Sistema de verificação (captcha)
+- [x] Sistema de lembretes recorrentes
+- [x] Polls/votações avançadas
+- [x] Sistema de anúncios agendados
+- [x] Welcome messages customizáveis
+- [x] Auto-roles por reação
+- [x] Sistema de verificação (captcha)
 
 ### Interface & UX
 

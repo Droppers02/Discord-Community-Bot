@@ -66,10 +66,11 @@ class EPABot(commands.Bot):
             "cogs.music",
             "cogs.economy",
             "cogs.utilidades",
+            "cogs.utilities_advanced",  # Novo: Sistema avançado de utilidades
             "cogs.social",
             "cogs.games_extra",
-            "cogs.moderation",      # Novo: Sistema de moderação
-            "cogs.monitoring",      # Novo: Monitorização
+            "cogs.moderation",
+            "cogs.monitoring",
         ]
 
     async def setup_hook(self):
