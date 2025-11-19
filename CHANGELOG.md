@@ -4,6 +4,84 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [2.3.0] - 2025-11-19
+
+### 🎉 Sistema Avançado de Utilidades
+
+- **Novo Cog** - `utilities_advanced.py` com 6 sistemas integrados
+
+### 📌 Lembretes Inteligentes
+
+- **Lembretes Simples e Recorrentes** - Suporte para s, m, h, d
+- **Comando /lembrete** - Criar lembretes com tempo customizado
+- **Comando /meus_lembretes** - Ver todos os lembretes ativos
+- **Sistema Automático** - Verificação periódica e envio automático
+- **Persistência** - Dados guardados em JSON
+
+### 📊 Sistema de Polls/Votações
+
+- **Polls Interativas** - Até 5 opções por votação
+- **Interface com Botões** - Votar com um clique
+- **Estatísticas em Tempo Real** - Percentagens e barras visuais
+- **Prevenção de Duplicados** - Um voto por utilizador
+- **Comando /poll** - Criar polls facilmente
+
+### 📢 Anúncios Agendados
+
+- **Agendar Anúncios** - Envio futuro ou imediato
+- **Comando /anuncio** - Apenas para administradores
+- **Verificação Automática** - Sistema de tasks periódicas
+- **Múltiplos Canais** - Agendar para qualquer canal
+
+### 🎮 Auto-Roles Completo (23 Roles!)
+
+- **Painel Permanente** - Botões sempre disponíveis
+- **Toggle Automático** - Adicionar/Remover com um clique
+- **23 Roles de Jogos** - Gacha, CSGO, Valorant, Overwatch, LoL, Anime, Ark, Runeterra, GTA V RP, Rocket League, Marvel Rivals, Minecraft, Dead by Daylight, Fortnite, Roblox
+- **4 Roles de Plataformas** - PlayStation, Xbox, PC, Mobile
+- **3 Roles de DM** - Podem DM, Perguntar, Não DM
+- **Comando /setup_autoroles** - Configuração rápida
+- **IDs Configurados** - Canal: 869989783856877618
+
+### ✅ Sistema de Verificação
+
+- **Verificação por Botão** - Sistema simples e eficaz
+- **Role Automática** - ID: 870001773648171178
+- **Welcome Message** - Mensagem personalizada após verificação
+- **Comando /setup_verificacao** - Configuração instantânea
+- **Canal Dedicado** - ID: 688416170998497347
+
+### 🚀 Deploy & Hosting
+
+- **Suporte Railway.app** - Configuração completa
+- **Arquivos Criados** - railway.json, Procfile, runtime.txt, nixpacks.toml
+- **FFmpeg Incluído** - Comandos de música funcionam
+- **512MB RAM** - 5x mais que Discloud
+- **Deploy Automático** - Via GitHub
+- **Região Europa** - Menor latência para Portugal
+
+### 🔧 Melhorias Técnicas
+
+- **Views Persistentes** - Botões funcionam após restart
+- **Tasks Periódicas** - Verificação automática de lembretes e anúncios
+- **Error Handling** - Tratamento completo de erros
+- **Logs Detalhados** - Registo de todas as ações
+- **Persistência JSON** - Dados guardados automaticamente
+
+### 🐛 Correções
+
+- **Level Up Duplicado** - Corrigido envio de 2 embeds ao subir de nível
+- **Nixpacks.toml** - Formato corrigido para Railway
+- **Cache Python** - Sistema de limpeza implementado
+
+### 📚 Documentação
+
+- **README Atualizado** - Instruções de deploy Railway
+- **Help Command** - Novos comandos documentados
+- **TODO.md** - Tarefas marcadas como concluídas
+
+---
+
 ## [2.2.0] - 2025-11-16
 
 ### 🎫 Sistema de Tickets Profissional

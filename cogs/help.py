@@ -104,7 +104,9 @@ class HelpCog(commands.Cog):
             "• `/userinfo [utilizador]` - Informações detalhadas de utilizador",
             "• `/serverinfo` - Informações do servidor",
             "• `/avatar [utilizador]` - Mostra avatar de utilizador",
-            "• `/lembrete <mensagem> <tempo>` - Cria lembrete pessoal"
+            "• `/lembrete <tempo> <mensagem>` - Criar lembrete (5m, 2h, 1d)",
+            "• `/meus_lembretes` - Ver lembretes ativos",
+            "• `/poll <pergunta> <opcoes>` - Criar votação interativa"
         ]
         embed.add_field(
             name="🔧 **Utilidades & Info**",
@@ -145,6 +147,9 @@ class HelpCog(commands.Cog):
         admin_commands = [
             "• `/setup_tickets` - Configura o painel de tickets com categorias",
             "• `/rename <novo_nome>` - Renomeia um ticket (apenas staff)",
+            "• `/setup_autoroles` - Configura painel de auto-roles",
+            "• `/setup_verificacao` - Configura sistema de verificação",
+            "• `/anuncio <canal> <mensagem> <tempo>` - Agendar anúncios",
             "• `/eco_add <utilizador> <quantia>` - Adiciona EPA Coins",
             "• `/eco_remove <utilizador> <quantia>` - Remove EPA Coins",
             "• `/eco_reset <utilizador>` - Reset económico completo",
@@ -177,7 +182,7 @@ class HelpCog(commands.Cog):
                   "🔹 **Monitorização:** Status, latência e estatísticas em tempo real\n"
                   "🔹 **Backup:** Sistema automático de backup (24h)\n"
                   "🔹 **Base de Dados:** SQLite com migração automática\n"
-                  "🔹 **Utilidades:** Lembretes, informações de users/servidor\n"
+                  "🔹 **Utilidades:** Lembretes, Polls, Anúncios, Auto-roles, Verificação\n"
                   "🔹 **Custom Roles:** Cria roles personalizadas na loja!\n"
                   "🔹 **Autor:** Droppers 🇵🇹",
             inline=False
