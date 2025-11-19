@@ -183,9 +183,51 @@ python3 main.py
 
 ## 🚀 Deployment / Hosting
 
-### Discloud (Plano Grátis)
+### Railway.app (Recomendado) ⭐
 
-O bot está configurado para deploy na **Discloud** com o ficheiro `discloud.config`:
+O bot está otimizado para deploy na **Railway** com plano grátis generoso (512MB RAM, $5 crédito mensal).
+
+**Ficheiros de configuração:**
+
+- `railway.json` - Configuração do deploy
+- `Procfile` - Comando de início
+- `runtime.txt` - Versão do Python
+- `nixpacks.toml` - Pacotes do sistema (FFmpeg)
+
+**Passo a passo:**
+
+1. **Criar conta:** Vai a [railway.app](https://railway.app) e cria conta com GitHub
+2. **Novo Projeto:** Clica em "New Project" → "Deploy from GitHub repo"
+3. **Selecionar Repo:** Escolhe o repositório `Discord-Community-Bot`
+4. **Variáveis de Ambiente:** No painel do projeto, vai a "Variables" e adiciona:
+   ```
+   DISCORD_TOKEN=teu_token_aqui
+   SERVER_ID=id_do_servidor
+   MOD_ROLE_ID=id_da_role_moderador
+   TICKET_CATEGORY_ID=id_da_categoria_tickets
+   ```
+5. **Deploy Automático:** Railway fará deploy automaticamente!
+
+**✅ Vantagens da Railway:**
+
+- 512MB RAM (5x mais que Discloud)
+- $5 crédito grátis por mês (~500 horas)
+- Deploy automático via GitHub
+- FFmpeg incluído (comandos de música funcionam)
+- Logs em tempo real
+- Restart automático
+
+**Monitorização:**
+
+- Acessa os logs em tempo real no painel
+- Vê uso de RAM e CPU
+- Deploy automático a cada push no GitHub
+
+---
+
+### Discloud (Alternativa)
+
+O bot também suporta **Discloud** com o ficheiro `discloud.config`:
 
 **Passo a passo:**
 
@@ -200,24 +242,18 @@ O bot está configurado para deploy na **Discloud** com o ficheiro `discloud.con
 
 **⚠️ Limitações do Plano Grátis:**
 
-- 100MB RAM (pode ser justo para muitos utilizadores)
-- Comandos de música podem causar problemas de memória
-- Considera desativar o cog `music.py` se necessário
+- 100MB RAM (muito limitado)
+- Comandos de música podem causar problemas
+- Considera desativar o cog `music.py`
 
-**Configuração:**
-
-```
-RAM: 100MB
-APT: ffmpeg, python3-dev, git
-AutoRestart: Ativado
-```
+---
 
 ### Outras Opções de Hosting
 
-- **VPS (Recomendado):** DigitalOcean, Linode, AWS EC2
-- **Railway.app:** Plano grátis com mais recursos
-- **Heroku:** Descontinuado para planos grátis
-- **Render.com:** Alternativa gratuita
+- **VPS (Máximo controlo):** DigitalOcean ($4/mês), Linode, AWS EC2
+- **Render.com:** Alternativa gratuita similar à Railway
+- **PebbleHost:** Especializado em bots Discord ($1/mês)
+- **Oracle Cloud:** VPS grátis permanente (requer cartão)
 
 ---
 

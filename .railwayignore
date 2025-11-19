@@ -1,0 +1,39 @@
+# Ficheiros locais
+.env
+.env.local
+*.log
+logs/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Desenvolvimento
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Base de dados local
+*.db-journal
+
+# Backups locais
+backups/
+backup_v1/
+*.backup
+
+# Git
+.git/
+.gitignore
+
+# Documentação (não necessária no servidor)
+README.md
+CHANGELOG.md
+TODO.md
+LICENSE
+
+# Ficheiros de outros hosts
+discloud.config
+.discloudignore
