@@ -374,20 +374,172 @@ class DMPreferenceRoleView(discord.ui.View):
             )
 
 
+class MathChallengeModal(discord.ui.Modal):
+    """Modal para responder ao desafio matemático"""
+    
+    def __init__(self, correct_answer: int, verification_code: str, guild_id: int):
+        super().__init__(title="🔢 Desafio Matemático")
+        self.correct_answer = correct_answer
+        self.verification_code = verification_code
+        self.guild_id = guild_id
+        
+        self.answer = discord.ui.TextInput(
+            label="Qual é o resultado?",
+            placeholder="Digite apenas o número",
+            required=True,
+            max_length=5
+        )
+        self.add_item(self.answer)
+    
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            user_answer = int(self.answer.value.strip())
+        except ValueError:
+            await interaction.response.send_message(
+                "❌ Por favor, insere apenas números!",
+                ephemeral=True
+            )
+            return
+        
+        if user_answer != self.correct_answer:
+            await interaction.response.send_message(
+                "❌ Resposta incorreta! Tenta novamente clicando no botão de verificação.",
+                ephemeral=True
+            )
+            bot_logger.info(f"{interaction.user} falhou o desafio matemático")
+            return
+        
+        # Fase 1 completa! Enviar código por DM
+        try:
+            dm_embed = discord.Embed(
+                title="📧 Código de Verificação - Fase 2/2",
+                description=f"**Parabéns!** Passaste na primeira fase.\n\n"
+                           f"Aqui está o teu código de verificação:\n\n"
+                           f"```\n{self.verification_code}\n```\n\n"
+                           f"Volta ao servidor e introduz este código quando pedido.",
+                color=discord.Color.blue(),
+                timestamp=datetime.now()
+            )
+            dm_embed.set_footer(text="EPA BOT • Sistema de Verificação 2FA")
+            
+            await interaction.user.send(embed=dm_embed)
+            
+            # Mostrar modal para código
+            code_modal = CodeVerificationModal(self.verification_code, self.guild_id)
+            await interaction.response.send_modal(code_modal)
+            
+            bot_logger.info(f"{interaction.user} passou na fase 1 (matemática)")
+            
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                "❌ Não consigo enviar-te DM! Ativa as mensagens privadas do servidor e tenta novamente.",
+                ephemeral=True
+            )
+            bot_logger.warning(f"{interaction.user} tem DMs desativadas")
+
+
+class CodeVerificationModal(discord.ui.Modal):
+    """Modal para inserir o código de verificação"""
+    
+    def __init__(self, correct_code: str, guild_id: int):
+        super().__init__(title="🔐 Código de Verificação")
+        self.correct_code = correct_code
+        self.guild_id = guild_id
+        
+        self.code = discord.ui.TextInput(
+            label="Insere o código que recebeste por DM",
+            placeholder="12345678",
+            required=True,
+            min_length=8,
+            max_length=8
+        )
+        self.add_item(self.code)
+    
+    async def on_submit(self, interaction: discord.Interaction):
+        user_code = self.code.value.strip()
+        
+        if user_code != self.correct_code:
+            await interaction.response.send_message(
+                "❌ Código incorreto! Verifica a tua DM e tenta novamente.",
+                ephemeral=True
+            )
+            bot_logger.info(f"{interaction.user} inseriu código incorreto")
+            return
+        
+        # Verificação completa! Dar role
+        verified_role_id = 870001773648171178
+        guild = interaction.client.get_guild(self.guild_id)
+        
+        if not guild:
+            await interaction.response.send_message(
+                "❌ Erro ao encontrar o servidor!",
+                ephemeral=True
+            )
+            return
+        
+        verified_role = guild.get_role(verified_role_id)
+        member = guild.get_member(interaction.user.id)
+        
+        if not verified_role or not member:
+            await interaction.response.send_message(
+                "❌ Erro ao verificar! Contacta um administrador.",
+                ephemeral=True
+            )
+            return
+        
+        try:
+            await member.add_roles(verified_role)
+            
+            success_embed = discord.Embed(
+                title="✅ Verificação Concluída!",
+                description=f"**Parabéns, {member.mention}!**\n\n"
+                           f"✅ Passaste nas 2 fases de verificação\n"
+                           f"✅ Tens agora acesso a todos os canais\n\n"
+                           f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                           f"**Próximos passos:**\n"
+                           f"• Pega nas tuas roles em <#869989783856877618>\n"
+                           f"• Lê as regras do servidor\n"
+                           f"• Diverte-te!",
+                color=discord.Color.green(),
+                timestamp=datetime.now()
+            )
+            success_embed.set_thumbnail(url=member.display_avatar.url)
+            success_embed.set_footer(text="EPA BOT • Verificação 2FA Completa")
+            
+            await interaction.response.send_message(
+                embed=success_embed,
+                ephemeral=True
+            )
+            
+            bot_logger.info(f"✅ {member} completou a verificação 2FA com sucesso")
+            
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                "❌ Não tenho permissões para dar roles!",
+                ephemeral=True
+            )
+        except Exception as e:
+            bot_logger.error(f"Erro ao verificar {interaction.user}: {e}")
+            await interaction.response.send_message(
+                "❌ Ocorreu um erro! Contacta um administrador.",
+                ephemeral=True
+            )
+
+
 class VerificationView(discord.ui.View):
-    """View para verificação de membros"""
+    """View para iniciar verificação 2FA"""
     
     def __init__(self):
         super().__init__(timeout=None)
     
     @discord.ui.button(
-        label="✅ Verificar",
+        label="✅ Iniciar Verificação",
         style=discord.ButtonStyle.success,
         custom_id="verify_button",
-        emoji="✅"
+        emoji="🔐"
     )
     async def verify(self, interaction: discord.Interaction, button: discord.ui.Button):
-        """Verificar membro"""
+        """Iniciar processo de verificação 2FA"""
         verified_role_id = 870001773648171178
         verified_role = interaction.guild.get_role(verified_role_id)
         
@@ -407,39 +559,64 @@ class VerificationView(discord.ui.View):
             )
             return
         
-        # Adicionar role de verificado
-        try:
-            await member.add_roles(verified_role)
-            
-            embed = discord.Embed(
-                title="✅ Verificação Concluída!",
-                description=f"Bem-vindo ao servidor, {member.mention}!\n\n"
-                           f"Agora tens acesso a todos os canais.\n"
-                           f"Não te esqueças de pegar nas tuas roles em <#869989783856877618>!",
-                color=discord.Color.green(),
-                timestamp=datetime.now()
-            )
-            embed.set_thumbnail(url=member.display_avatar.url)
-            embed.set_footer(text=f"EPA BOT • Verificação")
-            
-            await interaction.response.send_message(
-                embed=embed,
-                ephemeral=True
-            )
-            
-            bot_logger.info(f"Membro {member} verificado com sucesso")
-            
-        except discord.Forbidden:
-            await interaction.response.send_message(
-                "❌ Não tenho permissões para dar roles!",
-                ephemeral=True
-            )
-        except Exception as e:
-            bot_logger.error(f"Erro ao verificar membro: {e}")
-            await interaction.response.send_message(
-                "❌ Ocorreu um erro ao verificar-te. Contacta um administrador!",
-                ephemeral=True
-            )
+        # Gerar desafio matemático (soma ou subtração)
+        operation = random.choice(['+', '-'])
+        
+        if operation == '+':
+            num1 = random.randint(5, 50)
+            num2 = random.randint(5, 50)
+            correct_answer = num1 + num2
+            question = f"{num1} + {num2}"
+        else:
+            num1 = random.randint(20, 80)
+            num2 = random.randint(5, num1 - 5)
+            correct_answer = num1 - num2
+            question = f"{num1} - {num2}"
+        
+        # Gerar código de 8 dígitos
+        verification_code = ''.join([str(random.randint(0, 9)) for _ in range(8)])
+        
+        # Mostrar desafio
+        challenge_embed = discord.Embed(
+            title="🔐 Verificação em 2 Fases - Fase 1/2",
+            description=f"**Bem-vindo ao sistema de verificação!**\n\n"
+                       f"Para garantir que és humano, resolve esta conta:\n\n"
+                       f"**🔢 Quanto é `{question}`?**\n\n"
+                       f"Clica abaixo para responder.",
+            color=discord.Color.orange(),
+            timestamp=datetime.now()
+        )
+        challenge_embed.add_field(
+            name="📋 Processo",
+            value="1️⃣ Resolve a conta matemática\n"
+                  "2️⃣ Recebe código por DM (8 dígitos)\n"
+                  "3️⃣ Insere o código para completar",
+            inline=False
+        )
+        challenge_embed.set_footer(text="EPA BOT • Verificação 2FA")
+        
+        await interaction.response.send_message(
+            embed=challenge_embed,
+            ephemeral=True
+        )
+        
+        # Enviar modal para resposta
+        modal = MathChallengeModal(correct_answer, verification_code, interaction.guild.id)
+        await interaction.followup.send("Clica no botão abaixo:", view=MathChallengeButton(modal), ephemeral=True)
+        
+        bot_logger.info(f"{member} iniciou verificação 2FA (desafio: {question} = {correct_answer})")
+
+
+class MathChallengeButton(discord.ui.View):
+    """View temporária com botão para abrir modal"""
+    
+    def __init__(self, modal: MathChallengeModal):
+        super().__init__(timeout=300)
+        self.modal = modal
+    
+    @discord.ui.button(label="📝 Responder", style=discord.ButtonStyle.primary)
+    async def answer_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(self.modal)
 
 
 class UtilitiesAdvanced(commands.Cog):
@@ -882,40 +1059,48 @@ class UtilitiesAdvanced(commands.Cog):
     
     @app_commands.command(
         name="setup_verificacao",
-        description="[ADMIN] Configurar sistema de verificação"
+        description="[ADMIN] Configurar sistema de verificação 2FA"
     )
     @app_commands.default_permissions(administrator=True)
     async def setup_verification(self, interaction: discord.Interaction):
-        """Configurar sistema de verificação"""
+        """Configurar sistema de verificação 2FA"""
         embed = discord.Embed(
-            title="✅ Verificação - EPA",
+            title="🔐 Verificação 2FA - EPA",
             description="**Bem-vindo ao servidor EPA!**\n\n"
-                       "Para teres acesso a todos os canais, precisas de te verificar.\n\n"
+                       "Para teres acesso a todos os canais, precisas de completar\n"
+                       "o nosso sistema de verificação em **2 fases**.\n\n"
                        "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                       "**Como funciona:**\n"
-                       "1️⃣ Clica no botão **✅ Verificar** abaixo\n"
-                       "2️⃣ Receberás a role de membro verificado\n"
-                       "3️⃣ Terás acesso a todo o servidor!\n\n"
+                       "**📋 Como funciona:**\n\n"
+                       "**Fase 1 - Desafio Matemático** 🔢\n"
+                       "• Resolve uma conta simples (soma ou subtração)\n"
+                       "• Isto confirma que és humano\n\n"
+                       "**Fase 2 - Código de Verificação** 📧\n"
+                       "• Recebe um código de 8 dígitos por DM\n"
+                       "• Insere o código para completar a verificação\n\n"
+                       "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                       "**⚠️ Requisitos:**\n"
+                       "• Tens que ter DMs ativas para receber o código\n"
+                       "• O processo é rápido e seguro\n\n"
                        "**Depois de verificado:**\n"
-                       "• Não te esqueças de pegar nas tuas roles em <#869989783856877618>\n"
-                       "• Lê as regras do servidor\n"
-                       "• Diverte-te!",
+                       "• Acesso total ao servidor\n"
+                       "• Pega nas tuas roles em <#869989783856877618>\n"
+                       "• Lê as regras e diverte-te!",
             color=discord.Color.green()
         )
         
-        embed.set_footer(text="EPA BOT • Sistema de Verificação")
+        embed.set_footer(text="EPA BOT • Sistema de Verificação 2FA")
         
         if interaction.guild.icon:
             embed.set_thumbnail(url=interaction.guild.icon.url)
         
         await interaction.response.send_message(
-            "✅ Sistema de verificação configurado!",
+            "✅ Sistema de verificação 2FA configurado!",
             ephemeral=True
         )
         
         await interaction.channel.send(embed=embed, view=VerificationView())
         
-        bot_logger.info(f"Sistema de verificação criado por {interaction.user}")
+        bot_logger.info(f"Sistema de verificação 2FA criado por {interaction.user}")
     
     @app_commands.command(
         name="meus_lembretes",
