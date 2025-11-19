@@ -272,10 +272,12 @@ Ou copia manualmente o ficheiro `utilities_config.example.json` e renomeia para 
 ### Passo 2: Obter os IDs do Discord
 
 **Ativar o Modo de Desenvolvedor:**
+
 1. Discord → Configurações do Utilizador → Avançado
 2. Ativar "Modo de desenvolvedor"
 
 **Copiar IDs:**
+
 - **Roles:** Clique direito na role → Copiar ID
 - **Canais:** Clique direito no canal → Copiar ID
 
@@ -318,6 +320,7 @@ Abre `config/utilities_config.json` e preenche com os IDs do teu servidor:
 Após editar o ficheiro, reinicia o bot para carregar as novas configurações.
 
 **Notas Importantes:**
+
 - Use `0` para desativar roles/botões específicos
 - O arquivo `utilities_config.json` não é commitado no git (está no .gitignore)
 - Mantenha seus IDs privados e seguros

@@ -552,8 +552,9 @@ class CodeVerificationModal(discord.ui.Modal):
 class VerificationView(discord.ui.View):
     """View para iniciar verificação 2FA"""
     
-    def __init__(self):
+    def __init__(self, config: dict):
         super().__init__(timeout=None)
+        self.config = config
     
     @discord.ui.button(
         label="✅ Iniciar Verificação",
@@ -563,13 +564,8 @@ class VerificationView(discord.ui.View):
     )
     async def verify(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Iniciar processo de verificação 2FA"""
-        # Carregar config para obter verified_role_id
-        try:
-            with open("config/utilities_config.json", 'r', encoding='utf-8') as f:
-                config = json.load(f)
-            verified_role_id = config.get("verification", {}).get("verified_role_id", 0)
-        except:
-            verified_role_id = 0
+        # Obter verified_role_id da configuração
+        verified_role_id = self.config.get("verification", {}).get("verified_role_id", 0)
         
         if verified_role_id == 0:
             await interaction.response.send_message(
@@ -767,7 +763,7 @@ class UtilitiesAdvanced(commands.Cog):
         self.bot.add_view(GamesRoleView(games_ids))
         self.bot.add_view(PlatformRoleView(platform_ids))
         self.bot.add_view(DMPreferenceRoleView(dm_ids))
-        self.bot.add_view(VerificationView())
+        self.bot.add_view(VerificationView(self.config))
         bot_logger.info("Sistema avançado de utilidades carregado")
     
     def cog_unload(self):
@@ -1198,7 +1194,7 @@ class UtilitiesAdvanced(commands.Cog):
             ephemeral=True
         )
         
-        await interaction.channel.send(embed=embed, view=VerificationView())
+        await interaction.channel.send(embed=embed, view=VerificationView(self.config))
         
         bot_logger.info(f"Sistema de verificação 2FA criado por {interaction.user}")
     
