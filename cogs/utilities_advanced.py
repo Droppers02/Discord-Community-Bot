@@ -545,13 +545,6 @@ class VerificationView(discord.ui.View):
         verified_role_id = 870001773648171178
         verified_role = interaction.guild.get_role(verified_role_id)
         
-        member = interaction.user
-        member_roles = [role.name for role in member.roles]
-        
-        bot_logger.info(f"🔍 [2FA DEBUG] {member} clicou no botão de verificação")
-        bot_logger.info(f"🔍 [2FA DEBUG] Roles atuais do utilizador: {member_roles}")
-        bot_logger.info(f"🔍 [2FA DEBUG] Tem role de verificado? {verified_role in member.roles if verified_role else 'Role não existe'}")
-        
         if not verified_role:
             await interaction.response.send_message(
                 "❌ Role de verificado não encontrada!",
@@ -560,8 +553,22 @@ class VerificationView(discord.ui.View):
             bot_logger.error(f"❌ [2FA] Role {verified_role_id} não encontrada no servidor")
             return
         
+        # Responder imediatamente para não dar timeout
+        await interaction.response.defer(ephemeral=True)
+        
+        # Aguardar 2 segundos e fazer refresh do membro
+        await asyncio.sleep(2)
+        
+        # Refrescar o membro para ter os dados mais recentes
+        member = await interaction.guild.fetch_member(interaction.user.id)
+        member_roles = [role.name for role in member.roles]
+        
+        bot_logger.info(f"🔍 [2FA DEBUG] {member} clicou no botão de verificação")
+        bot_logger.info(f"🔍 [2FA DEBUG] Roles atuais do utilizador (após 2s + fetch): {member_roles}")
+        bot_logger.info(f"🔍 [2FA DEBUG] Tem role de verificado? {verified_role in member.roles}")
+        
         if verified_role in member.roles:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "✅ Já estás verificado!",
                 ephemeral=True
             )
@@ -604,7 +611,7 @@ class VerificationView(discord.ui.View):
         )
         challenge_embed.set_footer(text="EPA BOT • Verificação 2FA")
         
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=challenge_embed,
             ephemeral=True
         )
