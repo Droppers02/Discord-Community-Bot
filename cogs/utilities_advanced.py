@@ -598,13 +598,29 @@ class VerificationView(discord.ui.View):
         bot_logger.info(f"🔍 [2FA DEBUG] Roles atuais do utilizador (após 2s + fetch): {member_roles}")
         bot_logger.info(f"🔍 [2FA DEBUG] Tem role de verificado? {verified_role in member.roles}")
         
+        # Se já tem a role, remover para forçar re-verificação
         if verified_role in member.roles:
-            await interaction.followup.send(
-                "✅ Já estás verificado!",
-                ephemeral=True
-            )
-            bot_logger.info(f"ℹ️ [2FA] {member} já tem a role de verificado")
-            return
+            try:
+                await member.remove_roles(verified_role, reason="Re-verificação 2FA iniciada")
+                bot_logger.info(f"⚠️ [2FA] Role removida de {member} para re-verificação")
+                await interaction.followup.send(
+                    "⚠️ Role de membro removida! Complete a verificação para a recuperar.",
+                    ephemeral=True
+                )
+            except discord.Forbidden:
+                await interaction.followup.send(
+                    "❌ Não tenho permissões para remover roles!",
+                    ephemeral=True
+                )
+                bot_logger.error(f"❌ [2FA] Sem permissões para remover role de {member}")
+                return
+            except Exception as e:
+                bot_logger.error(f"❌ [2FA] Erro ao remover role: {e}")
+                await interaction.followup.send(
+                    "❌ Erro ao processar verificação. Tenta novamente.",
+                    ephemeral=True
+                )
+                return
         
         # Gerar desafio matemático (soma ou subtração)
         operation = random.choice(['+', '-'])
