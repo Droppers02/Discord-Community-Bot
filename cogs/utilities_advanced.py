@@ -488,7 +488,9 @@ class CodeVerificationModal(discord.ui.Modal):
             return
         
         try:
+            bot_logger.info(f"🔍 [2FA] {member} prestes a receber role de verificado (ID: {verified_role_id})")
             await member.add_roles(verified_role)
+            bot_logger.info(f"✅ [2FA] {member} recebeu role de verificado com sucesso")
             
             success_embed = discord.Embed(
                 title="✅ Verificação Concluída!",
@@ -543,20 +545,27 @@ class VerificationView(discord.ui.View):
         verified_role_id = 870001773648171178
         verified_role = interaction.guild.get_role(verified_role_id)
         
+        member = interaction.user
+        member_roles = [role.name for role in member.roles]
+        
+        bot_logger.info(f"🔍 [2FA DEBUG] {member} clicou no botão de verificação")
+        bot_logger.info(f"🔍 [2FA DEBUG] Roles atuais do utilizador: {member_roles}")
+        bot_logger.info(f"🔍 [2FA DEBUG] Tem role de verificado? {verified_role in member.roles if verified_role else 'Role não existe'}")
+        
         if not verified_role:
             await interaction.response.send_message(
                 "❌ Role de verificado não encontrada!",
                 ephemeral=True
             )
+            bot_logger.error(f"❌ [2FA] Role {verified_role_id} não encontrada no servidor")
             return
-        
-        member = interaction.user
         
         if verified_role in member.roles:
             await interaction.response.send_message(
                 "✅ Já estás verificado!",
                 ephemeral=True
             )
+            bot_logger.info(f"ℹ️ [2FA] {member} já tem a role de verificado")
             return
         
         # Gerar desafio matemático (soma ou subtração)
