@@ -181,6 +181,45 @@ python3 main.py
 
 ---
 
+## 🚀 Deployment / Hosting
+
+### Discloud (Plano Grátis)
+
+O bot está configurado para deploy na **Discloud** com o ficheiro `discloud.config`:
+
+**Passo a passo:**
+
+1. Cria uma conta em [discloud.app](https://discloud.app)
+2. Faz upload do bot (ZIP ou conecta ao GitHub)
+3. No painel, adiciona as variáveis de ambiente:
+   - `DISCORD_TOKEN`
+   - `SERVER_ID`
+   - `MOD_ROLE_ID`
+   - `TICKET_CATEGORY_ID`
+4. Inicia o bot
+
+**⚠️ Limitações do Plano Grátis:**
+- 100MB RAM (pode ser justo para muitos utilizadores)
+- Comandos de música podem causar problemas de memória
+- Considera desativar o cog `music.py` se necessário
+
+**Configuração:**
+```
+RAM: 100MB
+APT: ffmpeg, python3-dev, git
+AutoRestart: Ativado
+```
+
+### Outras Opções de Hosting
+
+- **VPS (Recomendado):** DigitalOcean, Linode, AWS EC2
+- **Railway.app:** Plano grátis com mais recursos
+- **Heroku:** Descontinuado para planos grátis
+- **Render.com:** Alternativa gratuita
+
+
+---
+
 ## 🐛 Resolução de Problemas
 
 ### Bot não inicia

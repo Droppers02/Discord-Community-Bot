@@ -1,0 +1,36 @@
+# Ficheiros de desenvolvimento
+.git/
+.gitignore
+.env.example
+.vscode/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Logs locais
+logs/
+*.log
+
+# Backups
+backups/
+backup_v1/
+*.backup
+
+# Base de dados local (será criada no servidor)
+data/*.db
+data/*.db-journal
+
+# Ficheiros de sistema
+.DS_Store
+Thumbs.db
+
+# Documentação
+README.md
+CHANGELOG.md
+TODO.md
+LICENSE
+
+# FFmpeg (instalar no servidor se necessário)
+bin/
