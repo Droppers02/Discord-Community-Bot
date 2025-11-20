@@ -4,6 +4,74 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [2.4.0] - 2025-11-20
+
+### 🛡️ Sistema de Moderação Avançado
+
+**Logs Detalhados de Moderação**
+
+- ✅ Comando `/setup_modlogs` para configurar canal de logs
+- ✅ Logs automáticos para todas as ações (kick, ban, timeout, warn, unban)
+- ✅ Embeds formatados com informações completas (usuário, moderador, motivo, timestamp)
+- ✅ Logs de filtro de palavras e sistema de quarentena
+- ✅ Thumbnails com avatar do usuário afetado
+
+**Filtro de Palavras Proibidas**
+
+- ✅ `/setup_wordfilter` - Ativar/desativar e configurar ação
+- ✅ `/addword` - Adicionar palavras à lista proibida
+- ✅ `/removeword` - Remover palavras da lista
+- ✅ `/listwords` - Listar palavras (com spoiler)
+- ✅ Detecção automática em mensagens (regex boundary)
+- ✅ Ações configuráveis: warn, timeout (10min), kick, ban
+- ✅ Moderadores têm bypass automático
+- ✅ Logs detalhados de violações
+
+**Sistema de Quarentena para Novos Membros**
+
+- ✅ `/setup_quarantine` - Configurar sistema
+- ✅ Role automática aplicada ao entrar no servidor
+- ✅ Duração configurável em minutos (padrão: 10min)
+- ✅ Remoção automática via task periódica
+- ✅ Logs de aplicação e remoção
+- ✅ Sistema de tracking interno
+
+**Sistema de Appeals**
+
+- ✅ `/setup_appeals` - Configurar canal de appeals
+- ✅ `/appeal` - Comando em DM para pedir unban
+- ✅ Validação de servidor e permissões
+- ✅ Embeds formatados enviados para canal de moderação
+- ✅ Prevenção de spam de appeals
+
+**Timeout com Presets**
+
+- ✅ Comando `/timeout` reformulado com presets rápidos
+- ✅ 10 presets: 1m, 5m, 10m, 30m, 1h, 6h, 12h, 1d, 3d, 1w
+- ✅ Select menu integrado para escolha fácil
+- ✅ Formatação automática de duração
+- ✅ Logs com duração formatada
+
+**Configuração**
+
+- 📝 Novo arquivo `config/moderation_config.json`
+- 📝 Configurações centralizadas (logs, filtro, quarentena, appeals, presets)
+- 📝 Fácil personalização sem modificar código
+
+**Melhorias nos Comandos Existentes**
+
+- 🔧 Logs adicionados aos comandos kick e ban
+- 🔧 Melhor formatação de embeds
+- 🔧 Validações aprimoradas
+
+### 📝 Documentação
+
+- 📖 README atualizado com todos os novos comandos de moderação
+- 📖 Seção expandida com exemplos e explicações
+- 📖 TODO.md atualizado com tarefas concluídas
+
+---
+
 ## [2.3.1] - 2025-11-20
 
 ### 🔒 Sistema de Verificação 2FA - Melhorias e Correções

@@ -64,11 +64,11 @@ Lista de tarefas, melhorias e correções planeadas para versões futuras.
 ### Moderação
 
 - [ ] Sistema de auto-moderação (anti-spam, anti-raid)
-- [ ] Logs detalhados de ações de moderação
-- [ ] Sistema de appeals para bans
-- [ ] Tempo de timeout customizável
-- [ ] Filtro de palavras proibidas
-- [ ] Sistema de quarentena para novos membros
+- [x] Logs detalhados de ações de moderação
+- [x] Sistema de appeals para bans
+- [x] Tempo de timeout customizável
+- [x] Filtro de palavras proibidas
+- [x] Sistema de quarentena para novos membros
 
 ### Tickets
 

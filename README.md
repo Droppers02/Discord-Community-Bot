@@ -34,7 +34,7 @@ Bot Discord completo com sistema de economia, jogos, música, moderação, ticke
 - **🎵 Música** - Player de música com fila e controles
 - **⭐ Social** - Sistema de XP, níveis, reputação e leaderboards
 - **🎫 Tickets** - Sistema profissional de suporte com categorias e gestão
-- **🛡️ Moderação** - Ferramentas completas (kick, ban, warn, timeout, etc.)
+- **🛡️ Moderação** - Sistema avançado com logs, filtro de palavras, quarentena, appeals e timeout presets
 - **📊 Monitoramento** - Status do bot, servidor e utilizadores
 - **🔧 Utilidades Avançadas** - Lembretes, Polls, Anúncios, Auto-roles (3 painéis), Verificação 2FA
 
@@ -477,16 +477,62 @@ https://discord.com/api/oauth2/authorize?client_id=CLIENT_ID&permissions=8&scope
 
 ### 🛡️ Moderação
 
+**Comandos Básicos:**
+
 ```
 /kick <@user> [razão]    - Expulsar membro
 /ban <@user> [razão]     - Banir membro
 /unban <user_id>         - Desbanir
-/timeout <@user> <tempo> - Timeout
+/timeout <@user> <preset> - Timeout com presets (1m, 5m, 10m, 30m, 1h, 6h, 12h, 1d, 3d, 1w)
 /untimeout <@user>       - Remover timeout
 /warn <@user> <razão>    - Avisar utilizador
 /warnings <@user>        - Ver avisos
 /clear <quantidade>      - Limpar mensagens
 ```
+
+**Sistema de Logs:**
+
+```
+/setup_modlogs <#canal>  - Configurar canal de logs de moderação
+```
+
+- Logs automáticos de todas as ações (kick, ban, timeout, warn)
+- Embeds formatados com informações completas
+- Registro de filtro de palavras e quarentena
+
+**Filtro de Palavras:**
+
+```
+/setup_wordfilter <ativar> [ação] - Configurar filtro (warn/timeout/kick/ban)
+/addword <palavra>                - Adicionar palavra proibida
+/removeword <palavra>             - Remover palavra
+/listwords                        - Listar palavras proibidas
+```
+
+- Detecção automática de palavras proibidas
+- Ações configuráveis (aviso, timeout, kick, ban)
+- Logs detalhados de violações
+
+**Sistema de Quarentena:**
+
+```
+/setup_quarantine <ativar> [role] [duração] - Configurar quarentena
+```
+
+- Role automática para novos membros
+- Duração configurável em minutos
+- Remoção automática após tempo definido
+
+**Sistema de Appeals:**
+
+```
+/setup_appeals <ativar> [#canal] - Configurar appeals
+/appeal <servidor_id> <motivo>   - Pedir unban (DM)
+```
+
+- Usuários banidos podem pedir revisão
+- Appeals enviados para canal específico
+- Processo organizado para moderação
 
 ### 📊 Monitoramento
 

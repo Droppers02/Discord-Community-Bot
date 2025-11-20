@@ -131,15 +131,33 @@ class HelpCog(commands.Cog):
             "• `/kick <membro> [motivo]` - Expulsar membro do servidor",
             "• `/ban <membro> [motivo]` - Banir membro do servidor",
             "• `/unban <user_id> [motivo]` - Remover ban de utilizador",
-            "• `/timeout <membro> <minutos> [motivo]` - Colocar membro em timeout",
+            "• `/timeout <membro> <preset> [motivo]` - Timeout (1m-1w)",
             "• `/untimeout <membro>` - Remover timeout de membro",
             "• `/warn <membro> <motivo>` - Avisar membro",
             "• `/warnings <membro>` - Ver avisos de membro",
             "• `/clear <quantidade>` - Apagar mensagens em massa (1-100)"
         ]
+        
+        moderation_advanced = [
+            "• `/setup_modlogs <canal>` - Configurar logs de moderação",
+            "• `/setup_wordfilter <ativar> [ação]` - Filtro de palavras",
+            "• `/addword <palavra>` - Adicionar palavra proibida",
+            "• `/removeword <palavra>` - Remover palavra proibida",
+            "• `/listwords` - Listar palavras proibidas",
+            "• `/setup_quarantine <ativar> [role] [minutos]` - Quarentena",
+            "• `/setup_appeals <ativar> [canal]` - Sistema de appeals",
+            "• `/appeal <servidor_id> <motivo>` - Pedir unban (DM)"
+        ]
+        
         embed.add_field(
-            name="🛡️ **Moderação** (Requer Permissões)",
+            name="🛡️ **Moderação Básica** (Requer Permissões)",
             value="\n".join(moderation_commands),
+            inline=False
+        )
+        
+        embed.add_field(
+            name="🔧 **Moderação Avançada** (Administradores)",
+            value="\n".join(moderation_advanced),
             inline=False
         )
         
