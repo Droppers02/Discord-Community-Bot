@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import random
 from typing import List, Optional
+from utils.database import Database
 
 
 class TicTacToeButton(discord.ui.Button):
@@ -540,6 +541,7 @@ class GamesCog(commands.Cog):
     
     def __init__(self, bot):
         self.bot = bot
+        self.db = Database()
 
     async def cog_load(self):
         """Método chamado quando o cog é carregado"""

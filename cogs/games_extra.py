@@ -6,6 +6,7 @@ import asyncio
 import aiohttp
 import json
 from typing import Optional
+from utils.database import Database
 
 
 class HangmanView(discord.ui.View):
@@ -165,6 +166,7 @@ class GamesExtraCog(commands.Cog):
     
     def __init__(self, bot):
         self.bot = bot
+        self.db = Database()
         self.active_games = {}  # Jogos ativos
         
         self.quiz_questions = [

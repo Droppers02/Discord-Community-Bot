@@ -17,6 +17,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 **Novos Jogos**
 
 - ✅ **4 em Linha** (`/4emlinha`)
+
   - Jogo clássico Connect Four com IA bot
   - Tabuleiro 6x7 interativo com botões
   - Bot AI com estratégia: ganhar > bloquear > centro > aleatório
@@ -41,6 +42,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 **Sistema de Estatísticas**
 
 - ✅ **Base de Dados de Stats** (`utils/database.py`)
+
   - Nova tabela `game_stats`: tracking completo por jogo e utilizador
   - Campos: wins, losses, draws, total_games, total_earnings, best_streak, current_streak
   - Nova tabela `tournaments` (estrutura pronta para futuro)
@@ -63,6 +65,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 - ✅ Atualizado `TODO.md` marcando features completas
 
 **Resumo**
+
 - **9 jogos** totais disponíveis (4 clássicos + 2 aposta + 3 mini-jogos)
 - **Sistema completo de stats** com tracking automático
 - **Leaderboards** competitivos por jogo

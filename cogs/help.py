@@ -11,6 +11,9 @@ class HelpCog(commands.Cog):
     async def help_command(self, interaction: discord.Interaction):
         """Comando de ajuda que mostra todos os comandos disponíveis"""
         
+        # Defer para evitar timeout
+        await interaction.response.defer()
+        
         # Criar embed principal
         embed = discord.Embed(
             title="🤖 EPA Bot - Central de Comandos",
@@ -243,7 +246,7 @@ class HelpCog(commands.Cog):
         # Timestamp
         embed.timestamp = discord.utils.utcnow()
         
-        await interaction.response.send_message(embed=embed, ephemeral=False)
+        await interaction.followup.send(embed=embed)
 
     @discord.app_commands.command(name="reload_commands", description="[ADMIN] Recarrega todos os comandos do bot")
     async def reload_commands(self, interaction: discord.Interaction):
