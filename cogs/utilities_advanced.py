@@ -1138,6 +1138,81 @@ class UtilitiesAdvanced(commands.Cog):
         )
     
     @app_commands.command(
+        name="anuncios_fila",
+        description="[ADMIN] Ver anúncios agendados"
+    )
+    @app_commands.default_permissions(administrator=True)
+    async def announcements_queue(self, interaction: discord.Interaction):
+        """Ver fila de anúncios agendados"""
+        if not self.scheduled_announcements:
+            await interaction.response.send_message(
+                "📭 Não há anúncios agendados.",
+                ephemeral=True
+            )
+            return
+        
+        embed = discord.Embed(
+            title="📢 Anúncios Agendados",
+            description=f"Total: {len(self.scheduled_announcements)} anúncio(s)",
+            color=discord.Color.blue()
+        )
+        
+        for i, announcement in enumerate(self.scheduled_announcements, 1):
+            channel = self.bot.get_channel(int(announcement['channel_id']))
+            channel_mention = channel.mention if channel else f"<#{announcement['channel_id']}>"
+            
+            # Calcular tempo restante
+            time_left = announcement['time'] - datetime.now().timestamp()
+            
+            if time_left > 0:
+                hours = int(time_left // 3600)
+                minutes = int((time_left % 3600) // 60)
+                time_str = f"🕒 Em {hours}h {minutes}m"
+            else:
+                time_str = "⏰ Atrasado (será enviado em breve)"
+            
+            # Preview da mensagem (primeiros 100 chars)
+            message_preview = announcement['message'][:100]
+            if len(announcement['message']) > 100:
+                message_preview += "..."
+            
+            embed.add_field(
+                name=f"#{i} - {channel_mention}",
+                value=f"{time_str}\n```{message_preview}```",
+                inline=False
+            )
+        
+        embed.set_footer(text="Use /cancelar_anuncio <número> para cancelar")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    
+    @app_commands.command(
+        name="cancelar_anuncio",
+        description="[ADMIN] Cancelar anúncio agendado"
+    )
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.describe(numero="Número do anúncio na fila")
+    async def cancel_announcement(self, interaction: discord.Interaction, numero: int):
+        """Cancelar anúncio agendado"""
+        if numero < 1 or numero > len(self.scheduled_announcements):
+            await interaction.response.send_message(
+                f"❌ Número inválido! Use /anuncios_fila para ver os números.",
+                ephemeral=True
+            )
+            return
+        
+        # Remover anúncio
+        removed = self.scheduled_announcements.pop(numero - 1)
+        self.save_announcements()
+        
+        channel = self.bot.get_channel(int(removed['channel_id']))
+        channel_name = channel.mention if channel else f"<#{removed['channel_id']}>"
+        
+        await interaction.response.send_message(
+            f"✅ Anúncio #{numero} para {channel_name} cancelado!",
+            ephemeral=True
+        )
+    
+    @app_commands.command(
         name="setup_autoroles",
         description="[ADMIN] Configurar painel de auto-roles"
     )
