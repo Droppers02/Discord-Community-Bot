@@ -249,6 +249,291 @@ class TicTacToeView(discord.ui.View):
             item.disabled = True
 
 
+class Connect4Button(discord.ui.Button):
+    """Botão para jogar 4 em linha"""
+    
+    def __init__(self, column: int):
+        super().__init__(
+            style=discord.ButtonStyle.primary, 
+            label=f"{column + 1}",
+            custom_id=f"c4_col_{column}"
+        )
+        self.column = column
+
+    async def callback(self, interaction: discord.Interaction):
+        """Callback executado quando o botão é clicado"""
+        view: Connect4View = self.view
+        
+        # Verificar se é a vez do jogador
+        if interaction.user != view.current_player_user:
+            await interaction.response.send_message(
+                "❌ Não é a tua vez!",
+                ephemeral=True
+            )
+            return
+        
+        # Tentar colocar peça na coluna
+        row = view.drop_piece(self.column)
+        if row == -1:
+            await interaction.response.send_message(
+                "❌ Esta coluna está cheia!",
+                ephemeral=True
+            )
+            return
+        
+        # Verificar vencedor
+        winner = view.check_winner()
+        if winner:
+            for button in view.children:
+                button.disabled = True
+            
+            winner_user = view.player1 if winner == "🔴" else view.player2
+            embed = discord.Embed(
+                title="🎉 Jogo Terminado!",
+                description=f"**Vencedor:** {winner_user.mention if not winner_user.bot else 'EPA BOT'} ({winner})",
+                color=discord.Color.green()
+            )
+            board_display = view.get_board_display()
+            embed.add_field(name="Tabuleiro Final:", value=board_display, inline=False)
+            embed.set_footer(text="EPA Bot • 4 em Linha")
+            
+            await interaction.response.edit_message(embed=embed, view=view)
+            return
+        
+        # Verificar empate
+        if view.is_full():
+            for button in view.children:
+                button.disabled = True
+            
+            embed = discord.Embed(
+                title="🤝 Empate!",
+                description="O tabuleiro está cheio! Ninguém ganhou!",
+                color=discord.Color.orange()
+            )
+            board_display = view.get_board_display()
+            embed.add_field(name="Tabuleiro Final:", value=board_display, inline=False)
+            embed.set_footer(text="EPA Bot • 4 em Linha")
+            
+            await interaction.response.edit_message(embed=embed, view=view)
+            return
+        
+        # Próximo jogador
+        view.switch_player()
+        
+        # Se é modo single player e é a vez do bot
+        if view.is_single_player and view.current_player_user.bot:
+            await view.make_bot_move(interaction)
+        else:
+            embed = discord.Embed(
+                title="🎯 4 em Linha",
+                description=f"**Vez de:** {view.current_player_user.mention if not view.current_player_user.bot else 'EPA BOT'} ({view.current_symbol})",
+                color=discord.Color.blue()
+            )
+            board_display = view.get_board_display()
+            embed.add_field(name="Tabuleiro:", value=board_display, inline=False)
+            embed.set_footer(text="EPA Bot • 4 em Linha")
+            
+            await interaction.response.edit_message(embed=embed, view=view)
+
+
+class Connect4View(discord.ui.View):
+    """View principal do 4 em linha"""
+    
+    def __init__(self, player1: discord.Member, player2: Optional[discord.Member] = None):
+        super().__init__(timeout=600)
+        
+        self.player1 = player1
+        self.player2 = player2  # None para modo single player (bot)
+        self.board = [[" " for _ in range(7)] for _ in range(6)]  # 6 linhas x 7 colunas
+        self.current_symbol = "🔴"
+        self.current_player_user = player1
+        self.is_single_player = player2 is None
+        
+        # Se single player, usar bot
+        if self.is_single_player:
+            import types
+            bot_user = types.SimpleNamespace()
+            bot_user.mention = "EPA BOT"
+            bot_user.bot = True
+            self.player2 = bot_user
+        
+        # Adicionar botões de coluna (0-6)
+        for col in range(7):
+            self.add_item(Connect4Button(col))
+    
+    def drop_piece(self, column: int) -> int:
+        """Coloca peça na coluna. Retorna linha onde caiu ou -1 se cheia"""
+        for row in range(5, -1, -1):  # De baixo para cima
+            if self.board[row][column] == " ":
+                self.board[row][column] = self.current_symbol
+                return row
+        return -1
+    
+    def switch_player(self):
+        """Alterna entre os jogadores"""
+        if self.current_symbol == "🔴":
+            self.current_symbol = "🟡"
+            self.current_player_user = self.player2
+        else:
+            self.current_symbol = "🔴"
+            self.current_player_user = self.player1
+    
+    def check_winner(self) -> Optional[str]:
+        """Verifica se há um vencedor (4 em linha)"""
+        # Verificar horizontal
+        for row in range(6):
+            for col in range(4):
+                if (self.board[row][col] != " " and
+                    self.board[row][col] == self.board[row][col+1] == 
+                    self.board[row][col+2] == self.board[row][col+3]):
+                    return self.board[row][col]
+        
+        # Verificar vertical
+        for row in range(3):
+            for col in range(7):
+                if (self.board[row][col] != " " and
+                    self.board[row][col] == self.board[row+1][col] == 
+                    self.board[row+2][col] == self.board[row+3][col]):
+                    return self.board[row][col]
+        
+        # Verificar diagonal descendente (\)
+        for row in range(3):
+            for col in range(4):
+                if (self.board[row][col] != " " and
+                    self.board[row][col] == self.board[row+1][col+1] == 
+                    self.board[row+2][col+2] == self.board[row+3][col+3]):
+                    return self.board[row][col]
+        
+        # Verificar diagonal ascendente (/)
+        for row in range(3, 6):
+            for col in range(4):
+                if (self.board[row][col] != " " and
+                    self.board[row][col] == self.board[row-1][col+1] == 
+                    self.board[row-2][col+2] == self.board[row-3][col+3]):
+                    return self.board[row][col]
+        
+        return None
+    
+    def is_full(self) -> bool:
+        """Verifica se o tabuleiro está cheio"""
+        return all(self.board[0][col] != " " for col in range(7))
+    
+    def get_board_display(self) -> str:
+        """Retorna representação visual do tabuleiro"""
+        display = ""
+        for row in self.board:
+            display += "".join([cell if cell != " " else "⚫" for cell in row]) + "\n"
+        display += "1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣"
+        return display
+    
+    async def make_bot_move(self, interaction: discord.Interaction):
+        """Faz a jogada do bot (modo single player)"""
+        if not self.is_single_player or not self.current_player_user.bot:
+            return
+        
+        # Estratégia do bot: tentar ganhar > bloquear > centro > aleatório
+        
+        # 1. Tentar ganhar
+        for col in range(7):
+            row = self._try_column(col, "🟡")
+            if row != -1:
+                self.board[row][col] = " "  # Desfazer
+                winner = self.check_winner()
+                if winner == "🟡":
+                    self.drop_piece(col)
+                    await self._handle_bot_move_result(interaction)
+                    return
+                self.board[row][col] = " "
+        
+        # 2. Bloquear jogador
+        for col in range(7):
+            row = self._try_column(col, "🔴")
+            if row != -1:
+                self.board[row][col] = " "  # Desfazer
+                winner = self.check_winner()
+                if winner == "🔴":
+                    self.drop_piece(col)
+                    await self._handle_bot_move_result(interaction)
+                    return
+                self.board[row][col] = " "
+        
+        # 3. Preferir centro
+        center_columns = [3, 2, 4, 1, 5, 0, 6]
+        for col in center_columns:
+            if self._can_drop(col):
+                self.drop_piece(col)
+                await self._handle_bot_move_result(interaction)
+                return
+    
+    def _can_drop(self, column: int) -> bool:
+        """Verifica se pode colocar peça na coluna"""
+        return self.board[0][column] == " "
+    
+    def _try_column(self, column: int, symbol: str) -> int:
+        """Tenta colocar símbolo na coluna e retorna linha"""
+        for row in range(5, -1, -1):
+            if self.board[row][column] == " ":
+                self.board[row][column] = symbol
+                return row
+        return -1
+    
+    async def _handle_bot_move_result(self, interaction: discord.Interaction):
+        """Processa resultado após jogada do bot"""
+        # Verificar vencedor
+        winner = self.check_winner()
+        if winner:
+            for button in self.children:
+                button.disabled = True
+            
+            embed = discord.Embed(
+                title="🎉 Jogo Terminado!",
+                description=f"**Vencedor:** EPA BOT (🟡)",
+                color=discord.Color.red()
+            )
+            board_display = self.get_board_display()
+            embed.add_field(name="Tabuleiro Final:", value=board_display, inline=False)
+            embed.set_footer(text="EPA Bot • 4 em Linha")
+            
+            await interaction.response.edit_message(embed=embed, view=self)
+            return
+        
+        # Verificar empate
+        if self.is_full():
+            for button in self.children:
+                button.disabled = True
+            
+            embed = discord.Embed(
+                title="🤝 Empate!",
+                description="O tabuleiro está cheio! Ninguém ganhou!",
+                color=discord.Color.orange()
+            )
+            board_display = self.get_board_display()
+            embed.add_field(name="Tabuleiro Final:", value=board_display, inline=False)
+            embed.set_footer(text="EPA Bot • 4 em Linha")
+            
+            await interaction.response.edit_message(embed=embed, view=self)
+            return
+        
+        # Voltar para o jogador humano
+        self.switch_player()
+        
+        embed = discord.Embed(
+            title="🎯 4 em Linha",
+            description=f"**Vez de:** {self.current_player_user.mention} ({self.current_symbol})",
+            color=discord.Color.blue()
+        )
+        board_display = self.get_board_display()
+        embed.add_field(name="Tabuleiro:", value=board_display, inline=False)
+        embed.set_footer(text="EPA Bot • 4 em Linha")
+        
+        await interaction.response.edit_message(embed=embed, view=self)
+    
+    async def on_timeout(self):
+        """Executado quando o timeout é atingido"""
+        for item in self.children:
+            item.disabled = True
+
+
 class GamesCog(commands.Cog):
     """Cog para jogos interativos"""
     
@@ -295,6 +580,54 @@ class GamesCog(commands.Cog):
             view = TicTacToeView(interaction.user, oponente)
         
         embed.set_footer(text="EPA Bot • Jogo do Galo • Timeout: 5 minutos")
+        
+        # CORREÇÃO: Responder à interação antes de fazer qualquer outra operação
+        await interaction.response.send_message(embed=embed, view=view)
+        
+        # Se for single player e o bot começar (opcional)
+        # if oponente is None and random.random() < 0.5:
+        #     await view.make_bot_move()
+        #     await interaction.edit_original_response(embed=embed, view=view)
+
+    @discord.app_commands.command(name="4emlinha", description="Jogo do 4 em linha (Connect Four)")
+    @discord.app_commands.describe(oponente="Utilizador para jogar contra (opcional, deixe em branco para jogar contra o bot)")
+    async def connect_four(self, interaction: discord.Interaction, oponente: Optional[discord.Member] = None):
+        """
+        Inicia um jogo de 4 em linha
+        
+        Args:
+            oponente: Utilizador para jogar contra (opcional, deixe em branco para jogar contra o bot)
+        """
+        if oponente == interaction.user:
+            await interaction.response.send_message("❌ Não podes jogar contra ti próprio!", ephemeral=True)
+            return
+        
+        if oponente and oponente.bot:
+            await interaction.response.send_message("❌ Não podes jogar contra outros bots!", ephemeral=True)
+            return
+        
+        # Determinar modo de jogo
+        if oponente is None:
+            # Modo single player
+            embed = discord.Embed(
+                title="🎯 4 em Linha - Vs Bot",
+                description=f"**Jogador:** {interaction.user.mention} (🔴)\n**Bot:** EPA BOT (🟡)\n\n**Vez de:** {interaction.user.mention}",
+                color=discord.Color.blue()
+            )
+            view = Connect4View(interaction.user, None)
+        else:
+            # Modo multiplayer
+            embed = discord.Embed(
+                title="🎯 4 em Linha - Multiplayer",
+                description=f"**Jogador 1:** {interaction.user.mention} (🔴)\n**Jogador 2:** {oponente.mention} (🟡)\n\n**Vez de:** {interaction.user.mention}",
+                color=discord.Color.blue()
+            )
+            view = Connect4View(interaction.user, oponente)
+        
+        # Adicionar tabuleiro inicial
+        board_display = view.get_board_display()
+        embed.add_field(name="Tabuleiro:", value=board_display, inline=False)
+        embed.set_footer(text="EPA Bot • 4 em Linha • Clica no número da coluna • Timeout: 10 minutos")
         
         await interaction.response.send_message(embed=embed, view=view)
 

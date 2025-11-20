@@ -8,6 +8,158 @@ import json
 from typing import Optional
 
 
+class HangmanView(discord.ui.View):
+    """View para o jogo da forca com botões de letras"""
+    
+    def __init__(self, word: str, hint: str, user_id: int, cog):
+        super().__init__(timeout=300)
+        self.word = word.upper()
+        self.hint = hint
+        self.user_id = user_id
+        self.cog = cog
+        self.guessed_letters = set()
+        self.wrong_guesses = 0
+        self.max_wrong = 6
+        
+        # Adicionar botões de letras (A-Z)
+        alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        for i, letter in enumerate(alphabet):
+            button = discord.ui.Button(
+                label=letter,
+                style=discord.ButtonStyle.primary,
+                custom_id=f"hangman_{letter}",
+                row=i // 5  # 5 botões por linha
+            )
+            button.callback = self.make_guess_callback(letter)
+            self.add_item(button)
+    
+    def make_guess_callback(self, letter: str):
+        """Cria callback para botão de letra"""
+        async def callback(interaction: discord.Interaction):
+            if interaction.user.id != self.user_id:
+                await interaction.response.send_message(
+                    "❌ Este não é o teu jogo!", ephemeral=True
+                )
+                return
+            
+            # Adicionar letra às adivinhadas
+            self.guessed_letters.add(letter)
+            
+            # Verificar se acertou
+            if letter not in self.word:
+                self.wrong_guesses += 1
+            
+            # Desabilitar botão
+            for item in self.children:
+                if isinstance(item, discord.ui.Button) and item.label == letter:
+                    item.disabled = True
+                    item.style = discord.ButtonStyle.success if letter in self.word else discord.ButtonStyle.danger
+                    break
+            
+            # Verificar vitória/derrota
+            if all(l in self.guessed_letters for l in self.word):
+                await self.end_game(interaction, won=True)
+                return
+            
+            if self.wrong_guesses >= self.max_wrong:
+                await self.end_game(interaction, won=False)
+                return
+            
+            # Atualizar embed
+            embed = self.create_embed()
+            await interaction.response.edit_message(embed=embed, view=self)
+        
+        return callback
+    
+    def create_embed(self) -> discord.Embed:
+        """Criar embed do jogo"""
+        # Palavra com letras adivinhadas
+        display_word = " ".join([l if l in self.guessed_letters else "_" for l in self.word])
+        
+        # Desenhos da forca
+        hangman_stages = [
+            "```\n  +---+\n  |   |\n      |\n      |\n      |\n      |\n=========```",
+            "```\n  +---+\n  |   |\n  O   |\n      |\n      |\n      |\n=========```",
+            "```\n  +---+\n  |   |\n  O   |\n  |   |\n      |\n      |\n=========```",
+            "```\n  +---+\n  |   |\n  O   |\n /|   |\n      |\n      |\n=========```",
+            "```\n  +---+\n  |   |\n  O   |\n /|\\  |\n      |\n      |\n=========```",
+            "```\n  +---+\n  |   |\n  O   |\n /|\\  |\n /    |\n      |\n=========```",
+            "```\n  +---+\n  |   |\n  O   |\n /|\\  |\n / \\  |\n      |\n=========```"
+        ]
+        
+        embed = discord.Embed(
+            title="🎪 Jogo da Forca",
+            color=discord.Color.blue()
+        )
+        
+        embed.add_field(name="💡 Dica:", value=self.hint, inline=False)
+        embed.add_field(name="📝 Palavra:", value=f"**{display_word}**", inline=False)
+        embed.add_field(name="🎨 Forca:", value=hangman_stages[self.wrong_guesses], inline=False)
+        embed.add_field(
+            name="❌ Erros:", 
+            value=f"{self.wrong_guesses}/{self.max_wrong}",
+            inline=True
+        )
+        
+        if self.guessed_letters:
+            wrong_letters = [l for l in self.guessed_letters if l not in self.word]
+            if wrong_letters:
+                embed.add_field(
+                    name="🚫 Letras Erradas:",
+                    value=" ".join(sorted(wrong_letters)),
+                    inline=True
+                )
+        
+        embed.set_footer(text="Clica nas letras para adivinhar • Timeout: 5 minutos")
+        
+        return embed
+    
+    async def end_game(self, interaction: discord.Interaction, won: bool):
+        """Terminar jogo"""
+        for item in self.children:
+            item.disabled = True
+        
+        if won:
+            embed = discord.Embed(
+                title="🎉 Vitória!",
+                description=f"Parabéns! Adivinhaste a palavra: **{self.word}**",
+                color=discord.Color.green()
+            )
+            
+            # Recompensa
+            reward = 100
+            try:
+                economy_cog = self.cog.bot.get_cog("SimpleEconomy")
+                if economy_cog:
+                    economy_cog.add_money(str(self.user_id), reward)
+                    embed.add_field(name="💰 Recompensa", value=f"{reward} EPA Coins!", inline=False)
+            except:
+                pass
+        else:
+            embed = discord.Embed(
+                title="💀 Derrota!",
+                description=f"A palavra era: **{self.word}**\n\n💡 Dica: {self.hint}",
+                color=discord.Color.red()
+            )
+        
+        embed.add_field(
+            name="📊 Estatísticas:",
+            value=f"Erros: {self.wrong_guesses}/{self.max_wrong}\nLetras tentadas: {len(self.guessed_letters)}",
+            inline=False
+        )
+        
+        await interaction.response.edit_message(embed=embed, view=self)
+        
+        # Remover do active_games
+        if self.user_id in self.cog.active_games:
+            del self.cog.active_games[self.user_id]
+    
+    async def on_timeout(self):
+        """Timeout do jogo"""
+        if self.user_id in self.cog.active_games:
+            del self.cog.active_games[self.user_id]
+
+
 class GamesExtraCog(commands.Cog):
     """Cog para jogos adicionais e diversão"""
     
@@ -49,8 +201,16 @@ class GamesExtraCog(commands.Cog):
         ]
         
         self.forca_words = [
-            "PORTUGAL", "DISCORD", "PROGRAMACAO", "COMPUTADOR", "INTERNET",
-            "MUSICA", "JOGOS", "AMIZADE", "DIVERSAO", "AVENTURA"
+            ("PORTUGAL", "País europeu"), ("DISCORD", "Plataforma de comunicação"),
+            ("PROGRAMACAO", "Criar software"), ("COMPUTADOR", "Máquina eletrônica"),
+            ("INTERNET", "Rede mundial"), ("MUSICA", "Arte sonora"),
+            ("FUTEBOL", "Desporto com bola"), ("PIZZA", "Comida italiana"),
+            ("ELEFANTE", "Animal com tromba"), ("CHOCOLATE", "Doce de cacau"),
+            ("GUITARRA", "Instrumento de cordas"), ("MONTANHA", "Elevação natural"),
+            ("OCEANO", "Grande massa de água"), ("DIAMANTE", "Pedra preciosa"),
+            ("FOGUETE", "Veículo espacial"), ("BIBLIOTECA", "Local com livros"),
+            ("TSUNAMI", "Onda gigante"), ("VAMPIRO", "Criatura da noite"),
+            ("DRAGAO", "Criatura mítica"), ("UNICORNIO", "Cavalo com chifre")
         ]
 
     @app_commands.command(name="quiz", description="Jogo de perguntas e respostas")
@@ -152,31 +312,33 @@ class GamesExtraCog(commands.Cog):
             if user_id in self.active_games:
                 del self.active_games[user_id]
 
-    @app_commands.command(name="forca", description="Jogo da forca")
+    @app_commands.command(name="forca", description="Jogo da forca melhorado")
     async def forca(self, interaction: discord.Interaction):
-        """Jogo da forca"""
+        """Jogo da forca com interface de botões"""
         user_id = interaction.user.id
         
         if user_id in self.active_games:
             await interaction.response.send_message("❌ Já tens um jogo ativo! Termina-o primeiro.", ephemeral=True)
             return
         
-        # Escolher palavra
-        word = random.choice(self.forca_words)
-        guessed_letters = set()
-        wrong_guesses = 0
-        max_wrong = 6
+        # Escolher palavra com dica
+        word_data = random.choice(self.forca_words)
+        word, hint = word_data
+        
+        # Criar view com botões de letras
+        view = HangmanView(word, hint, user_id, self)
+        
+        # Criar embed inicial
+        embed = view.create_embed()
         
         # Guardar jogo
         self.active_games[user_id] = {
             "type": "forca",
             "word": word,
-            "guessed": guessed_letters,
-            "wrong": wrong_guesses,
-            "max_wrong": max_wrong
+            "view": view
         }
         
-        await self._show_forca_status(interaction, user_id, first_time=True)
+        await interaction.response.send_message(embed=embed, view=view)
 
     async def _show_forca_status(self, interaction, user_id, first_time=False):
         """Mostrar status do jogo da forca"""
