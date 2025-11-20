@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import random
 from typing import List, Optional
-from utils.database import Database
+from utils.database import get_database
 
 
 class TicTacToeButton(discord.ui.Button):
@@ -541,11 +541,11 @@ class GamesCog(commands.Cog):
     
     def __init__(self, bot):
         self.bot = bot
-        self.db = Database()
+        self.db = None
 
     async def cog_load(self):
         """Método chamado quando o cog é carregado"""
-        pass
+        self.db = await get_database()
 
     @discord.app_commands.command(name="jogodogalo", description="Inicia um jogo do galo")
     @discord.app_commands.describe(oponente="Utilizador para jogar contra (opcional, deixe em branco para jogar contra o bot)")
