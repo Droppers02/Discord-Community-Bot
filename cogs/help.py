@@ -112,16 +112,37 @@ class HelpCog(commands.Cog):
             embed2.set_thumbnail(url=self.bot.user.avatar.url)
         
         economy_commands = [
-            "• `/balance [@user]` - Ver saldo",
-            "• `/daily` - Recompensa diária",
-            "• `/work` - Trabalhar por moedas",
-            "• `/shop` - Loja de itens",
-            "• `/buy <item>` - Comprar item",
-            "• `/inventory [@user]` - Ver inventário",
-            "• `/transfer <user> <valor>` - Transferir",
-            "• `/leaderboard` - Top utilizadores"
+            "• `/saldo [@user]` - Ver saldo",
+            "• `/daily` - Recompensa diária (streak bonus)",
+            "• `/trabalho` - Trabalhar (cooldown 1h)",
+            "• `/crime` - Crime arriscado (cooldown 2h)",
+            "• `/loja` - Loja de itens",
+            "• `/comprar <item>` - Comprar item",
+            "• `/inventario [@user]` - Ver inventário",
+            "• `/doar <user> <valor>` - Doar coins",
+            "• `/leaderboard` - Top utilizadores",
+            "• `/perfil [@user]` - Perfil económico"
         ]
-        embed2.add_field(name="💰 **Economia**", value="\n".join(economy_commands), inline=False)
+        embed2.add_field(name="💰 **Economia Básica**", value="\n".join(economy_commands), inline=False)
+        
+        economy_advanced = [
+            "• `/comprar_role <nome> <cor>` - Custom Role (50k)",
+            "• `/editar_role [nome] [cor]` - Editar role",
+            "• `/remover_role` - Remover role",
+            "• `/propor_trade <@user> <coins> <pede>` - Trocar",
+            "• `/trades_pendentes` - Ver trades",
+            "• `/conquistas [@user]` - Ver achievements",
+            "• `/criar_leilao <item> <desc> <lance>` - Leilão",
+            "• `/leiloes` - Ver leilões ativos",
+            "• `/dar_lance <id> <valor>` - Licitar"
+        ]
+        embed2.add_field(name="💎 **Economia Avançada**", value="\n".join(economy_advanced), inline=False)
+        
+        events_commands = [
+            "• `/criar_evento <tipo> <horas>` - [ADMIN]",
+            "• `/eventos_ativos` - Ver eventos"
+        ]
+        embed2.add_field(name="🎊 **Eventos Especiais**", value="\n".join(events_commands), inline=False)
         
         social_commands = [
             "• `/rank [user]` - Ver nível, XP e progresso",

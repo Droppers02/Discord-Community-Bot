@@ -423,6 +423,7 @@ https://discord.com/api/oauth2/authorize?client_id=CLIENT_ID&permissions=8&scope
 ### 💰 Economia
 
 **Básico:**
+
 ```
 /saldo [@user]            - Ver saldo de EPA Coins
 /daily                    - Recompensa diária (streak bonus)
@@ -433,6 +434,7 @@ https://discord.com/api/oauth2/authorize?client_id=CLIENT_ID&permissions=8&scope
 ```
 
 **Loja & Itens:**
+
 ```
 /loja                     - Ver itens disponíveis
 /comprar <item>           - Comprar item da loja
@@ -440,6 +442,7 @@ https://discord.com/api/oauth2/authorize?client_id=CLIENT_ID&permissions=8&scope
 ```
 
 **Economia Avançada:**
+
 ```
 /comprar_role <nome> <cor> - Comprar Custom Role (50k coins)
 /editar_role [nome] [cor]  - Editar a tua Custom Role
@@ -450,6 +453,7 @@ https://discord.com/api/oauth2/authorize?client_id=CLIENT_ID&permissions=8&scope
 ```
 
 **Leilões:**
+
 ```
 /criar_leilao <nome> <desc> <lance> [compra_ja] [horas] - Criar leilão
 /leiloes                   - Ver leilões ativos
@@ -457,6 +461,7 @@ https://discord.com/api/oauth2/authorize?client_id=CLIENT_ID&permissions=8&scope
 ```
 
 **Eventos (Admin):**
+
 ```
 /criar_evento <tipo> <horas> [multiplicador] - Criar evento especial
 /eventos_ativos             - Ver eventos ativos

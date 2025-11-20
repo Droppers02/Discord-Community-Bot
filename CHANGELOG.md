@@ -4,6 +4,130 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [2.6.0] - 2025-11-20
+
+### 💰 Sistema de Economia Avançado
+
+**Nova Base de Dados (9 tabelas adicionadas)**
+
+- ✅ **Custom Roles** (`custom_roles`)
+
+  - Roles personalizadas compradas por utilizadores
+  - Suporte para cores customizadas (hex ou nomes)
+  - Uma role por utilizador, editável a qualquer momento
+
+- ✅ **Trading P2P** (`trades`, `auction_bids`)
+
+  - Sistema completo de trocas entre utilizadores
+  - Propostas com botões interativos (Aceitar/Recusar)
+  - Histórico de trades pendentes e completos
+
+- ✅ **Achievements** (`achievements`, `user_achievements`)
+
+  - 7 conquistas pré-definidas com recompensas
+  - Sistema de unlock automático baseado em ações
+  - Rewards: 10k-50k coins por achievement
+
+- ✅ **Leilões** (`auctions`, `auction_bids`)
+
+  - Criar leilões de itens raros
+  - Sistema de lances competitivo
+  - Preço de "Compra Já" opcional
+  - Duração configurável (1-168h)
+
+- ✅ **Eventos Especiais** (`active_events`)
+
+  - 4 tipos: Happy Hour, Super Sorte, Chuva de Ouro, Dailies Especiais
+  - Multiplicadores de coins customizáveis
+  - Administradores podem ativar eventos temporários
+
+- ✅ **Inventário de Itens** (`inventory_items`)
+  - Sistema de itens raros colecionáveis
+  - 6 raridades: Comum, Incomum, Raro, Épico, Lendário, Mítico
+  - Itens tradeáveis vs não-tradeáveis
+
+**Novos Comandos de Economia (16 total)**
+
+- ✅ `/trabalho` - Trabalhar por coins (cooldown 1h)
+
+  - 8 profissões diferentes com recompensas variadas (300-650 coins)
+  - 10% chance de bónus aleatório (100-300 coins)
+  - Cooldown visual com barra de progresso
+
+- ✅ `/crime` - Crimes arriscados (cooldown 2h)
+  - 5 tipos de crime com riscos/recompensas diferentes
+  - Taxas de sucesso: 40-55%
+  - Ganhos: 500-1800 coins (sucesso) ou multas: 250-1000 coins (falha)
+  - 5% chance de jackpot (500-1000 coins extra)
+
+**Custom Roles:**
+
+- ✅ `/comprar_role <nome> <cor>` - Comprar role personalizada (50,000 coins)
+- ✅ `/editar_role [nome] [cor]` - Editar role existente (grátis)
+- ✅ `/remover_role` - Remover role permanentemente
+
+**Trading:**
+
+- ✅ `/propor_trade <@user> <tuas_coins> <pedes_coins>` - Propor troca
+- ✅ `/trades_pendentes` - Ver trades pendentes (enviados e recebidos)
+
+**Achievements:**
+
+- ✅ `/conquistas [@user]` - Ver conquistas desbloqueadas
+- Conquistas disponíveis:
+  - 💰 Primeiro Milhão (1M coins) - 50k reward
+  - 💸 Grande Gastador (500k gastos) - 25k reward
+  - 🍀 Sorte 7 (7 apostas seguidas) - 10k reward
+  - 🎒 Colecionador (50 itens) - 30k reward
+  - 🤝 Trader Pro (20 trades) - 15k reward
+  - 🔨 Mestre dos Leilões (10 vitórias) - 20k reward
+  - ⚔️ Guerreiro Diário (30 dias streak) - 40k reward
+
+**Leilões:**
+
+- ✅ `/criar_leilao <item> <desc> <lance> [compra_ja] [horas]` - Criar leilão
+- ✅ `/leiloes` - Ver leilões ativos
+- ✅ `/dar_lance <id> <valor>` - Dar lance
+- Sistema de lance mínimo: 5% do lance atual ou 100 coins
+
+**Eventos (Admin):**
+
+- ✅ `/criar_evento <tipo> <horas> [multiplicador]` - Ativar evento
+- ✅ `/eventos_ativos` - Ver eventos em curso
+
+**Melhorias no Sistema Existente**
+
+- ✅ **Cooldowns Visuais Avançados**
+
+  - Barras de progresso `[████░░░░░░]` com percentagem
+  - Timestamps Discord `<t:timestamp:R>` (formato relativo)
+  - Display de tempo restante em HH:MM:SS
+
+- ✅ **22 Novos Métodos na Database** (`utils/database.py`)
+  - `create_custom_role()`, `get_custom_role()`, `delete_custom_role()`
+  - `create_trade()`, `get_trade()`, `update_trade_status()`, `get_pending_trades()`
+  - `add_achievement()`, `unlock_achievement()`, `get_user_achievements()`, `claim_achievement_reward()`
+  - `create_auction()`, `place_bid()`, `get_auction()`, `get_active_auctions()`, `complete_auction()`
+  - `create_event()`, `get_active_events()`
+  - `add_inventory_item()`, `get_user_inventory()`, `remove_inventory_item()`
+
+**Documentação**
+
+- ✅ Atualizado `/help` com comandos de economia avançada
+- ✅ Atualizado `README.md` com todas as features
+- ✅ Atualizado `TODO.md` marcando 6 tarefas completas
+- ✅ Novo ficheiro: `cogs/economy_advanced.py` (1000+ linhas)
+
+**Estatísticas da Versão**
+
+- **1,436 linhas** de código adicionadas
+- **5 ficheiros** modificados
+- **9 tabelas** de database
+- **16 comandos** novos
+- **22 métodos** de database
+
+---
+
 ## [2.5.0] - 2025-11-20
 
 ### 🎮 Sistema de Jogos v2 - Completo Overhaul

@@ -68,7 +68,8 @@ class HangmanView(discord.ui.View):
             
             # Atualizar embed
             embed = self.create_embed()
-            await interaction.response.edit_message(embed=embed, view=self)
+            await interaction.message.edit(embed=embed, view=self)
+            await interaction.response.defer()
         
         return callback
     
@@ -149,7 +150,8 @@ class HangmanView(discord.ui.View):
             inline=False
         )
         
-        await interaction.response.edit_message(embed=embed, view=self)
+        await interaction.message.edit(embed=embed, view=self)
+        await interaction.response.defer()
         
         # Remover do active_games
         if self.user_id in self.cog.active_games:
