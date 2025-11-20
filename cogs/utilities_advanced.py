@@ -1298,6 +1298,40 @@ class UtilitiesAdvanced(commands.Cog):
                 )
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
+    
+    @app_commands.command(name="sync", description="🔄 Sincronizar comandos slash (Apenas Donos)")
+    async def sync_commands(self, interaction: discord.Interaction):
+        """Sincronizar comandos slash manualmente"""
+        
+        # Verificar se é dono do bot
+        owner_ids = self.bot.config.owner_ids or []
+        if interaction.user.id not in owner_ids:
+            await interaction.response.send_message(
+                "❌ Apenas os donos do bot podem usar este comando!",
+                ephemeral=True
+            )
+            return
+        
+        await interaction.response.defer(ephemeral=True)
+        
+        try:
+            # Sincronizar para o servidor atual
+            guild = interaction.guild
+            synced = await self.bot.tree.sync(guild=guild)
+            
+            await interaction.followup.send(
+                f"✅ Sincronizados **{len(synced)}** comandos para este servidor!",
+                ephemeral=True
+            )
+            
+            bot_logger.info(f"Comandos sincronizados manualmente por {interaction.user} - {len(synced)} comandos")
+            
+        except Exception as e:
+            await interaction.followup.send(
+                f"❌ Erro ao sincronizar: {e}",
+                ephemeral=True
+            )
+            bot_logger.error(f"Erro ao sincronizar comandos: {e}")
 
 
 async def setup(bot):

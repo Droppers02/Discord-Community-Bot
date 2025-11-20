@@ -9,6 +9,7 @@ class Config:
     # Tokens e IDs
     discord_token: str
     openai_token: Optional[str] = None
+    owner_ids: list[int] = None  # IDs dos donos do bot
     
     # Configurações do servidor (use IDs do seu servidor)
     server_id: int = 0  # ID do seu servidor
@@ -32,9 +33,14 @@ class Config:
     @classmethod
     def from_env(cls) -> "Config":
         """Cria configuração a partir de variáveis de ambiente"""
+        # Parse owner IDs
+        owner_ids_str = os.getenv("OWNER_IDS", "")
+        owner_ids = [int(id.strip()) for id in owner_ids_str.split(",") if id.strip()] if owner_ids_str else []
+        
         return cls(
             discord_token=os.getenv("DISCORD_TOKEN", ""),
             openai_token=os.getenv("OPENAI_TOKEN"),
+            owner_ids=owner_ids,
             server_id=int(os.getenv("SERVER_ID", "0")),
             mod_role_id=int(os.getenv("MOD_ROLE_ID", "0")),
             ticket_category_id=int(os.getenv("TICKET_CATEGORY_ID", "0")),
