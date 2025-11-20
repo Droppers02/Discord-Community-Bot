@@ -88,6 +88,9 @@ Lista de tarefas, melhorias e correções planeadas para versões futuras.
 - [x] Welcome messages customizáveis
 - [x] Auto-roles em 3 painéis separados (Jogos, Plataformas, DM)
 - [x] Sistema de verificação 2FA (desafio matemático + código DM)
+- [x] Sistema de configuração JSON para roles/canais personalizáveis
+- [x] Documentação de setup integrada no README
+- [x] Correções do sistema 2FA (remoção de role, modals, DMs)
 - [ ] Sistema de sugestões da comunidade
 - [ ] Sistema de giveaways automatizado
 - [ ] Comandos de utilidade para timestamps

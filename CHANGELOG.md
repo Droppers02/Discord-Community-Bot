@@ -4,6 +4,44 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [2.3.1] - 2025-11-20
+
+### 🔒 Sistema de Verificação 2FA - Melhorias e Correções
+
+**Sistema de Configuração JSON**
+- ✅ Novo ficheiro `config/utilities_config.json` para personalização de IDs
+- ✅ Suporte para configurar todas as roles e canais sem modificar código
+- ✅ Ficheiro commitado no git para fácil deploy
+- ✅ Documentação integrada no README.md
+
+**Correções Críticas do 2FA**
+- 🐛 **Fix**: Role de membro agora removida ao iniciar verificação (evita bypass do Discord Onboarding)
+- 🐛 **Fix**: Corrigido erro "Something went wrong" no modal matemático
+- 🐛 **Fix**: Erro 400 ao enviar DM com código resolvido (timestamp removido)
+- 🐛 **Fix**: Modal dentro de modal substituído por botão intermediário
+- 🐛 **Fix**: Ordem correta de operações (modal → DM em vez de DM → modal)
+
+**Melhorias no Fluxo de Verificação**
+- 🎯 Nova UI com botão "🔐 Inserir Código" após fase matemática
+- 🔍 Logs detalhados em cada etapa do processo
+- ✅ Verificação de permissões do bot antes de remover/adicionar roles
+- 📊 Confirmação visual de atribuição de role com fetch_member()
+- ⚠️ Error handlers para melhor tratamento de exceções
+
+**Melhorias Técnicas**
+- 🔧 `VerificationView` agora recebe config como parâmetro
+- 🔧 Auto-criação de utilities_config.json a partir do exemplo (removido posteriormente)
+- 🔧 Remoção de código duplicado e mal indentado em `cogs/help.py`
+- 🔧 Logs DEBUG removidos após resolução dos problemas
+
+### 📝 Documentação
+
+- 📖 Instruções de configuração consolidadas no README.md
+- 📖 Seção "Configuração de IDs Personalizados" adicionada
+- 📖 Guia passo-a-passo para obter IDs do Discord
+
+---
+
 ## [2.3.0] - 2025-11-19
 
 ### 🎉 Sistema Avançado de Utilidades
