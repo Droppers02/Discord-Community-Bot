@@ -108,30 +108,11 @@ class EPABot(commands.Bot):
         
         # Sincronizar comandos slash
         try:
-            if self.config.server_id:
-                guild = discord.Object(id=self.config.server_id)
-                
-                # PASSO 1: Limpar comandos do servidor no Discord
-                self.tree.clear_commands(guild=guild)
-                await self.tree.sync(guild=guild)  # Sync vazio para limpar
-                self.logger.info("🧹 Comandos do servidor limpos")
-                
-                # PASSO 2: Copiar comandos globais para o servidor
-                self.tree.copy_global_to(guild=guild)
-                
-                # PASSO 3: Sincronizar comandos novos
-                synced = await self.tree.sync(guild=guild)
-                
-                self.logger.info(f"✅ {len(synced)} comandos sincronizados para o servidor {self.config.server_id}")
-                
-                if len(synced) > 0:
-                    self.logger.info("✅ Comandos disponíveis IMEDIATAMENTE no servidor!")
-                else:
-                    self.logger.warning("⚠️ NENHUM comando sincronizado para o servidor!")
-                    
-            else:
-                self.logger.warning("⚠️ SERVER_ID não configurado, comandos não sincronizados!")
-                
+            # Sincronizar comandos globalmente (aparece em todos os servidores)
+            synced = await self.tree.sync()
+            self.logger.info(f"✅ {len(synced)} comandos sincronizados GLOBALMENTE")
+            self.logger.info("⏰ Comandos estarão disponíveis em até 1 hora em todos os servidores")
+            
             # Log dos comandos carregados
             total_commands = len(self.tree.get_commands())
             self.logger.info(f"📋 Total de comandos na árvore: {total_commands}")

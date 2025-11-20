@@ -1304,10 +1304,11 @@ class UtilitiesAdvanced(commands.Cog):
         modo="Modo de sincronização"
     )
     @app_commands.choices(modo=[
-        app_commands.Choice(name="Servidor (Limpar + Sincronizar)", value="guild"),
-        app_commands.Choice(name="Limpar Comandos Globais", value="clear_global")
+        app_commands.Choice(name="Global (todos os servidores)", value="global"),
+        app_commands.Choice(name="Servidor Atual (imediato)", value="guild"),
+        app_commands.Choice(name="Limpar Servidor Atual", value="clear_guild")
     ])
-    async def sync_commands(self, interaction: discord.Interaction, modo: str = "guild"):
+    async def sync_commands(self, interaction: discord.Interaction, modo: str = "global"):
         """Sincronizar comandos slash manualmente"""
         
         # Verificar se é dono do bot
@@ -1324,33 +1325,38 @@ class UtilitiesAdvanced(commands.Cog):
         try:
             guild = interaction.guild
             
-            if modo == "clear_global":
-                # Limpar comandos globais
-                self.bot.tree.clear_commands(guild=None)
-                await self.bot.tree.sync()
+            if modo == "global":
+                # Sincronizar comandos globalmente
+                synced = await self.bot.tree.sync()
                 await interaction.followup.send(
-                    "✅ Comandos globais limpos!\n⏰ Pode demorar até 1h para desaparecer.",
+                    f"✅ Sincronizados **{len(synced)}** comandos GLOBALMENTE!\n"
+                    f"⏰ Estarão disponíveis em até 1h em todos os servidores.",
                     ephemeral=True
                 )
-                bot_logger.info(f"Comandos globais limpos por {interaction.user}")
+                bot_logger.info(f"Comandos globais sincronizados por {interaction.user} - {len(synced)} comandos")
+                
+            elif modo == "clear_guild":
+                # Limpar comandos do servidor
+                self.bot.tree.clear_commands(guild=guild)
+                synced = await self.bot.tree.sync(guild=guild)
+                await interaction.followup.send(
+                    f"✅ Comandos do servidor limpos!\n"
+                    f"⚡ Use modo 'Servidor Atual' para adicionar comandos novamente.",
+                    ephemeral=True
+                )
+                bot_logger.info(f"Comandos do servidor limpos por {interaction.user}")
                 
             else:  # guild
-                # PASSO 1: Limpar comandos do servidor no Discord
-                self.bot.tree.clear_commands(guild=guild)
-                await self.bot.tree.sync(guild=guild)  # Sync vazio para limpar
-                
-                # PASSO 2: Copiar comandos globais para o servidor
+                # Copiar comandos globais para o servidor atual
                 self.bot.tree.copy_global_to(guild=guild)
-                
-                # PASSO 3: Sincronizar comandos novos
                 synced = await self.bot.tree.sync(guild=guild)
                 
                 await interaction.followup.send(
-                    f"✅ Servidor limpo e sincronizados **{len(synced)}** comandos!\n"
+                    f"✅ Sincronizados **{len(synced)}** comandos para ESTE servidor!\n"
                     f"⚡ Disponíveis **IMEDIATAMENTE**!",
                     ephemeral=True
                 )
-                bot_logger.info(f"Servidor limpo e sincronizado por {interaction.user} - {len(synced)} comandos")
+                bot_logger.info(f"Comandos sincronizados para servidor por {interaction.user} - {len(synced)} comandos")
             
         except Exception as e:
             await interaction.followup.send(
