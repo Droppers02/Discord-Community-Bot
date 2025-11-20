@@ -412,31 +412,72 @@ class MathChallengeModal(discord.ui.Modal):
             bot_logger.info(f"{interaction.user} falhou o desafio matemático")
             return
         
-        # Fase 1 completa! Enviar código por DM
-        # Primeiro mostrar o modal do código (responder à interação)
-        code_modal = CodeVerificationModal(self.verification_code, self.guild_id)
-        await interaction.response.send_modal(code_modal)
-        
-        # DEPOIS enviar a DM (não usa interaction.response)
+        # Resposta correta! Enviar código por DM
         try:
             dm_embed = discord.Embed(
                 title="📧 Código de Verificação - Fase 2/2",
                 description=f"**Parabéns!** Passaste na primeira fase.\n\n"
                            f"Aqui está o teu código de verificação:\n\n"
                            f"```\n{self.verification_code}\n```\n\n"
-                           f"Volta ao servidor e introduz este código quando pedido.",
+                           f"**Agora clica no botão abaixo para inserir o código.**",
                 color=discord.Color.blue()
             )
             dm_embed.set_footer(text="EPA BOT • Sistema de Verificação 2FA")
             
             await interaction.user.send(embed=dm_embed)
             
+            # Criar view com botão para abrir o modal do código
+            view = CodeInputView(self.verification_code, self.guild_id)
+            
+            await interaction.response.send_message(
+                "✅ **Fase 1 completa!**\n\n"
+                f"📧 Código enviado por DM!\n"
+                f"🔐 Clica no botão abaixo para inserir o código:",
+                view=view,
+                ephemeral=True
+            )
+            
             bot_logger.info(f"{interaction.user} passou na fase 1 (matemática) - código enviado por DM")
             
         except discord.Forbidden:
-            bot_logger.warning(f"{interaction.user} tem DMs desativadas - código não enviado")
+            await interaction.response.send_message(
+                "❌ Não consigo enviar-te DM! Ativa as mensagens privadas do servidor e tenta novamente.",
+                ephemeral=True
+            )
+            bot_logger.warning(f"{interaction.user} tem DMs desativadas")
         except Exception as e:
-            bot_logger.error(f"Erro ao enviar DM para {interaction.user}: {e}")
+            await interaction.response.send_message(
+                f"❌ Erro inesperado: {str(e)}",
+                ephemeral=True
+            )
+            bot_logger.error(f"Erro ao processar verificação de {interaction.user}: {e}")
+    
+    async def on_error(self, interaction: discord.Interaction, error: Exception):
+        bot_logger.error(f"Erro no MathChallengeModal: {error}")
+        if not interaction.response.is_done():
+            await interaction.response.send_message(
+                "❌ Ocorreu um erro! Tenta novamente.",
+                ephemeral=True
+            )
+
+
+class CodeInputView(discord.ui.View):
+    """View com botão para abrir modal do código"""
+    
+    def __init__(self, correct_code: str, guild_id: int):
+        super().__init__(timeout=300)  # 5 minutos
+        self.correct_code = correct_code
+        self.guild_id = guild_id
+    
+    @discord.ui.button(
+        label="🔐 Inserir Código",
+        style=discord.ButtonStyle.primary,
+        emoji="🔐"
+    )
+    async def input_code(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Abrir modal para inserir código"""
+        code_modal = CodeVerificationModal(self.correct_code, self.guild_id)
+        await interaction.response.send_modal(code_modal)
 
 
 class CodeVerificationModal(discord.ui.Modal):
