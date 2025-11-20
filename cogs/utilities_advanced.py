@@ -1301,12 +1301,11 @@ class UtilitiesAdvanced(commands.Cog):
     
     @app_commands.command(name="sync", description="🔄 Sincronizar comandos slash (Apenas Donos)")
     @app_commands.describe(
-        modo="Modo de sincronização: guild (servidor), global, clear (limpar servidor)"
+        modo="Modo de sincronização"
     )
     @app_commands.choices(modo=[
-        app_commands.Choice(name="Servidor Atual (Imediato)", value="guild"),
-        app_commands.Choice(name="Global (Demora 1h)", value="global"),
-        app_commands.Choice(name="Limpar Servidor", value="clear")
+        app_commands.Choice(name="Servidor (Limpar + Sincronizar)", value="guild"),
+        app_commands.Choice(name="Limpar Comandos Globais", value="clear_global")
     ])
     async def sync_commands(self, interaction: discord.Interaction, modo: str = "guild"):
         """Sincronizar comandos slash manualmente"""
@@ -1325,37 +1324,30 @@ class UtilitiesAdvanced(commands.Cog):
         try:
             guild = interaction.guild
             
-            if modo == "clear":
-                # Limpar comandos do servidor
-                self.bot.tree.clear_commands(guild=guild)
-                await self.bot.tree.sync(guild=guild)
+            if modo == "clear_global":
+                # Limpar comandos globais
+                self.bot.tree.clear_commands(guild=None)
+                await self.bot.tree.sync()
                 await interaction.followup.send(
-                    "✅ Comandos do servidor limpos!",
+                    "✅ Comandos globais limpos!\n⏰ Pode demorar até 1h para desaparecer.",
                     ephemeral=True
                 )
-                bot_logger.info(f"Comandos do servidor limpos por {interaction.user}")
-                
-            elif modo == "global":
-                # Sincronização global
-                synced = await self.bot.tree.sync()
-                await interaction.followup.send(
-                    f"✅ Sincronizados **{len(synced)}** comandos globalmente!\n"
-                    f"⏰ Pode demorar até **1 hora** para aparecer.",
-                    ephemeral=True
-                )
-                bot_logger.info(f"Comandos sincronizados globalmente por {interaction.user} - {len(synced)} comandos")
+                bot_logger.info(f"Comandos globais limpos por {interaction.user}")
                 
             else:  # guild
-                # Copiar comandos globais para o servidor e sincronizar
-                self.bot.tree.copy_global_to(guild=guild)
+                # Limpar comandos do servidor e sincronizar novos
+                self.bot.tree.clear_commands(guild=guild)
+                await self.bot.tree.sync(guild=guild)
+                
+                # Agora sincronizar os comandos corretos
                 synced = await self.bot.tree.sync(guild=guild)
                 
                 await interaction.followup.send(
-                    f"✅ Sincronizados **{len(synced)}** comandos para este servidor!\n"
-                    f"⚡ Comandos disponíveis **IMEDIATAMENTE**!",
+                    f"✅ Servidor limpo e sincronizados **{len(synced)}** comandos!\n"
+                    f"⚡ Disponíveis **IMEDIATAMENTE**!",
                     ephemeral=True
                 )
-                bot_logger.info(f"Comandos sincronizados para servidor por {interaction.user} - {len(synced)} comandos")
+                bot_logger.info(f"Servidor limpo e sincronizado por {interaction.user} - {len(synced)} comandos")
             
         except Exception as e:
             await interaction.followup.send(
