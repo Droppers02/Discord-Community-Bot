@@ -135,12 +135,61 @@ class Database:
                 )
             """)
             
+            # Tabela de estatísticas de jogos
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS game_stats (
+                    user_id TEXT NOT NULL,
+                    game_type TEXT NOT NULL,
+                    wins INTEGER DEFAULT 0,
+                    losses INTEGER DEFAULT 0,
+                    draws INTEGER DEFAULT 0,
+                    total_games INTEGER DEFAULT 0,
+                    total_earnings INTEGER DEFAULT 0,
+                    best_streak INTEGER DEFAULT 0,
+                    current_streak INTEGER DEFAULT 0,
+                    last_played TEXT,
+                    PRIMARY KEY (user_id, game_type)
+                )
+            """)
+            
+            # Tabela de torneios
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS tournaments (
+                    tournament_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    game_type TEXT NOT NULL,
+                    creator_id TEXT NOT NULL,
+                    guild_id TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    start_time TEXT,
+                    end_time TEXT,
+                    prize_pool INTEGER DEFAULT 0,
+                    status TEXT DEFAULT 'open',
+                    max_players INTEGER DEFAULT 8,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # Tabela de participantes em torneios
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS tournament_participants (
+                    tournament_id INTEGER,
+                    user_id TEXT NOT NULL,
+                    score INTEGER DEFAULT 0,
+                    rank INTEGER,
+                    joined_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (tournament_id) REFERENCES tournaments(tournament_id)
+                )
+            """)
+            
             # Criar índices para melhor performance
             await db.execute("CREATE INDEX IF NOT EXISTS idx_user_items_user ON user_items(user_id)")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_transactions_from ON transactions(from_user_id)")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_transactions_to ON transactions(to_user_id)")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_mod_logs_guild ON moderation_logs(guild_id)")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_warnings_user ON warnings(user_id, guild_id)")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_game_stats_user ON game_stats(user_id)")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_game_stats_type ON game_stats(game_type)")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_tournaments_guild ON tournaments(guild_id)")
             
             await db.commit()
             self.logger.info("✅ Base de dados inicializada com sucesso")
@@ -425,6 +474,106 @@ class Database:
                 VALUES (?, ?, ?, ?, ?, ?)
             """, (guild_id, user_id, moderator_id, action, reason, duration))
             await db.commit()
+    
+    # --- Métodos de Estatísticas de Jogos ---
+    
+    async def update_game_stats(self, user_id: str, game_type: str, result: str, earnings: int = 0):
+        """Atualiza estatísticas de jogo de um utilizador"""
+        async with aiosqlite.connect(self.db_path) as db:
+            # Verificar se já existe
+            async with db.execute(
+                "SELECT * FROM game_stats WHERE user_id = ? AND game_type = ?",
+                (user_id, game_type)
+            ) as cursor:
+                existing = await cursor.fetchone()
+            
+            if existing:
+                wins = existing[2] + (1 if result == "win" else 0)
+                losses = existing[3] + (1 if result == "loss" else 0)
+                draws = existing[4] + (1 if result == "draw" else 0)
+                total_games = existing[5] + 1
+                total_earnings = existing[6] + earnings
+                current_streak = existing[8] + 1 if result == "win" else 0
+                best_streak = max(existing[7], current_streak)
+                
+                await db.execute("""
+                    UPDATE game_stats 
+                    SET wins = ?, losses = ?, draws = ?, total_games = ?,
+                        total_earnings = ?, best_streak = ?, current_streak = ?,
+                        last_played = CURRENT_TIMESTAMP
+                    WHERE user_id = ? AND game_type = ?
+                """, (wins, losses, draws, total_games, total_earnings, 
+                      best_streak, current_streak, user_id, game_type))
+            else:
+                wins = 1 if result == "win" else 0
+                losses = 1 if result == "loss" else 0
+                draws = 1 if result == "draw" else 0
+                current_streak = 1 if result == "win" else 0
+                
+                await db.execute("""
+                    INSERT INTO game_stats 
+                    (user_id, game_type, wins, losses, draws, total_games, 
+                     total_earnings, best_streak, current_streak, last_played)
+                    VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, CURRENT_TIMESTAMP)
+                """, (user_id, game_type, wins, losses, draws, earnings, 
+                      current_streak, current_streak))
+            
+            await db.commit()
+    
+    async def get_game_stats(self, user_id: str, game_type: str = None):
+        """Obtém estatísticas de jogo de um utilizador"""
+        async with aiosqlite.connect(self.db_path) as db:
+            if game_type:
+                async with db.execute(
+                    "SELECT * FROM game_stats WHERE user_id = ? AND game_type = ?",
+                    (user_id, game_type)
+                ) as cursor:
+                    row = await cursor.fetchone()
+                    if row:
+                        return {
+                            "wins": row[2], "losses": row[3], "draws": row[4],
+                            "total_games": row[5], "total_earnings": row[6],
+                            "best_streak": row[7], "current_streak": row[8],
+                            "last_played": row[9]
+                        }
+            else:
+                async with db.execute(
+                    "SELECT * FROM game_stats WHERE user_id = ?",
+                    (user_id,)
+                ) as cursor:
+                    rows = await cursor.fetchall()
+                    stats = {}
+                    for row in rows:
+                        stats[row[1]] = {
+                            "wins": row[2], "losses": row[3], "draws": row[4],
+                            "total_games": row[5], "total_earnings": row[6],
+                            "best_streak": row[7], "current_streak": row[8],
+                            "last_played": row[9]
+                        }
+                    return stats
+        return {}
+    
+    async def get_game_leaderboard(self, game_type: str, limit: int = 10):
+        """Obtém leaderboard de um jogo específico"""
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("""
+                SELECT user_id, wins, total_games, total_earnings, best_streak
+                FROM game_stats
+                WHERE game_type = ?
+                ORDER BY wins DESC, total_earnings DESC
+                LIMIT ?
+            """, (game_type, limit)) as cursor:
+                rows = await cursor.fetchall()
+                return [
+                    {
+                        "user_id": row[0],
+                        "wins": row[1],
+                        "total_games": row[2],
+                        "total_earnings": row[3],
+                        "best_streak": row[4]
+                    }
+                    for row in rows
+                ]
 
 
 # Instância global

@@ -666,6 +666,180 @@ class GamesCog(commands.Cog):
         embed.set_footer(text=f"Solicitado por {interaction.user.display_name}")
         await interaction.response.send_message(embed=embed)
 
+    @discord.app_commands.command(name="gamestats", description="Ver estatísticas dos teus jogos")
+    @discord.app_commands.describe(
+        jogo="Jogo específico (opcional)",
+        utilizador="Ver stats de outro utilizador (opcional)"
+    )
+    @discord.app_commands.choices(jogo=[
+        app_commands.Choice(name="Jogo do Galo", value="tictactoe"),
+        app_commands.Choice(name="4 em Linha", value="connect4"),
+        app_commands.Choice(name="Forca", value="hangman"),
+        app_commands.Choice(name="Blackjack", value="blackjack")
+    ])
+    async def game_stats(
+        self, 
+        interaction: discord.Interaction, 
+        jogo: Optional[str] = None,
+        utilizador: Optional[discord.Member] = None
+    ):
+        """Ver estatísticas de jogos"""
+        target_user = utilizador or interaction.user
+        
+        try:
+            db = self.bot.db
+            stats = await db.get_game_stats(str(target_user.id), jogo)
+            
+            if not stats:
+                await interaction.response.send_message(
+                    f"❌ {target_user.mention} ainda não jogou nenhum jogo!",
+                    ephemeral=True
+                )
+                return
+            
+            embed = discord.Embed(
+                title=f"📊 Estatísticas de Jogos - {target_user.display_name}",
+                color=discord.Color.blue()
+            )
+            embed.set_thumbnail(url=target_user.display_avatar.url)
+            
+            if jogo:
+                # Stats de um jogo específico
+                game_names = {
+                    "tictactoe": "🎮 Jogo do Galo",
+                    "connect4": "🎯 4 em Linha",
+                    "hangman": "🎪 Forca",
+                    "blackjack": "🃏 Blackjack"
+                }
+                
+                embed.add_field(
+                    name=game_names.get(jogo, jogo.title()),
+                    value=f"**Vitórias:** {stats.get('wins', 0)}\n"
+                          f"**Derrotas:** {stats.get('losses', 0)}\n"
+                          f"**Empates:** {stats.get('draws', 0)}\n"
+                          f"**Total:** {stats.get('total_games', 0)} jogos\n"
+                          f"**Ganhos:** {stats.get('total_earnings', 0)} EPA Coins\n"
+                          f"**Melhor Streak:** {stats.get('best_streak', 0)}\n"
+                          f"**Streak Atual:** {stats.get('current_streak', 0)}",
+                    inline=False
+                )
+                
+                # Calcular win rate
+                total = stats.get('total_games', 0)
+                if total > 0:
+                    win_rate = (stats.get('wins', 0) / total) * 100
+                    embed.add_field(
+                        name="📈 Win Rate",
+                        value=f"{win_rate:.1f}%",
+                        inline=True
+                    )
+            else:
+                # Stats de todos os jogos
+                game_names = {
+                    "tictactoe": "🎮 Jogo do Galo",
+                    "connect4": "🎯 4 em Linha",
+                    "hangman": "🎪 Forca",
+                    "blackjack": "🃏 Blackjack"
+                }
+                
+                total_wins = 0
+                total_games = 0
+                total_earnings = 0
+                
+                for game_type, game_stats in stats.items():
+                    total_wins += game_stats.get('wins', 0)
+                    total_games += game_stats.get('total_games', 0)
+                    total_earnings += game_stats.get('total_earnings', 0)
+                    
+                    embed.add_field(
+                        name=game_names.get(game_type, game_type.title()),
+                        value=f"V: {game_stats.get('wins', 0)} | "
+                              f"D: {game_stats.get('losses', 0)} | "
+                              f"E: {game_stats.get('draws', 0)}",
+                        inline=True
+                    )
+                
+                embed.add_field(
+                    name="🏆 Totais",
+                    value=f"**Vitórias:** {total_wins}\n"
+                          f"**Jogos:** {total_games}\n"
+                          f"**Ganhos:** {total_earnings} EPA Coins",
+                    inline=False
+                )
+            
+            await interaction.response.send_message(embed=embed)
+            
+        except Exception as e:
+            await interaction.response.send_message(
+                f"❌ Erro ao obter estatísticas: {e}",
+                ephemeral=True
+            )
+
+    @discord.app_commands.command(name="gameleaderboard", description="Ver leaderboard de jogos")
+    @discord.app_commands.describe(jogo="Tipo de jogo")
+    @discord.app_commands.choices(jogo=[
+        app_commands.Choice(name="Jogo do Galo", value="tictactoe"),
+        app_commands.Choice(name="4 em Linha", value="connect4"),
+        app_commands.Choice(name="Forca", value="hangman"),
+        app_commands.Choice(name="Blackjack", value="blackjack")
+    ])
+    async def game_leaderboard(self, interaction: discord.Interaction, jogo: str):
+        """Ver leaderboard de um jogo"""
+        game_names = {
+            "tictactoe": "🎮 Jogo do Galo",
+            "connect4": "🎯 4 em Linha",
+            "hangman": "🎪 Forca",
+            "blackjack": "🃏 Blackjack"
+        }
+        
+        try:
+            db = self.bot.db
+            leaderboard = await db.get_game_leaderboard(jogo, limit=10)
+            
+            if not leaderboard:
+                await interaction.response.send_message(
+                    f"❌ Ainda não há estatísticas para {game_names.get(jogo, jogo)}!",
+                    ephemeral=True
+                )
+                return
+            
+            embed = discord.Embed(
+                title=f"🏆 Leaderboard - {game_names.get(jogo, jogo.title())}",
+                color=discord.Color.gold()
+            )
+            
+            description = ""
+            medals = ["🥇", "🥈", "🥉"]
+            
+            for i, entry in enumerate(leaderboard, 1):
+                try:
+                    user = await self.bot.fetch_user(int(entry['user_id']))
+                    user_name = user.display_name
+                except:
+                    user_name = f"User#{entry['user_id'][-4:]}"
+                
+                medal = medals[i-1] if i <= 3 else f"`#{i}`"
+                wins = entry['wins']
+                games = entry['total_games']
+                earnings = entry['total_earnings']
+                streak = entry['best_streak']
+                
+                win_rate = (wins / games * 100) if games > 0 else 0
+                
+                description += f"{medal} **{user_name}**\n"
+                description += f"   Vitórias: {wins} | WR: {win_rate:.1f}% | Streak: {streak}\n\n"
+            
+            embed.description = description
+            embed.set_footer(text=f"Dados do servidor • Top 10")
+            
+            await interaction.response.send_message(embed=embed)
+            
+        except Exception as e:
+            await interaction.response.send_message(
+                f"❌ Erro ao obter leaderboard: {e}",
+                ephemeral=True
+            )
+
 
 
 async def setup(bot):
