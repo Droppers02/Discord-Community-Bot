@@ -106,8 +106,12 @@ class GamesExtraCog(commands.Cog):
             "answered": False
         }
         
-        # Aguardar resposta
+        # Aguardar resposta com timeout de 30 segundos
         def check(reaction, user):
+            return user.id == user_id and str(reaction.emoji) in emojis and reaction.message.id == message.id
+        
+        try:
+            reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=check)
             return (user.id == interaction.user.id and 
                    str(reaction.emoji) in emojis and 
                    reaction.message.id == message.id)
@@ -722,7 +726,7 @@ class ReactionGameView(discord.ui.View):
     """View para jogo de reação"""
     
     def __init__(self, target_emoji: str, button_emojis: list, user_id: int, cog):
-        super().__init__(timeout=10)
+        super().__init__(timeout=15)  # 15 segundos para clicar
         self.target_emoji = target_emoji
         self.user_id = user_id
         self.cog = cog
@@ -786,7 +790,7 @@ class MathGameView(discord.ui.View):
     """View para desafio matemático"""
     
     def __init__(self, answer: int, options: list, user_id: int, cog):
-        super().__init__(timeout=15)
+        super().__init__(timeout=20)  # 20 segundos para responder
         self.answer = answer
         self.user_id = user_id
         self.cog = cog
@@ -849,7 +853,7 @@ class MemoryGameView(discord.ui.View):
     """View para jogo de memória"""
     
     def __init__(self, card_emojis: list, user_id: int, cog):
-        super().__init__(timeout=60)
+        super().__init__(timeout=120)  # 2 minutos total para completar
         self.card_emojis = card_emojis
         self.user_id = user_id
         self.cog = cog

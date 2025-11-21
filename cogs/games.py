@@ -368,6 +368,9 @@ class Connect4Button(discord.ui.Button):
             )
             return
         
+        # Resetar timer
+        view.reset_turn_timer()
+        
         # Tentar colocar peça na coluna
         row = view.drop_piece(self.column)
         if row == -1:
@@ -380,6 +383,7 @@ class Connect4Button(discord.ui.Button):
         # Verificar vencedor
         winner = view.check_winner()
         if winner:
+            view.cancel_turn_timer()
             for button in view.children:
                 button.disabled = True
             
@@ -438,8 +442,8 @@ class Connect4Button(discord.ui.Button):
 class Connect4View(discord.ui.View):
     """View principal do 4 em linha"""
     
-    def __init__(self, player1: discord.Member, player2: Optional[discord.Member] = None):
-        super().__init__(timeout=600)
+    def __init__(self, player1: discord.Member, player2: Optional[discord.Member] = None, channel = None):
+        super().__init__(timeout=None)  # Sem timeout global, usamos timer manual
         
         self.player1 = player1
         self.player2 = player2  # None para modo single player (bot)
@@ -447,6 +451,9 @@ class Connect4View(discord.ui.View):
         self.current_symbol = "🔴"
         self.current_player_user = player1
         self.is_single_player = player2 is None
+        self.channel = channel
+        self.turn_timer_task = None
+        self.message = None
         
         # Se single player, usar bot
         if self.is_single_player:
@@ -524,6 +531,48 @@ class Connect4View(discord.ui.View):
             display += "".join([cell if cell != " " else "⚫" for cell in row]) + "\n"
         display += "1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣"
         return display
+    
+    def start_turn_timer(self):
+        """Iniciar timer de 45 segundos para a jogada"""
+        if self.turn_timer_task:
+            self.turn_timer_task.cancel()
+        
+        if not self.is_single_player and self.current_player_user and not hasattr(self.current_player_user, 'bot'):
+            self.turn_timer_task = asyncio.create_task(self._turn_timeout())
+    
+    def reset_turn_timer(self):
+        """Resetar timer da jogada"""
+        if self.turn_timer_task:
+            self.turn_timer_task.cancel()
+        self.start_turn_timer()
+    
+    def cancel_turn_timer(self):
+        """Cancelar timer da jogada"""
+        if self.turn_timer_task:
+            self.turn_timer_task.cancel()
+            self.turn_timer_task = None
+    
+    async def _turn_timeout(self):
+        """Timeout de 45 segundos - jogador atual perde"""
+        try:
+            await asyncio.sleep(45)
+            
+            # Jogador atual perdeu por timeout
+            winner = self.player2 if self.current_player_user == self.player1 else self.player1
+            
+            for item in self.children:
+                item.disabled = True
+            
+            embed = discord.Embed(
+                title="⏰ Tempo Esgotado!",
+                description=f"{self.current_player_user.mention} demorou mais de 45 segundos!\n\n🎉 **{winner.mention}** vence por desistência!",
+                color=discord.Color.orange()
+            )
+            
+            if self.message:
+                await self.message.edit(embed=embed, view=self)
+        except asyncio.CancelledError:
+            pass
     
     async def make_bot_move(self, interaction: discord.Interaction):
         """Faz a jogada do bot (modo single player)"""
@@ -714,40 +763,72 @@ class GamesCog(commands.Cog):
         Args:
             oponente: Utilizador para jogar contra (opcional, deixe em branco para jogar contra o bot)
         """
-        await interaction.response.defer()
         
         if oponente == interaction.user:
-            await interaction.followup.send("❌ Não podes jogar contra ti próprio!", ephemeral=True)
-            return
+            return await interaction.response.send_message("❌ Não podes jogar contra ti próprio!", ephemeral=True)
         
         if oponente and oponente.bot:
-            await interaction.response.send_message("❌ Não podes jogar contra outros bots!", ephemeral=True)
-            return
+            return await interaction.response.send_message("❌ Não podes jogar contra outros bots!", ephemeral=True)
         
-        # Determinar modo de jogo
+        # Modo vs Bot - iniciar diretamente
         if oponente is None:
-            # Modo single player
+            import types
+            bot_user = types.SimpleNamespace()
+            bot_user.mention = "EPA BOT"
+            bot_user.bot = True
+            
+            view = Connect4View(interaction.user, bot_user, interaction.channel)
             embed = discord.Embed(
                 title="🎯 4 em Linha - Vs Bot",
                 description=f"**Jogador:** {interaction.user.mention} (🔴)\n**Bot:** EPA BOT (🟡)\n\n**Vez de:** {interaction.user.mention}",
                 color=discord.Color.blue()
             )
-            view = Connect4View(interaction.user, None)
-        else:
-            # Modo multiplayer
+            board_display = view.get_board_display()
+            embed.add_field(name="Tabuleiro:", value=board_display, inline=False)
+            embed.set_footer(text="EPA Bot • 4 em Linha")
+            
+            msg = await interaction.response.send_message(embed=embed, view=view)
+            view.message = await interaction.original_response()
+            view.start_turn_timer()
+            return
+        
+        # Modo PvP - enviar desafio
+        challenge_embed = discord.Embed(
+            title="🎯 Desafio de 4 em Linha!",
+            description=f"{interaction.user.mention} desafiou {oponente.mention} para um jogo de 4 em linha!\n\n{oponente.mention}, aceitas o desafio?",
+            color=discord.Color.blue()
+        )
+        challenge_embed.set_footer(text="⏰ Tens 60 segundos para aceitar o desafio")
+        
+        challenge_view = ChallengeView(interaction.user, oponente)
+        await interaction.response.send_message(embed=challenge_embed, view=challenge_view)
+        
+        # Aguardar resposta
+        await challenge_view.wait()
+        
+        if challenge_view.accepted is None:
+            # Timeout
+            timeout_embed = discord.Embed(
+                title="⏰ Tempo Esgotado",
+                description=f"{oponente.mention} não respondeu a tempo. O desafio expirou.",
+                color=discord.Color.orange()
+            )
+            await interaction.edit_original_response(embed=timeout_embed, view=challenge_view)
+        elif challenge_view.accepted:
+            # Aceite - iniciar jogo
+            view = Connect4View(interaction.user, oponente, interaction.channel)
             embed = discord.Embed(
                 title="🎯 4 em Linha - Multiplayer",
                 description=f"**Jogador 1:** {interaction.user.mention} (🔴)\n**Jogador 2:** {oponente.mention} (🟡)\n\n**Vez de:** {interaction.user.mention}",
                 color=discord.Color.blue()
             )
-            view = Connect4View(interaction.user, oponente)
-        
-        # Adicionar tabuleiro inicial
-        board_display = view.get_board_display()
-        embed.add_field(name="Tabuleiro:", value=board_display, inline=False)
-        embed.set_footer(text="EPA Bot • 4 em Linha • Clica no número da coluna • Timeout: 10 minutos")
-        
-        await interaction.followup.send(embed=embed, view=view)
+            board_display = view.get_board_display()
+            embed.add_field(name="Tabuleiro:", value=board_display, inline=False)
+            embed.set_footer(text="EPA Bot • 4 em Linha • 45s por jogada")
+            
+            msg = await interaction.channel.send(embed=embed, view=view)
+            view.message = msg
+            view.start_turn_timer()
 
     @discord.app_commands.command(name="coinflip", description="Cara ou coroa")
     @discord.app_commands.describe(escolha="A tua escolha (cara/coroa) - opcional")
