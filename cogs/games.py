@@ -10,7 +10,7 @@ class TicTacToeButton(discord.ui.Button):
     """Botão individual do jogo do galo"""
     
     def __init__(self, x: int, y: int):
-        super().__init__(style=discord.ButtonStyle.secondary, label=" ", row=y)
+        super().__init__(style=discord.ButtonStyle.secondary, label="⬜", row=y)
         self.x = x
         self.y = y
 
@@ -20,60 +20,30 @@ class TicTacToeButton(discord.ui.Button):
         
         # Verificar se é a vez do jogador
         if interaction.user != view.current_player_user:
-            await interaction.response.send_message(
-                "❌ Não é a tua vez!",
-                ephemeral=True
-            )
-            return
+            return await interaction.response.send_message("❌ Não é a tua vez!", ephemeral=True)
         
         # Verificar se a posição está ocupada
         if view.board[self.y][self.x] != " ":
-            await interaction.response.send_message(
-                "❌ Esta posição já está ocupada!",
-                ephemeral=True
-            )
-            return
+            return await interaction.response.send_message("❌ Esta posição já está ocupada!", ephemeral=True)
         
         # Fazer a jogada
         view.board[self.y][self.x] = view.current_symbol
-        self.label = view.current_symbol
+        self.label = "❌" if view.current_symbol == "X" else "⭕"
         self.style = discord.ButtonStyle.success if view.current_symbol == "X" else discord.ButtonStyle.danger
         self.disabled = True
         
         # Verificar vencedor
         winner = view.check_winner()
         if winner:
-            for button in view.children:
-                if isinstance(button, TicTacToeButton):
-                    button.disabled = True
-            
-            embed = discord.Embed(
-                title="🎉 Jogo Terminado!",
-                description=f"**Vencedor:** {view.current_player_user.mention} ({winner})",
-                color=discord.Color.green()
-            )
-            embed.set_footer(text="EPA Bot • Jogo do Galo")
-            
-            await interaction.response.defer()
-            await interaction.message.edit(embed=embed, view=view)
-            return
+            view.disable_all_buttons()
+            embed = view.create_embed(f"🎉 **{view.current_player_user.mention}** venceu!", discord.Color.green())
+            return await interaction.response.edit_message(embed=embed, view=view)
         
         # Verificar empate
         if view.is_tied():
-            for button in view.children:
-                if isinstance(button, TicTacToeButton):
-                    button.disabled = True
-            
-            embed = discord.Embed(
-                title="🤝 Empate!",
-                description="O jogo terminou sem vencedor!",
-                color=discord.Color.orange()
-            )
-            embed.set_footer(text="EPA Bot • Jogo do Galo")
-            
-            await interaction.response.defer()
-            await interaction.message.edit(embed=embed, view=view)
-            return
+            view.disable_all_buttons()
+            embed = view.create_embed("🤝 **Empate!** Ninguém ganhou!", discord.Color.orange())
+            return await interaction.response.edit_message(embed=embed, view=view)
         
         # Próximo jogador
         view.switch_player()
@@ -85,50 +55,24 @@ class TicTacToeButton(discord.ui.Button):
             # Verificar vencedor após jogada do bot
             winner = view.check_winner()
             if winner:
-                for button in view.children:
-                    if isinstance(button, TicTacToeButton):
-                        button.disabled = True
-                
-                embed = discord.Embed(
-                    title="🤖 Jogo Terminado!",
-                    description=f"**Vencedor:** {'EPA BOT' if winner == 'O' else view.player1.mention} ({winner})",
-                    color=discord.Color.red() if winner == 'O' else discord.Color.green()
-                )
-                embed.set_footer(text="EPA Bot • Jogo do Galo")
-                
-                await interaction.response.defer()
-                await interaction.message.edit(embed=embed, view=view)
-                return
+                view.disable_all_buttons()
+                embed = view.create_embed("🤖 **EPA BOT** venceu!", discord.Color.red())
+                return await interaction.response.edit_message(embed=embed, view=view)
             
             # Verificar empate após jogada do bot
             if view.is_tied():
-                for button in view.children:
-                    if isinstance(button, TicTacToeButton):
-                        button.disabled = True
-                
-                embed = discord.Embed(
-                    title="🤝 Empate!",
-                    description="O jogo terminou sem vencedor!",
-                    color=discord.Color.orange()
-                )
-                embed.set_footer(text="EPA Bot • Jogo do Galo")
-                
-                await interaction.response.defer()
-                await interaction.message.edit(embed=embed, view=view)
-                return
+                view.disable_all_buttons()
+                embed = view.create_embed("🤝 **Empate!** Ninguém ganhou!", discord.Color.orange())
+                return await interaction.response.edit_message(embed=embed, view=view)
             
             # Voltar para o jogador humano
             view.switch_player()
         
-        embed = discord.Embed(
-            title="🎮 Jogo do Galo",
-            description=f"**Vez de:** {view.current_player_user.mention if view.current_player_user else 'EPA BOT'} ({view.current_symbol})",
-            color=discord.Color.blue()
-        )
-        embed.set_footer(text="EPA Bot • Jogo do Galo")
-        
-        await interaction.response.defer()
-        await interaction.message.edit(embed=embed, view=view)
+        # Atualizar embed para próxima jogada
+        player_name = view.current_player_user.mention if view.current_player_user else "**EPA BOT**"
+        symbol = "❌" if view.current_symbol == "X" else "⭕"
+        embed = view.create_embed(f"Vez de {player_name} ({symbol})", discord.Color.blue())
+        await interaction.response.edit_message(embed=embed, view=view)
 
 
 class TicTacToeView(discord.ui.View):
@@ -148,6 +92,37 @@ class TicTacToeView(discord.ui.View):
         for y in range(3):
             for x in range(3):
                 self.add_item(TicTacToeButton(x, y))
+    
+    def create_embed(self, description: str, color: discord.Color) -> discord.Embed:
+        """Criar embed do jogo"""
+        embed = discord.Embed(
+            title="🎮 Jogo do Galo",
+            description=description,
+            color=color
+        )
+        
+        # Mostrar tabuleiro visual
+        board_str = ""
+        for row in self.board:
+            row_display = []
+            for cell in row:
+                if cell == "X":
+                    row_display.append("❌")
+                elif cell == "O":
+                    row_display.append("⭕")
+                else:
+                    row_display.append("⬜")
+            board_str += " ".join(row_display) + "\n"
+        
+        embed.add_field(name="📊 Tabuleiro", value=board_str, inline=False)
+        
+        if not self.is_single_player:
+            embed.add_field(name="👥 Jogadores", value=f"❌ {self.player1.mention}\n⭕ {self.player2.mention}", inline=False)
+        else:
+            embed.add_field(name="👥 Jogadores", value=f"❌ {self.player1.mention}\n⭕ **EPA BOT**", inline=False)
+        
+        embed.set_footer(text="EPA Bot • Jogo do Galo")
+        return embed
     
     def switch_player(self):
         """Alterna entre os jogadores"""
@@ -184,6 +159,12 @@ class TicTacToeView(discord.ui.View):
     def is_tied(self) -> bool:
         """Verifica se houve empate"""
         return all(cell != " " for row in self.board for cell in row)
+    
+    def disable_all_buttons(self):
+        """Desabilitar todos os botões"""
+        for button in self.children:
+            if isinstance(button, TicTacToeButton):
+                button.disabled = True
     
     def get_available_moves(self) -> List[tuple]:
         """Retorna movimentos disponíveis para o bot"""
@@ -245,7 +226,7 @@ class TicTacToeView(discord.ui.View):
         # Encontrar e atualizar o botão correspondente
         for item in self.children:
             if isinstance(item, TicTacToeButton) and item.x == x and item.y == y:
-                item.label = "O"
+                item.label = "⭕"
                 item.style = discord.ButtonStyle.danger
                 item.disabled = True
                 break
@@ -566,42 +547,25 @@ class GamesCog(commands.Cog):
         Args:
             oponente: Utilizador para jogar contra (opcional, deixe em branco para jogar contra o bot)
         """
-        await interaction.response.defer()
         
         if oponente == interaction.user:
-            await interaction.followup.send("❌ Não podes jogar contra ti próprio!", ephemeral=True)
-            return
+            return await interaction.response.send_message("❌ Não podes jogar contra ti próprio!", ephemeral=True)
         
         if oponente and oponente.bot:
-            await interaction.followup.send("❌ Não podes jogar contra outros bots!", ephemeral=True)
-            return
+            return await interaction.response.send_message("❌ Não podes jogar contra outros bots!", ephemeral=True)
         
-        # Determinar modo de jogo
+        # Criar view do jogo
+        view = TicTacToeView(interaction.user, oponente)
+        
+        # Criar embed inicial
         if oponente is None:
-            # Modo single player
-            embed = discord.Embed(
-                title="🎮 Jogo do Galo - Vs Bot",
-                description=f"**Jogador:** {interaction.user.mention} (X)\n**Bot:** EPA BOT (O)\n\n**Vez de:** {interaction.user.mention}",
-                color=discord.Color.blue()
-            )
-            view = TicTacToeView(interaction.user, None)
+            description = f"Vez de {interaction.user.mention} (❌)"
         else:
-            # Modo multiplayer
-            embed = discord.Embed(
-                title="🎮 Jogo do Galo - Multiplayer",
-                description=f"**Jogador 1:** {interaction.user.mention} (X)\n**Jogador 2:** {oponente.mention} (O)\n\n**Vez de:** {interaction.user.mention}",
-                color=discord.Color.blue()
-            )
-            view = TicTacToeView(interaction.user, oponente)
+            description = f"Vez de {interaction.user.mention} (❌)"
         
-        embed.set_footer(text="EPA Bot • Jogo do Galo • Timeout: 5 minutos")
+        embed = view.create_embed(description, discord.Color.blue())
         
-        await interaction.followup.send(embed=embed, view=view)
-        
-        # Se for single player e o bot começar (opcional)
-        # if oponente is None and random.random() < 0.5:
-        #     await view.make_bot_move()
-        #     await interaction.edit_original_response(embed=embed, view=view)
+        await interaction.response.send_message(embed=embed, view=view)
 
     @discord.app_commands.command(name="4emlinha", description="Jogo do 4 em linha (Connect Four)")
     @discord.app_commands.describe(oponente="Utilizador para jogar contra (opcional, deixe em branco para jogar contra o bot)")

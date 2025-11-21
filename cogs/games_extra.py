@@ -38,10 +38,9 @@ class HangmanView(discord.ui.View):
         """Cria callback para botão de letra"""
         async def callback(interaction: discord.Interaction):
             if interaction.user.id != self.user_id:
-                await interaction.response.send_message(
+                return await interaction.response.send_message(
                     "❌ Este não é o teu jogo!", ephemeral=True
                 )
-                return
             
             # Adicionar letra às adivinhadas
             self.guessed_letters.add(letter)
@@ -59,17 +58,14 @@ class HangmanView(discord.ui.View):
             
             # Verificar vitória/derrota
             if all(l in self.guessed_letters for l in self.word):
-                await self.end_game(interaction, won=True)
-                return
+                return await self.end_game(interaction, won=True)
             
             if self.wrong_guesses >= self.max_wrong:
-                await self.end_game(interaction, won=False)
-                return
+                return await self.end_game(interaction, won=False)
             
             # Atualizar embed
             embed = self.create_embed()
-            await interaction.response.defer()
-            await interaction.message.edit(embed=embed, view=self)
+            await interaction.response.edit_message(embed=embed, view=self)
         
         return callback
     
@@ -150,8 +146,7 @@ class HangmanView(discord.ui.View):
             inline=False
         )
         
-        await interaction.response.defer()
-        await interaction.message.edit(embed=embed, view=self)
+        await interaction.response.edit_message(embed=embed, view=self)
         
         # Remover do active_games
         if self.user_id in self.cog.active_games:
@@ -318,13 +313,11 @@ class GamesExtraCog(commands.Cog):
     @app_commands.command(name="forca", description="Jogo da forca melhorado")
     async def forca(self, interaction: discord.Interaction):
         """Jogo da forca com interface de botões"""
-        await interaction.response.defer()
         
         user_id = interaction.user.id
         
         if user_id in self.active_games:
-            await interaction.followup.send("❌ Já tens um jogo ativo! Termina-o primeiro.", ephemeral=True)
-            return
+            return await interaction.response.send_message("❌ Já tens um jogo ativo! Termina-o primeiro.", ephemeral=True)
         
         # Escolher palavra com dica
         word_data = random.choice(self.forca_words)
@@ -343,7 +336,7 @@ class GamesExtraCog(commands.Cog):
             "view": view
         }
         
-        await interaction.followup.send(embed=embed, view=view)
+        await interaction.response.send_message(embed=embed, view=view)
 
     async def _show_forca_status(self, interaction, user_id, first_time=False):
         """Mostrar status do jogo da forca"""
