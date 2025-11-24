@@ -30,6 +30,9 @@ class Config:
     log_level: str = "INFO"
     music_debug: bool = False  # Log detalhado para música
     
+    # Configurações de idioma
+    language: str = "en"  # 'en' para English, 'pt' para Português
+    
     @classmethod
     def from_env(cls) -> "Config":
         """Cria configuração a partir de variáveis de ambiente"""
@@ -51,7 +54,8 @@ class Config:
             ytdl_format=os.getenv("YTDL_FORMAT", "bestaudio"),
             enable_music_cache=os.getenv("ENABLE_MUSIC_CACHE", "True").lower() == "true",
             log_level=os.getenv("LOG_LEVEL", "INFO"),
-            music_debug=os.getenv("MUSIC_DEBUG", "False").lower() == "true"
+            music_debug=os.getenv("MUSIC_DEBUG", "False").lower() == "true",
+            language=os.getenv("BOT_LANGUAGE", "en")
         )
     
     def validate(self) -> bool:

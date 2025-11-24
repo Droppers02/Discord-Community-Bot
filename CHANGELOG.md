@@ -4,6 +4,51 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [2.7.0] - 2025-11-24
+
+### 🌍 Internacionalização (i18n)
+
+**Nova Branch: `en` (English)**
+
+- ✅ **Sistema de tradução completo** (`config/i18n.py`)
+
+  - Suporte para Português (`pt`) e English (`en`)
+  - Traduções centralizadas em dicionários
+  - Sistema de formatação de strings com variáveis
+  - Fácil adição de novos idiomas
+
+- ✅ **Comandos traduzidos**
+
+  - `/help` totalmente traduzido para inglês
+  - Todas as categorias e descrições em inglês
+  - Paginação mantida (5 páginas)
+
+- ✅ **Configuração de idioma**
+
+  - Variável de ambiente `BOT_LANGUAGE`
+  - Suporte em `config/settings.py`
+  - Branch `main` = Português (padrão)
+  - Branch `en` = English
+
+- ✅ **Documentação**
+  - README_EN.md completo em inglês
+  - Instruções de instalação e configuração
+  - Guia de desenvolvimento
+  - Estrutura de tradução documentada
+
+**Estrutura de Branches**
+
+```
+main (Portuguese) ←→ en (English)
+```
+
+**Como usar:**
+
+- Para Português: `git checkout main` + `BOT_LANGUAGE=pt`
+- Para English: `git checkout en` + `BOT_LANGUAGE=en`
+
+---
+
 ## [2.6.1] - 2025-11-24
 
 ### ✨ Novos Comandos de Emoji
