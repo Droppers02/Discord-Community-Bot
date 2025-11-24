@@ -847,7 +847,7 @@ class SimpleEconomy(commands.Cog):
         await interaction.response.send_message(embed=embed)
 
 
-    @app_commands.command(name="perfil", description="Vê o teu perfil económico completo")
+    @app_commands.command(name="perfil_economico", description="Vê o teu perfil económico completo")
     async def profile(self, interaction: discord.Interaction, utilizador: Optional[discord.Member] = None):
         """Ver perfil económico detalhado"""
         target = utilizador or interaction.user

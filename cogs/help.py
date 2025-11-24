@@ -121,7 +121,7 @@ class HelpCog(commands.Cog):
             "• `/inventario [@user]` - Ver inventário",
             "• `/doar <user> <valor>` - Doar coins",
             "• `/leaderboard` - Top utilizadores",
-            "• `/perfil [@user]` - Perfil económico"
+            "• `/perfil_economico [@user]` - Perfil económico"
         ]
         embed2.add_field(name="💰 **Economia Básica**", value="\n".join(economy_commands), inline=False)
         
