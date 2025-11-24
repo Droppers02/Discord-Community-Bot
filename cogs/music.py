@@ -92,20 +92,28 @@ class MusicCog(commands.Cog):
             # Opções avançadas para contornar restrições do YouTube
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["android", "web"],
-                    "player_skip": ["configs", "webpage"],
-                    "skip": ["hls", "dash"],
+                    "player_client": ["android", "ios", "web"],
+                    "player_skip": ["webpage", "configs"],
+                    "skip": ["hls", "dash", "translated_subs"],
                 }
             },
             "http_headers": {
-                "User-Agent": "Mozilla/5.0 (Linux; Android 11; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36"
+                "User-Agent": "com.google.android.youtube/17.36.4 (Linux; U; Android 12; US) gzip",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-us,en;q=0.5",
+                "Sec-Fetch-Mode": "navigate",
             },
             # Configurações adicionais
             "cookiesfrombrowser": None,
             "age_limit": None,
             "geo_bypass": True,
+            "geo_bypass_country": "US",
             "prefer_insecure": False,
             "extract_flat": False,
+            # Usar client Android por padrão (menos restritivo)
+            "extractor_retries": 3,
+            "fragment_retries": 3,
+            "skip_unavailable_fragments": True,
         }
         
         # Configurações do FFmpeg otimizadas
