@@ -1,4 +1,5 @@
 import os
+import sys
 from dataclasses import dataclass
 from typing import Optional
 
@@ -20,7 +21,7 @@ class Config:
     command_prefix: str = "!"
     
     # Configurações de música
-    ffmpeg_path: str = "bin\\ffmpeg\\ffmpeg.exe"
+    ffmpeg_path: str = "bin\\ffmpeg\\ffmpeg.exe" if sys.platform == "win32" else "/usr/bin/ffmpeg"
     max_queue_size: int = 50
     music_timeout: int = 15  # Timeout para extração de música em segundos
     ytdl_format: str = "bestaudio"  # Formato padrão do yt-dlp
@@ -37,6 +38,9 @@ class Config:
         owner_ids_str = os.getenv("OWNER_IDS", "")
         owner_ids = [int(id.strip()) for id in owner_ids_str.split(",") if id.strip()] if owner_ids_str else []
         
+        # Default FFmpeg path baseado no OS
+        default_ffmpeg = "bin\\ffmpeg\\ffmpeg.exe" if sys.platform == "win32" else "/usr/bin/ffmpeg"
+        
         return cls(
             discord_token=os.getenv("DISCORD_TOKEN", ""),
             openai_token=os.getenv("OPENAI_TOKEN"),
@@ -45,7 +49,7 @@ class Config:
             mod_role_id=int(os.getenv("MOD_ROLE_ID", "0")),
             ticket_category_id=int(os.getenv("TICKET_CATEGORY_ID", "0")),
             command_prefix=os.getenv("COMMAND_PREFIX", "!"),
-            ffmpeg_path=os.getenv("FFMPEG_PATH", "bin\\ffmpeg\\ffmpeg.exe"),
+            ffmpeg_path=os.getenv("FFMPEG_PATH", default_ffmpeg),
             max_queue_size=int(os.getenv("MAX_QUEUE_SIZE", "50")),
             music_timeout=int(os.getenv("MUSIC_TIMEOUT", "15")),
             ytdl_format=os.getenv("YTDL_FORMAT", "bestaudio"),
