@@ -747,11 +747,14 @@ class Moderation(commands.Cog):
             self.logger.error(f"Erro ao obter avisos: {e}")
             await interaction.response.send_message("❌ Erro ao obter avisos!", ephemeral=True)
     
-    @app_commands.command(name="clear", description="Apaga mensagens em massa")
+    # Grupo de comandos /clear
+    clear_group = app_commands.Group(name="clear", description="Comandos para apagar mensagens")
+    
+    @clear_group.command(name="quantidade", description="Apaga um número específico de mensagens")
     @app_commands.describe(quantidade="Número de mensagens a apagar (1-100)")
     @app_commands.checks.has_permissions(manage_messages=True)
     @app_commands.checks.bot_has_permissions(manage_messages=True)
-    async def clear(
+    async def clear_quantidade(
         self,
         interaction: discord.Interaction,
         quantidade: app_commands.Range[int, 1, 100]
@@ -777,6 +780,131 @@ class Moderation(commands.Cog):
         except Exception as e:
             self.logger.error(f"Erro ao apagar mensagens: {e}")
             await interaction.followup.send("❌ Erro ao apagar mensagens!", ephemeral=True)
+    
+    @clear_group.command(name="apartir", description="Apaga mensagens a partir de uma mensagem específica")
+    @app_commands.describe(
+        mensagem_id="ID da mensagem a partir da qual apagar (clica direito > Copiar ID)",
+        limite="Número máximo de mensagens a apagar (1-100)"
+    )
+    @app_commands.checks.has_permissions(manage_messages=True)
+    @app_commands.checks.bot_has_permissions(manage_messages=True)
+    async def clear_apartir(
+        self,
+        interaction: discord.Interaction,
+        mensagem_id: str,
+        limite: app_commands.Range[int, 1, 100] = 100
+    ):
+        """Apaga mensagens a partir de uma mensagem específica"""
+        
+        try:
+            await interaction.response.defer(ephemeral=True)
+            
+            # Converter ID para int
+            try:
+                msg_id = int(mensagem_id)
+            except ValueError:
+                await interaction.followup.send("❌ ID de mensagem inválido!", ephemeral=True)
+                return
+            
+            # Buscar mensagem inicial
+            try:
+                start_message = await interaction.channel.fetch_message(msg_id)
+            except discord.NotFound:
+                await interaction.followup.send("❌ Mensagem não encontrada neste canal!", ephemeral=True)
+                return
+            except discord.Forbidden:
+                await interaction.followup.send("❌ Não tenho permissão para ver essa mensagem!", ephemeral=True)
+                return
+            
+            # Apagar mensagens após a mensagem especificada (incluindo ela)
+            deleted = await interaction.channel.purge(limit=limite, after=start_message.created_at - timedelta(seconds=1))
+            
+            embed = EmbedBuilder.success(
+                title="🗑️ Mensagens apagadas",
+                description=f"**{len(deleted)}** mensagens foram apagadas a partir da mensagem especificada!"
+            )
+            embed.add_field(name="Moderador", value=interaction.user.mention, inline=True)
+            embed.add_field(name="Mensagem inicial", value=f"ID: `{mensagem_id}`", inline=True)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            self.logger.info(f"{interaction.user} apagou {len(deleted)} mensagens a partir de {mensagem_id} em {interaction.channel}")
+            
+        except discord.Forbidden:
+            await interaction.followup.send("❌ Não tenho permissões para apagar mensagens!", ephemeral=True)
+        except Exception as e:
+            self.logger.error(f"Erro ao apagar mensagens: {e}")
+            await interaction.followup.send(f"❌ Erro ao apagar mensagens: {str(e)}", ephemeral=True)
+    
+    @clear_group.command(name="intervalo", description="Apaga mensagens entre duas mensagens específicas")
+    @app_commands.describe(
+        mensagem_inicio="ID da primeira mensagem do intervalo",
+        mensagem_fim="ID da última mensagem do intervalo"
+    )
+    @app_commands.checks.has_permissions(manage_messages=True)
+    @app_commands.checks.bot_has_permissions(manage_messages=True)
+    async def clear_intervalo(
+        self,
+        interaction: discord.Interaction,
+        mensagem_inicio: str,
+        mensagem_fim: str
+    ):
+        """Apaga mensagens entre duas mensagens específicas"""
+        
+        try:
+            await interaction.response.defer(ephemeral=True)
+            
+            # Converter IDs para int
+            try:
+                msg_inicio_id = int(mensagem_inicio)
+                msg_fim_id = int(mensagem_fim)
+            except ValueError:
+                await interaction.followup.send("❌ IDs de mensagem inválidos!", ephemeral=True)
+                return
+            
+            # Verificar qual é a mais antiga
+            if msg_inicio_id > msg_fim_id:
+                msg_inicio_id, msg_fim_id = msg_fim_id, msg_inicio_id
+                mensagem_inicio, mensagem_fim = mensagem_fim, mensagem_inicio
+            
+            # Buscar mensagens
+            try:
+                start_message = await interaction.channel.fetch_message(msg_inicio_id)
+                end_message = await interaction.channel.fetch_message(msg_fim_id)
+            except discord.NotFound:
+                await interaction.followup.send("❌ Uma ou ambas mensagens não foram encontradas neste canal!", ephemeral=True)
+                return
+            except discord.Forbidden:
+                await interaction.followup.send("❌ Não tenho permissão para ver essas mensagens!", ephemeral=True)
+                return
+            
+            # Calcular diferença de tempo
+            time_diff = (end_message.created_at - start_message.created_at).total_seconds()
+            if time_diff > 14 * 24 * 3600:  # 14 dias
+                await interaction.followup.send("❌ O intervalo não pode ser maior que 14 dias (limitação do Discord)!", ephemeral=True)
+                return
+            
+            # Apagar mensagens no intervalo
+            deleted = await interaction.channel.purge(
+                after=start_message.created_at - timedelta(seconds=1),
+                before=end_message.created_at + timedelta(seconds=1)
+            )
+            
+            embed = EmbedBuilder.success(
+                title="🗑️ Mensagens apagadas",
+                description=f"**{len(deleted)}** mensagens foram apagadas no intervalo especificado!"
+            )
+            embed.add_field(name="Moderador", value=interaction.user.mention, inline=False)
+            embed.add_field(name="Início", value=f"ID: `{mensagem_inicio}`", inline=True)
+            embed.add_field(name="Fim", value=f"ID: `{mensagem_fim}`", inline=True)
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            self.logger.info(f"{interaction.user} apagou {len(deleted)} mensagens entre {mensagem_inicio} e {mensagem_fim} em {interaction.channel}")
+            
+        except discord.Forbidden:
+            await interaction.followup.send("❌ Não tenho permissões para apagar mensagens!", ephemeral=True)
+        except Exception as e:
+            self.logger.error(f"Erro ao apagar mensagens: {e}")
+            await interaction.followup.send(f"❌ Erro ao apagar mensagens: {str(e)}", ephemeral=True)
     
     @app_commands.command(name="setup_modlogs", description="Configura o canal de logs de moderação")
     @app_commands.describe(canal="Canal para receber logs de moderação")
