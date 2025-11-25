@@ -1,5 +1,5 @@
 import os
-import sys
+import platform
 from dataclasses import dataclass
 from typing import Optional
 
@@ -21,7 +21,7 @@ class Config:
     command_prefix: str = "!"
     
     # Configurações de música
-    ffmpeg_path: str = "bin\\ffmpeg\\ffmpeg.exe" if sys.platform == "win32" else "/usr/bin/ffmpeg"
+    ffmpeg_path: str = "bin\\ffmpeg\\ffmpeg.exe"
     max_queue_size: int = 50
     music_timeout: int = 15  # Timeout para extração de música em segundos
     ytdl_format: str = "bestaudio"  # Formato padrão do yt-dlp
@@ -31,6 +31,9 @@ class Config:
     log_level: str = "INFO"
     music_debug: bool = False  # Log detalhado para música
     
+    # Configurações de idioma
+    language: str = "en"  # 'en' para English, 'pt' para Português
+    
     @classmethod
     def from_env(cls) -> "Config":
         """Cria configuração a partir de variáveis de ambiente"""
@@ -38,8 +41,11 @@ class Config:
         owner_ids_str = os.getenv("OWNER_IDS", "")
         owner_ids = [int(id.strip()) for id in owner_ids_str.split(",") if id.strip()] if owner_ids_str else []
         
-        # Default FFmpeg path baseado no OS
-        default_ffmpeg = "bin\\ffmpeg\\ffmpeg.exe" if sys.platform == "win32" else "/usr/bin/ffmpeg"
+        # Detectar caminho padrão do FFmpeg baseado no sistema operacional
+        if platform.system() == "Windows":
+            default_ffmpeg = "bin\\ffmpeg\\ffmpeg.exe"
+        else:  # Linux, macOS, Railway
+            default_ffmpeg = "ffmpeg"  # Usar do PATH do sistema
         
         return cls(
             discord_token=os.getenv("DISCORD_TOKEN", ""),
@@ -55,7 +61,8 @@ class Config:
             ytdl_format=os.getenv("YTDL_FORMAT", "bestaudio"),
             enable_music_cache=os.getenv("ENABLE_MUSIC_CACHE", "True").lower() == "true",
             log_level=os.getenv("LOG_LEVEL", "INFO"),
-            music_debug=os.getenv("MUSIC_DEBUG", "False").lower() == "true"
+            music_debug=os.getenv("MUSIC_DEBUG", "False").lower() == "true",
+            language=os.getenv("BOT_LANGUAGE", "en")
         )
     
     def validate(self) -> bool:
