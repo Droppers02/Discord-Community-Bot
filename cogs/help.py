@@ -147,7 +147,7 @@ class HelpCog(commands.Cog):
         social_commands = [
             "• `/rank [user]` - Ver nível, XP e progresso",
             "• `/like <user>` - Dar reputação (1h cooldown)",
-            "• `/leaderboard [tipo]` - Rankings (XP/Reputação)",
+            "• `/leaderboard <categoria>` - Rankings (XP/Rep/Dinheiro/Jogos/Msgs/Streaks)",
             "• `/perfil [user]` - Ver perfil completo",
             "• `/editarperfil` - Customizar perfil",
             "• `/badges [user]` - Ver badges conquistados",
@@ -157,6 +157,15 @@ class HelpCog(commands.Cog):
             "• `/streaks` - Ver streaks (Daily/Mensagens/Jogos)"
         ]
         embed2.add_field(name="⭐ **Social Avançado**", value="\n".join(social_commands), inline=False)
+        
+        social_new = [
+            "• `/amigos <acao> [user]` - Sistema de amizades",
+            "• `/amigos_aceitar <user>` - Aceitar pedido",
+            "• `/amigos_rejeitar <user>` - Rejeitar pedido",
+            "• `/casamento_upgrade <tier>` - Upgrade anel (1-5)",
+            "• `/atividade [periodo] [user]` - Gráficos de atividade"
+        ]
+        embed2.add_field(name="👥 **Funcionalidades Novas**", value="\n".join(social_new), inline=False)
         
         embed2.set_footer(text="Página 2/5 • Use os botões para navegar")
         embeds.append(embed2)
@@ -211,10 +220,16 @@ class HelpCog(commands.Cog):
             "• `/timeout <user> <preset>` - Timeout",
             "• `/untimeout <user>` - Remover timeout",
             "• `/warn <user> <razão>` - Avisar",
-            "• `/warnings <user>` - Ver avisos",
-            "• `/clear <quantidade>` - Limpar mensagens"
+            "• `/warnings <user>` - Ver avisos"
         ]
         embed4.add_field(name="🛡️ **Moderação Básica**", value="\n".join(moderation_commands), inline=False)
+        
+        clear_commands = [
+            "• `/clear quantidade <número>` - Limpar N mensagens",
+            "• `/clear apartir <msg_id> [limite]` - A partir de mensagem",
+            "• `/clear intervalo <msg1> <msg2>` - Entre duas mensagens"
+        ]
+        embed4.add_field(name="🗑️ **Limpeza de Mensagens**", value="\n".join(clear_commands), inline=False)
         
         moderation_advanced = [
             "• `/setup_modlogs <canal>` - Logs de moderação",
