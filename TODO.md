@@ -51,13 +51,13 @@ Lista de tarefas, melhorias e correções planeadas para versões futuras.
 - [x] Migração de XP para base de dados SQLite
 - [x] Badges automáticos por níveis (10, 25, 50, 100)
 - [x] Sistema de reputação integrado em SQLite
-- [ ] Top utilizadores por categoria (implementar queries completas)
-- [ ] Sistema de recompensas automáticas por streaks
-- [ ] Badges por achievements específicos
-- [ ] Sistema de aniversários de casamento
-- [ ] Ring tier upgrades (premium)
-- [ ] Sistema de amizades/friend list
-- [ ] Gráficos de atividade (charts de XP/mensagens)
+- [x] Top utilizadores por categoria (implementar queries completas)
+- [x] Sistema de recompensas automáticas por streaks
+- [x] Badges por achievements específicos
+- [x] Sistema de aniversários de casamento
+- [x] Ring tier upgrades (premium)
+- [x] Sistema de amizades/friend list
+- [x] Gráficos de atividade (charts de XP/mensagens)
 
 ### Jogos
 

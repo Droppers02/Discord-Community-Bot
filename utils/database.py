@@ -56,12 +56,25 @@ class Database:
                     level INTEGER DEFAULT 1,
                     reputation INTEGER DEFAULT 0,
                     messages_sent INTEGER DEFAULT 0,
+                    daily_streak INTEGER DEFAULT 0,
+                    last_daily TEXT,
                     last_message_at REAL DEFAULT 0,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (user_id, guild_id)
                 )
             """)
+            
+            # Adicionar colunas se não existirem (migração)
+            try:
+                await db.execute("ALTER TABLE user_levels ADD COLUMN daily_streak INTEGER DEFAULT 0")
+            except:
+                pass  # Coluna já existe
+            
+            try:
+                await db.execute("ALTER TABLE user_levels ADD COLUMN last_daily TEXT")
+            except:
+                pass  # Coluna já existe
             
             # Tabela de reputação
             await db.execute("""
@@ -245,6 +258,33 @@ class Database:
                     activity_type TEXT NOT NULL,
                     activity_data TEXT,
                     timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # Tabela de amizades/friend list
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS friendships (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    friend_id TEXT NOT NULL,
+                    guild_id TEXT NOT NULL,
+                    status TEXT DEFAULT 'pending',
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    accepted_at TEXT,
+                    UNIQUE(user_id, friend_id, guild_id)
+                )
+            """)
+            
+            # Tabela de estatísticas de mensagens (para gráficos)
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS message_stats (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    guild_id TEXT NOT NULL,
+                    date TEXT NOT NULL,
+                    message_count INTEGER DEFAULT 0,
+                    xp_gained INTEGER DEFAULT 0,
+                    UNIQUE(user_id, guild_id, date)
                 )
             """)
             

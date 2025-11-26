@@ -69,7 +69,7 @@ class SocialCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        """Sistema de XP por mensagens - agora com base de dados"""
+        """Sistema de XP por mensagens - agora com base de dados e achievements"""
         if message.author.bot or not message.guild or not self.db:
             return
         
@@ -104,6 +104,20 @@ class SocialCog(commands.Cog):
             
             # Atualizar streak de mensagens (1 dia de streak)
             await self.db.update_streak(user_id, guild_id, "messages", 1)
+            
+            # Registrar estatísticas diárias para gráficos
+            today = datetime.utcnow().date().isoformat()
+            await self.db.execute(
+                """INSERT INTO message_stats (user_id, guild_id, date, message_count, xp_gained)
+                   VALUES (?, ?, ?, 1, ?)
+                   ON CONFLICT(user_id, guild_id, date)
+                   DO UPDATE SET message_count = message_count + 1, xp_gained = xp_gained + ?""",
+                (user_id, guild_id, today, xp_gain, xp_gain)
+            )
+            await self.db.commit()
+            
+            # Verificar e dar achievements
+            await self.check_and_award_achievements(user_id, guild_id)
             
             # Se subiu de nível, enviar notificação
             if new_level > old_level:
@@ -397,13 +411,17 @@ class SocialCog(commands.Cog):
             await interaction.response.send_message("❌ Erro ao dar like!", ephemeral=True)
 
     @app_commands.command(name="leaderboard", description="Mostra o ranking do servidor")
-    @app_commands.describe(tipo="Tipo de ranking (xp ou reputacao)")
-    @app_commands.choices(tipo=[
-        app_commands.Choice(name="XP/Nível", value="xp"),
-        app_commands.Choice(name="Reputação", value="reputation")
+    @app_commands.describe(categoria="Categoria de ranking")
+    @app_commands.choices(categoria=[
+        app_commands.Choice(name="🏆 XP/Nível", value="xp"),
+        app_commands.Choice(name="👍 Reputação", value="reputation"),
+        app_commands.Choice(name="💰 Economia (Dinheiro)", value="money"),
+        app_commands.Choice(name="🎮 Jogos (Vitórias)", value="games"),
+        app_commands.Choice(name="📨 Mensagens Enviadas", value="messages"),
+        app_commands.Choice(name="🔥 Streaks Ativos", value="streaks")
     ])
-    async def leaderboard(self, interaction: discord.Interaction, tipo: str = "xp"):
-        """Mostra o ranking do servidor - agora com base de dados"""
+    async def leaderboard(self, interaction: discord.Interaction, categoria: str = "xp"):
+        """Mostra o ranking do servidor - agora com múltiplas categorias"""
         await interaction.response.defer()
         
         guild_id = str(interaction.guild.id)
@@ -413,21 +431,60 @@ class SocialCog(commands.Cog):
             return
         
         try:
-            # Buscar dados da base de dados
-            if tipo == "xp":
+            # Buscar dados baseado na categoria
+            if categoria == "xp":
                 query = """SELECT user_id, xp, level 
                           FROM user_levels 
                           WHERE guild_id = ? 
                           ORDER BY xp DESC 
                           LIMIT 10"""
                 title = "🏆 Ranking por XP/Nível"
-            else:
+                format_func = lambda row: f"Nível {row[2]} ({row[1]:,} XP)"
+                
+            elif categoria == "reputation":
                 query = """SELECT user_id, reputation, level 
                           FROM user_levels 
                           WHERE guild_id = ? AND reputation > 0
                           ORDER BY reputation DESC 
                           LIMIT 10"""
                 title = "👍 Ranking por Reputação"
+                format_func = lambda row: f"{row[1]} likes"
+                
+            elif categoria == "money":
+                query = """SELECT user_id, balance 
+                          FROM economy 
+                          WHERE guild_id = ? 
+                          ORDER BY balance DESC 
+                          LIMIT 10"""
+                title = "💰 Ranking por Dinheiro"
+                format_func = lambda row: f"${row[1]:,}"
+                
+            elif categoria == "games":
+                query = """SELECT user_id, total_wins 
+                          FROM game_stats 
+                          WHERE guild_id = ? AND total_wins > 0
+                          ORDER BY total_wins DESC 
+                          LIMIT 10"""
+                title = "🎮 Ranking por Vitórias em Jogos"
+                format_func = lambda row: f"{row[1]} vitórias"
+                
+            elif categoria == "messages":
+                query = """SELECT user_id, messages_sent 
+                          FROM user_levels 
+                          WHERE guild_id = ? AND messages_sent > 0
+                          ORDER BY messages_sent DESC 
+                          LIMIT 10"""
+                title = "📨 Ranking por Mensagens Enviadas"
+                format_func = lambda row: f"{row[1]:,} mensagens"
+                
+            elif categoria == "streaks":
+                query = """SELECT user_id, daily_streak 
+                          FROM user_levels 
+                          WHERE guild_id = ? AND daily_streak > 0
+                          ORDER BY daily_streak DESC 
+                          LIMIT 10"""
+                title = "🔥 Ranking por Streak Diário"
+                format_func = lambda row: f"{row[1]} dias"
             
             async with self.db.execute(query, (guild_id,)) as cursor:
                 rows = await cursor.fetchall()
@@ -447,11 +504,7 @@ class SocialCog(commands.Cog):
                     if not user:
                         continue
                     
-                    if tipo == "xp":
-                        value = f"Nível {row[2]} ({row[1]:,} XP)"
-                    else:
-                        value = f"{row[1]} likes"
-                    
+                    value = format_func(row)
                     medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"**{i}.**"
                     leaderboard_text += f"{medal} {user.display_name}: {value}\n"
                     
@@ -763,6 +816,720 @@ class SocialCog(commands.Cog):
             )
         
         await interaction.response.send_message(embed=embed)
+
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        """Sistema de boas-vindas + verificação de streak rewards"""
+        guild_id = str(member.guild.id)
+        
+        # Sistema de welcome messages existente
+        if guild_id in self.welcome_config.get("guilds", {}):
+            config = self.welcome_config["guilds"][guild_id]
+            if config.get("enabled", False):
+                channel_id = config.get("channel_id")
+                channel = member.guild.get_channel(int(channel_id)) if channel_id else None
+                
+                if channel:
+                    message = config.get("message", "Bem-vindo {user}!")
+                    message = message.replace("{user}", member.mention)
+                    message = message.replace("{server}", member.guild.name)
+                    message = message.replace("{count}", str(member.guild.member_count))
+                    
+                    try:
+                        await channel.send(message)
+                    except:
+                        pass
+    
+    @commands.Cog.listener()
+    async def on_message_streak_reward(self, user_id: str, guild_id: str, streak_count: int):
+        """Sistema automático de recompensas por streaks"""
+        if not self.db:
+            return
+        
+        try:
+            # Recompensas baseadas em milestones de streak
+            rewards = {
+                7: {"badge": "🔥 Semana de Fogo", "money": 1000, "xp": 500},
+                30: {"badge": "⭐ Dedicação Mensal", "money": 5000, "xp": 2500},
+                90: {"badge": "💎 Trimestre Diamante", "money": 20000, "xp": 10000},
+                180: {"badge": "👑 Semestre Real", "money": 50000, "xp": 25000},
+                365: {"badge": "🏆 Ano Épico", "money": 100000, "xp": 50000}
+            }
+            
+            if streak_count in rewards:
+                reward = rewards[streak_count]
+                
+                # Adicionar badge
+                if "badge" in reward:
+                    badge_name = reward["badge"]
+                    await self.db.add_badge(
+                        user_id, 
+                        guild_id,
+                        badge_name,
+                        f"Obtida por {streak_count} dias de streak consecutivo!",
+                        "🔥"
+                    )
+                
+                # Adicionar dinheiro (se o sistema de economia existir)
+                if "money" in reward:
+                    try:
+                        async with self.db.execute(
+                            "UPDATE economy SET balance = balance + ? WHERE user_id = ? AND guild_id = ?",
+                            (reward["money"], user_id, guild_id)
+                        ):
+                            await self.db.commit()
+                    except:
+                        pass
+                
+                # Adicionar XP bonus
+                if "xp" in reward:
+                    await self.db.update_user_xp(user_id, guild_id, reward["xp"])
+                
+                # Notificar utilizador (via DM ou canal)
+                self.bot.logger.info(f"Streak reward given to {user_id}: {streak_count} days")
+                
+        except Exception as e:
+            self.bot.logger.error(f"Erro ao dar recompensa de streak: {e}")
+    
+    @app_commands.command(name="amigos", description="Gerenciar a tua lista de amigos")
+    @app_commands.describe(acao="Ação a realizar", utilizador="Utilizador alvo")
+    @app_commands.choices(acao=[
+        app_commands.Choice(name="📋 Ver lista de amigos", value="list"),
+        app_commands.Choice(name="➕ Adicionar amigo", value="add"),
+        app_commands.Choice(name="➖ Remover amigo", value="remove"),
+        app_commands.Choice(name="📬 Pedidos pendentes", value="pending")
+    ])
+    async def friends(
+        self, 
+        interaction: discord.Interaction, 
+        acao: str,
+        utilizador: Optional[discord.Member] = None
+    ):
+        """Sistema de amizades/friend list"""
+        if not self.db:
+            await interaction.response.send_message("❌ Database não disponível!", ephemeral=True)
+            return
+        
+        user_id = str(interaction.user.id)
+        guild_id = str(interaction.guild.id)
+        
+        try:
+            if acao == "list":
+                # Ver lista de amigos
+                async with self.db.execute(
+                    """SELECT friend_id, created_at FROM friendships 
+                       WHERE user_id = ? AND guild_id = ? AND status = 'accepted'""",
+                    (user_id, guild_id)
+                ) as cursor:
+                    friends = await cursor.fetchall()
+                
+                if not friends:
+                    await interaction.response.send_message(
+                        "😢 Ainda não tens amigos adicionados! Usa `/amigos add @utilizador` para adicionar.",
+                        ephemeral=True
+                    )
+                    return
+                
+                embed = discord.Embed(
+                    title=f"👥 Amigos de {interaction.user.display_name}",
+                    description=f"Total: {len(friends)} amigo(s)",
+                    color=discord.Color.blue()
+                )
+                
+                for friend_id, created_at in friends:
+                    member = interaction.guild.get_member(int(friend_id))
+                    if member:
+                        date = datetime.fromisoformat(created_at).strftime("%d/%m/%Y")
+                        embed.add_field(
+                            name=member.display_name,
+                            value=f"Amigos desde: {date}",
+                            inline=False
+                        )
+                
+                await interaction.response.send_message(embed=embed)
+            
+            elif acao == "add":
+                if not utilizador:
+                    await interaction.response.send_message(
+                        "❌ Precisas especificar um utilizador!",
+                        ephemeral=True
+                    )
+                    return
+                
+                if utilizador == interaction.user:
+                    await interaction.response.send_message(
+                        "❌ Não podes adicionar-te a ti mesmo!",
+                        ephemeral=True
+                    )
+                    return
+                
+                friend_id = str(utilizador.id)
+                
+                # Verificar se já são amigos ou se já existe pedido
+                async with self.db.execute(
+                    """SELECT status FROM friendships 
+                       WHERE user_id = ? AND friend_id = ? AND guild_id = ?""",
+                    (user_id, friend_id, guild_id)
+                ) as cursor:
+                    existing = await cursor.fetchone()
+                
+                if existing:
+                    if existing[0] == "accepted":
+                        await interaction.response.send_message(
+                            f"❌ Já és amigo de {utilizador.display_name}!",
+                            ephemeral=True
+                        )
+                    else:
+                        await interaction.response.send_message(
+                            f"⏳ Já enviaste um pedido de amizade para {utilizador.display_name}!",
+                            ephemeral=True
+                        )
+                    return
+                
+                # Criar pedido de amizade
+                await self.db.execute(
+                    """INSERT OR IGNORE INTO friendships (user_id, friend_id, guild_id, status, created_at)
+                       VALUES (?, ?, ?, 'pending', ?)""",
+                    (user_id, friend_id, guild_id, datetime.utcnow().isoformat())
+                )
+                await self.db.commit()
+                
+                # Tentar notificar o utilizador
+                try:
+                    await utilizador.send(
+                        f"👋 **{interaction.user.display_name}** enviou-te um pedido de amizade em **{interaction.guild.name}**!\n"
+                        f"Usa `/amigos pending` para aceitar ou rejeitar."
+                    )
+                except:
+                    pass
+                
+                await interaction.response.send_message(
+                    f"✅ Pedido de amizade enviado para {utilizador.display_name}!",
+                    ephemeral=True
+                )
+            
+            elif acao == "remove":
+                if not utilizador:
+                    await interaction.response.send_message(
+                        "❌ Precisas especificar um utilizador!",
+                        ephemeral=True
+                    )
+                    return
+                
+                friend_id = str(utilizador.id)
+                
+                # Remover amizade (ambas as direções)
+                await self.db.execute(
+                    """DELETE FROM friendships 
+                       WHERE ((user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?))
+                       AND guild_id = ?""",
+                    (user_id, friend_id, friend_id, user_id, guild_id)
+                )
+                await self.db.commit()
+                
+                await interaction.response.send_message(
+                    f"✅ {utilizador.display_name} foi removido da tua lista de amigos.",
+                    ephemeral=True
+                )
+            
+            elif acao == "pending":
+                # Ver pedidos pendentes
+                async with self.db.execute(
+                    """SELECT user_id, created_at FROM friendships 
+                       WHERE friend_id = ? AND guild_id = ? AND status = 'pending'""",
+                    (user_id, guild_id)
+                ) as cursor:
+                    requests = await cursor.fetchall()
+                
+                if not requests:
+                    await interaction.response.send_message(
+                        "📭 Não tens pedidos de amizade pendentes!",
+                        ephemeral=True
+                    )
+                    return
+                
+                embed = discord.Embed(
+                    title="📬 Pedidos de Amizade Pendentes",
+                    description=f"Tens {len(requests)} pedido(s) pendente(s)",
+                    color=discord.Color.orange()
+                )
+                
+                for requester_id, created_at in requests:
+                    member = interaction.guild.get_member(int(requester_id))
+                    if member:
+                        date = datetime.fromisoformat(created_at).strftime("%d/%m/%Y %H:%M")
+                        embed.add_field(
+                            name=member.display_name,
+                            value=f"Recebido em: {date}\nID: {requester_id}",
+                            inline=False
+                        )
+                
+                embed.set_footer(text="Usa /amigos_aceitar ou /amigos_rejeitar para responder")
+                await interaction.response.send_message(embed=embed)
+                
+        except Exception as e:
+            self.bot.logger.error(f"Erro no sistema de amigos: {e}")
+            await interaction.response.send_message("❌ Erro ao processar pedido!", ephemeral=True)
+    
+    @app_commands.command(name="amigos_aceitar", description="Aceitar um pedido de amizade")
+    @app_commands.describe(utilizador="Utilizador que enviou o pedido")
+    async def accept_friend(self, interaction: discord.Interaction, utilizador: discord.Member):
+        """Aceitar pedido de amizade"""
+        if not self.db:
+            await interaction.response.send_message("❌ Database não disponível!", ephemeral=True)
+            return
+        
+        user_id = str(interaction.user.id)
+        friend_id = str(utilizador.id)
+        guild_id = str(interaction.guild.id)
+        
+        try:
+            # Verificar se existe pedido pendente
+            async with self.db.execute(
+                """SELECT 1 FROM friendships 
+                   WHERE user_id = ? AND friend_id = ? AND guild_id = ? AND status = 'pending'""",
+                (friend_id, user_id, guild_id)
+            ) as cursor:
+                exists = await cursor.fetchone()
+            
+            if not exists:
+                await interaction.response.send_message(
+                    "❌ Não tens nenhum pedido pendente deste utilizador!",
+                    ephemeral=True
+                )
+                return
+            
+            # Atualizar status para accepted
+            await self.db.execute(
+                """UPDATE friendships SET status = 'accepted' 
+                   WHERE user_id = ? AND friend_id = ? AND guild_id = ?""",
+                (friend_id, user_id, guild_id)
+            )
+            
+            # Criar relação reversa (ambos são amigos)
+            await self.db.execute(
+                """INSERT OR IGNORE INTO friendships (user_id, friend_id, guild_id, status, created_at)
+                   VALUES (?, ?, ?, 'accepted', ?)""",
+                (user_id, friend_id, guild_id, datetime.utcnow().isoformat())
+            )
+            
+            await self.db.commit()
+            
+            # Notificar o outro utilizador
+            try:
+                await utilizador.send(
+                    f"🎉 **{interaction.user.display_name}** aceitou o teu pedido de amizade em **{interaction.guild.name}**!"
+                )
+            except:
+                pass
+            
+            await interaction.response.send_message(
+                f"✅ Agora és amigo de {utilizador.display_name}! 🎉",
+                ephemeral=True
+            )
+            
+        except Exception as e:
+            self.bot.logger.error(f"Erro ao aceitar amizade: {e}")
+            await interaction.response.send_message("❌ Erro ao aceitar pedido!", ephemeral=True)
+    
+    @app_commands.command(name="amigos_rejeitar", description="Rejeitar um pedido de amizade")
+    @app_commands.describe(utilizador="Utilizador que enviou o pedido")
+    async def reject_friend(self, interaction: discord.Interaction, utilizador: discord.Member):
+        """Rejeitar pedido de amizade"""
+        if not self.db:
+            await interaction.response.send_message("❌ Database não disponível!", ephemeral=True)
+            return
+        
+        user_id = str(interaction.user.id)
+        friend_id = str(utilizador.id)
+        guild_id = str(interaction.guild.id)
+        
+        try:
+            # Deletar pedido
+            await self.db.execute(
+                """DELETE FROM friendships 
+                   WHERE user_id = ? AND friend_id = ? AND guild_id = ? AND status = 'pending'""",
+                (friend_id, user_id, guild_id)
+            )
+            await self.db.commit()
+            
+            await interaction.response.send_message(
+                f"✅ Pedido de {utilizador.display_name} foi rejeitado.",
+                ephemeral=True
+            )
+            
+        except Exception as e:
+            self.bot.logger.error(f"Erro ao rejeitar amizade: {e}")
+            await interaction.response.send_message("❌ Erro ao rejeitar pedido!", ephemeral=True)
+    
+    async def check_and_award_achievements(self, user_id: str, guild_id: str):
+        """Sistema automático de badges por achievements"""
+        if not self.db:
+            return
+        
+        try:
+            # Buscar estatísticas do utilizador
+            async with self.db.execute(
+                """SELECT xp, level, reputation, messages_sent, daily_streak 
+                   FROM user_levels WHERE user_id = ? AND guild_id = ?""",
+                (user_id, guild_id)
+            ) as cursor:
+                user_data = await cursor.fetchone()
+            
+            if not user_data:
+                return
+            
+            xp, level, reputation, messages_sent, daily_streak = user_data
+            
+            # Lista de achievements a verificar
+            achievements = [
+                # Level milestones
+                (level >= 10, "level_10", "⭐ Nível 10", "Alcançou o nível 10!", "⭐"),
+                (level >= 25, "level_25", "🌟 Nível 25", "Alcançou o nível 25!", "🌟"),
+                (level >= 50, "level_50", "💫 Nível 50", "Alcançou o nível 50!", "💫"),
+                (level >= 100, "level_100", "✨ Nível 100", "Alcançou o nível 100 - Lendário!", "✨"),
+                
+                # Reputation milestones
+                (reputation >= 10, "rep_10", "👍 Popular", "Recebeu 10 likes!", "👍"),
+                (reputation >= 50, "rep_50", "❤️ Adorado", "Recebeu 50 likes!", "❤️"),
+                (reputation >= 100, "rep_100", "💖 Amado", "Recebeu 100 likes!", "💖"),
+                
+                # Message milestones
+                (messages_sent >= 100, "msg_100", "💬 Conversador", "Enviou 100 mensagens!", "💬"),
+                (messages_sent >= 1000, "msg_1000", "🗣️ Orador", "Enviou 1000 mensagens!", "🗣️"),
+                (messages_sent >= 10000, "msg_10000", "📢 Megafone", "Enviou 10000 mensagens!", "📢"),
+                
+                # Streak milestones
+                (daily_streak >= 7, "streak_7", "🔥 Semana de Fogo", "7 dias de streak!", "🔥"),
+                (daily_streak >= 30, "streak_30", "⭐ Dedicação Mensal", "30 dias de streak!", "⭐"),
+                (daily_streak >= 90, "streak_90", "💎 Trimestre Diamante", "90 dias de streak!", "💎"),
+            ]
+            
+            # Verificar e adicionar badges
+            for condition, badge_id, name, description, emoji in achievements:
+                if condition:
+                    # Verificar se já tem a badge
+                    async with self.db.execute(
+                        """SELECT 1 FROM user_badges 
+                           WHERE user_id = ? AND guild_id = ? AND badge_id = ?""",
+                        (user_id, guild_id, badge_id)
+                    ) as cursor:
+                        has_badge = await cursor.fetchone()
+                    
+                    if not has_badge:
+                        # Adicionar badge
+                        await self.db.execute(
+                            """INSERT INTO user_badges 
+                               (user_id, guild_id, badge_id, badge_name, badge_description, badge_emoji)
+                               VALUES (?, ?, ?, ?, ?, ?)""",
+                            (user_id, guild_id, badge_id, name, description, emoji)
+                        )
+                        await self.db.commit()
+                        self.bot.logger.info(f"Badge '{name}' awarded to user {user_id}")
+        
+        except Exception as e:
+            self.bot.logger.error(f"Erro ao verificar achievements: {e}")
+    
+    @app_commands.command(name="casamento_upgrade", description="Fazer upgrade do anel de casamento")
+    @app_commands.describe(tier="Nível do anel desejado (1-5)")
+    @app_commands.choices(tier=[
+        app_commands.Choice(name="🥉 Bronze (Tier 1) - Grátis", value=1),
+        app_commands.Choice(name="🥈 Prata (Tier 2) - $50,000", value=2),
+        app_commands.Choice(name="🥇 Ouro (Tier 3) - $150,000", value=3),
+        app_commands.Choice(name="💎 Diamante (Tier 4) - $500,000", value=4),
+        app_commands.Choice(name="👑 Platina (Tier 5) - $1,000,000", value=5),
+    ])
+    async def marriage_upgrade(self, interaction: discord.Interaction, tier: int):
+        """Sistema de ring tier upgrades"""
+        if not self.db:
+            await interaction.response.send_message("❌ Database não disponível!", ephemeral=True)
+            return
+        
+        user_id = str(interaction.user.id)
+        guild_id = str(interaction.guild.id)
+        
+        # Preços dos tiers
+        tier_prices = {
+            1: 0,
+            2: 50000,
+            3: 150000,
+            4: 500000,
+            5: 1000000
+        }
+        
+        tier_names = {
+            1: "🥉 Bronze",
+            2: "🥈 Prata",
+            3: "🥇 Ouro",
+            4: "💎 Diamante",
+            5: "👑 Platina"
+        }
+        
+        try:
+            # Verificar se está casado
+            async with self.db.execute(
+                """SELECT id, ring_tier, user1_id, user2_id 
+                   FROM marriages 
+                   WHERE guild_id = ? AND (user1_id = ? OR user2_id = ?) AND status = 'active'""",
+                (guild_id, user_id, user_id)
+            ) as cursor:
+                marriage = await cursor.fetchone()
+            
+            if not marriage:
+                await interaction.response.send_message(
+                    "❌ Precisas estar casado para fazer upgrade do anel!",
+                    ephemeral=True
+                )
+                return
+            
+            marriage_id, current_tier, user1_id, user2_id = marriage
+            partner_id = user2_id if user1_id == user_id else user1_id
+            
+            if tier <= current_tier:
+                await interaction.response.send_message(
+                    f"❌ O teu anel já é {tier_names[current_tier]} ou superior!",
+                    ephemeral=True
+                )
+                return
+            
+            price = tier_prices[tier]
+            
+            # Verificar se tem dinheiro
+            async with self.db.execute(
+                "SELECT balance FROM economy WHERE user_id = ? AND guild_id = ?",
+                (user_id, guild_id)
+            ) as cursor:
+                economy_data = await cursor.fetchone()
+            
+            if not economy_data or economy_data[0] < price:
+                await interaction.response.send_message(
+                    f"❌ Precisas de **${price:,}** para fazer upgrade para {tier_names[tier]}!\n"
+                    f"Tens apenas **${economy_data[0]:,}** disponíveis." if economy_data else "❌ Não tens dinheiro suficiente!",
+                    ephemeral=True
+                )
+                return
+            
+            # Fazer upgrade
+            await self.db.execute(
+                "UPDATE marriages SET ring_tier = ? WHERE id = ?",
+                (tier, marriage_id)
+            )
+            
+            # Deduzir dinheiro
+            await self.db.execute(
+                "UPDATE economy SET balance = balance - ? WHERE user_id = ? AND guild_id = ?",
+                (price, user_id, guild_id)
+            )
+            
+            await self.db.commit()
+            
+            partner = interaction.guild.get_member(int(partner_id))
+            partner_mention = partner.mention if partner else "o teu parceiro"
+            
+            embed = discord.Embed(
+                title="💍 Upgrade de Anel Realizado!",
+                description=f"{interaction.user.mention} fez upgrade do anel de casamento com {partner_mention}!",
+                color=discord.Color.gold()
+            )
+            
+            embed.add_field(name="Tier Anterior", value=tier_names[current_tier], inline=True)
+            embed.add_field(name="Novo Tier", value=tier_names[tier], inline=True)
+            embed.add_field(name="Custo", value=f"${price:,}", inline=True)
+            
+            await interaction.response.send_message(embed=embed)
+            
+            # Notificar parceiro
+            if partner:
+                try:
+                    await partner.send(
+                        f"💍 {interaction.user.display_name} fez upgrade do vosso anel de casamento para {tier_names[tier]}!"
+                    )
+                except:
+                    pass
+        
+        except Exception as e:
+            self.bot.logger.error(f"Erro no upgrade de casamento: {e}")
+            await interaction.response.send_message("❌ Erro ao fazer upgrade!", ephemeral=True)
+    
+    @commands.Cog.listener()
+    async def on_marriage_anniversary(self):
+        """Verificar aniversários de casamento diariamente"""
+        if not self.db:
+            return
+        
+        try:
+            # Buscar todos os casamentos ativos
+            async with self.db.execute(
+                """SELECT id, guild_id, user1_id, user2_id, married_at, anniversary_count 
+                   FROM marriages WHERE status = 'active'"""
+            ) as cursor:
+                marriages = await cursor.fetchall()
+            
+            today = datetime.utcnow().date()
+            
+            for marriage_id, guild_id, user1_id, user2_id, married_at, anniversary_count in marriages:
+                married_date = datetime.fromisoformat(married_at).date()
+                
+                # Verificar se é aniversário (mesmo dia e mês)
+                if married_date.day == today.day and married_date.month == today.month:
+                    years = today.year - married_date.year
+                    
+                    if years > anniversary_count:
+                        # É um novo aniversário!
+                        await self.db.execute(
+                            "UPDATE marriages SET anniversary_count = ? WHERE id = ?",
+                            (years, marriage_id)
+                        )
+                        
+                        # Dar recompensas
+                        reward_money = years * 10000  # $10k por ano
+                        reward_xp = years * 1000
+                        
+                        for user_id in [user1_id, user2_id]:
+                            # Adicionar dinheiro
+                            await self.db.execute(
+                                """INSERT INTO economy (user_id, guild_id, balance)
+                                   VALUES (?, ?, ?)
+                                   ON CONFLICT(user_id, guild_id) 
+                                   DO UPDATE SET balance = balance + ?""",
+                                (user_id, guild_id, reward_money, reward_money)
+                            )
+                            
+                            # Adicionar XP
+                            await self.db.execute(
+                                """UPDATE user_levels SET xp = xp + ? 
+                                   WHERE user_id = ? AND guild_id = ?""",
+                                (reward_xp, user_id, guild_id)
+                            )
+                            
+                            # Adicionar badge de aniversário
+                            badge_name = f"💕 {years}º Aniversário"
+                            await self.db.execute(
+                                """INSERT OR IGNORE INTO user_badges 
+                                   (user_id, guild_id, badge_id, badge_name, badge_description, badge_emoji)
+                                   VALUES (?, ?, ?, ?, ?, ?)""",
+                                (user_id, guild_id, f"anniversary_{years}", badge_name, 
+                                 f"Celebrou {years} ano(s) de casamento!", "💕")
+                            )
+                        
+                        await self.db.commit()
+                        
+                        # Notificar o casal
+                        guild = self.bot.get_guild(int(guild_id))
+                        if guild:
+                            user1 = guild.get_member(int(user1_id))
+                            user2 = guild.get_member(int(user2_id))
+                            
+                            message = (
+                                f"🎉 **Feliz {years}º Aniversário de Casamento!** 🎉\n\n"
+                                f"{user1.mention if user1 else 'Utilizador 1'} ❤️ {user2.mention if user2 else 'Utilizador 2'}\n\n"
+                                f"**Recompensas:**\n"
+                                f"💰 ${reward_money:,} cada\n"
+                                f"⭐ {reward_xp:,} XP cada\n"
+                                f"🏅 Badge '{badge_name}'"
+                            )
+                            
+                            # Tentar enviar DMs
+                            for user in [user1, user2]:
+                                if user:
+                                    try:
+                                        await user.send(message)
+                                    except:
+                                        pass
+        
+        except Exception as e:
+            self.bot.logger.error(f"Erro ao verificar aniversários: {e}")
+    
+    @app_commands.command(name="atividade", description="Ver gráfico de atividade (mensagens/XP)")
+    @app_commands.describe(
+        utilizador="Utilizador para ver atividade (opcional)",
+        periodo="Período de tempo"
+    )
+    @app_commands.choices(periodo=[
+        app_commands.Choice(name="📅 Última Semana (7 dias)", value="7"),
+        app_commands.Choice(name="📆 Último Mês (30 dias)", value="30"),
+        app_commands.Choice(name="📊 Últimos 3 Meses (90 dias)", value="90"),
+    ])
+    async def activity_chart(
+        self,
+        interaction: discord.Interaction,
+        periodo: str = "7",
+        utilizador: Optional[discord.Member] = None
+    ):
+        """Ver gráficos de atividade (texto simples - ASCII art)"""
+        if not self.db:
+            await interaction.response.send_message("❌ Database não disponível!", ephemeral=True)
+            return
+        
+        await interaction.response.defer()
+        
+        target = utilizador or interaction.user
+        user_id = str(target.id)
+        guild_id = str(interaction.guild.id)
+        days = int(periodo)
+        
+        try:
+            # Buscar dados de atividade
+            async with self.db.execute(
+                """SELECT date, message_count, xp_gained 
+                   FROM message_stats 
+                   WHERE user_id = ? AND guild_id = ? 
+                   AND date >= date('now', ?)
+                   ORDER BY date ASC""",
+                (user_id, guild_id, f'-{days} days')
+            ) as cursor:
+                stats = await cursor.fetchall()
+            
+            if not stats:
+                await interaction.followup.send(
+                    f"📊 {target.display_name} não tem dados de atividade no período selecionado.",
+                    ephemeral=True
+                )
+                return
+            
+            # Criar gráfico ASCII
+            max_messages = max(row[1] for row in stats) if stats else 1
+            max_xp = max(row[2] for row in stats) if stats else 1
+            
+            embed = discord.Embed(
+                title=f"📊 Atividade de {target.display_name}",
+                description=f"Últimos {days} dias",
+                color=discord.Color.blue()
+            )
+            
+            embed.set_thumbnail(url=target.display_avatar.url)
+            
+            # Gráfico de mensagens (ASCII bar chart)
+            messages_chart = ""
+            for date, msg_count, xp in stats[-7:]:  # Últimos 7 dias para não ficar muito grande
+                bar_length = int((msg_count / max_messages) * 20) if max_messages > 0 else 0
+                bar = "█" * bar_length
+                messages_chart += f"`{date}` {bar} **{msg_count}** msgs\n"
+            
+            if messages_chart:
+                embed.add_field(
+                    name="📨 Mensagens por Dia",
+                    value=messages_chart or "Sem dados",
+                    inline=False
+                )
+            
+            # Estatísticas totais
+            total_messages = sum(row[1] for row in stats)
+            total_xp = sum(row[2] for row in stats)
+            avg_messages = total_messages // len(stats) if stats else 0
+            
+            embed.add_field(name="Total de Mensagens", value=f"**{total_messages:,}**", inline=True)
+            embed.add_field(name="Total de XP Ganho", value=f"**{total_xp:,}**", inline=True)
+            embed.add_field(name="Média/Dia", value=f"**{avg_messages}** msgs", inline=True)
+            
+            embed.set_footer(text=f"Período: {days} dias")
+            
+            await interaction.followup.send(embed=embed)
+            
+        except Exception as e:
+            self.bot.logger.error(f"Erro ao gerar gráfico de atividade: {e}")
+            await interaction.followup.send("❌ Erro ao gerar gráfico!", ephemeral=True)
 
 
 async def setup(bot):
