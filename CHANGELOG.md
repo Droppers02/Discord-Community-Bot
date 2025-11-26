@@ -4,6 +4,75 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [2.7.1] - 2025-11-26
+
+### 🛡️ Sistema de Moderação Avançado
+
+**Anti-Spam com Whitelist de Canais**
+
+- ✅ **Deteção Inteligente de Spam**
+  - Limite de mensagens por intervalo de tempo (configurável)
+  - Deteção de mensagens duplicadas/idênticas
+  - Sistema de warnings acumulativos
+  - Auto-delete de mensagens de spam
+  - Bypass automático para moderadores
+
+- ✅ **Whitelist de Canais**
+  - Adicionar/remover canais onde spam é permitido
+  - Comando `/setup_antispam` com ações: add, remove, list
+  - Configuração por canal (não global)
+
+**Anti-Raid Protection**
+
+- ✅ **Monitoramento de Joins Suspeitos**
+  - Threshold configurável (X membros em Y segundos)
+  - Ação automática quando raid é detetado (kick por padrão)
+  - Logs detalhados com timestamps dos joins
+  - Limpeza automática da lista após deteção
+
+- ✅ **Configuração Flexível**
+  - Comando `/setup_antiraid` para ajustar thresholds
+  - Intervalo de tempo personalizável
+  - Sistema ativa automaticamente ao detetar padrões
+
+**NSFW Detection**
+
+- ✅ **Análise de Imagens com IA**
+  - Integração com DeepAI API
+  - Confidence threshold ajustável (0.0-1.0)
+  - Suporte para: PNG, JPG, JPEG, GIF, WEBP
+  - Ações automáticas: delete, warn, timeout, kick
+
+- ✅ **Whitelist de Canais NSFW**
+  - Permitir conteúdo NSFW em canais específicos
+  - Comando `/setup_nsfw` com gestão de whitelist
+  - API key configurável via comando
+
+**Comandos Adicionados**
+
+- `/setup_antispam [enable] [channel] [action]` - Configurar anti-spam e whitelist
+- `/setup_antiraid [enable] [threshold] [interval]` - Configurar proteção anti-raid
+- `/setup_nsfw [enable] [channel] [action] [api_key]` - Configurar deteção NSFW
+
+**Melhorias na Configuração**
+
+- ✅ Config JSON expandido com novas opções:
+  - `anti_spam`: message_threshold, time_window, duplicate_threshold, whitelisted_channels
+  - `anti_raid`: join_threshold, time_window, action, lockdown_duration
+  - `nsfw_detection`: api_key, confidence_threshold, whitelisted_channels, action
+
+- ✅ Todas as features suportam configuração por canal
+- ✅ Logs detalhados enviados para canal de moderação
+- ✅ Sistema integrado nos listeners `on_message` e `on_member_join`
+
+### 🌍 Tradução para Inglês
+
+- ✅ Todos os novos comandos traduzidos no branch `en`
+- ✅ Descrições e mensagens em inglês
+- ✅ Help atualizado em ambas as versões (PT e EN)
+
+---
+
 ## [2.7.0] - 2025-11-24
 
 ### 🌍 Internacionalização

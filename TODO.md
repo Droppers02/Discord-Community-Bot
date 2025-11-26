@@ -94,10 +94,14 @@ Lista de tarefas, melhorias e correções planeadas para versões futuras.
 - [x] Filtro de palavras proibidas
 - [x] Sistema de quarentena para novos membros
 - [x] Subcomandos /clear (quantidade, apartir, intervalo)
-- [ ] Sistema de auto-moderação (anti-spam, anti-raid)
+- [x] Sistema de auto-moderação (anti-spam, anti-raid)
+- [x] Anti-spam com whitelist de canais
+- [x] Anti-raid com monitoramento de joins
+- [x] Moderação de imagens (NSFW detection via DeepAI)
+- [x] Configuração por canal (whitelists)
 - [ ] Detecção de links maliciosos/phishing
 - [ ] Sistema de strikes (3 strikes = ban automático)
-- [ ] Moderação de imagens (NSFW detection)
+- [ ] Auto-mute em menção em massa (@everyone/@here spam)
 - [ ] Auto-slowmode em raids
 - [ ] Backup automático de roles ao banir (restaurar ao desbanir)
 

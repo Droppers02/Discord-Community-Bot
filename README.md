@@ -31,14 +31,14 @@ Bot Discord completo com sistema de economia, jogos, música, moderação, ticke
 
 ### 🎮 Sistemas Principais
 
-- **💰 Economia Avançada** - Moedas, loja, custom roles, trading, leilões, achievements, eventos especiais
-- **🎲 Jogos** - Jogos interativos (blackjack, slots, crash, coinflip, etc.)
-- **🎵 Música** - Player de música com fila e controles
-- **⭐ Social Avançado** - XP, níveis, perfis customizáveis, badges, casamentos, streaks e histórico
-- **🎫 Tickets** - Sistema profissional de suporte com categorias e gestão
-- **🛡️ Moderação** - Sistema avançado com logs, filtro de palavras, quarentena, appeals e timeout presets
-- **📊 Monitoramento** - Status do bot, servidor e utilizadores
-- **🔧 Utilidades Avançadas** - Lembretes, Polls, Anúncios, Auto-roles (3 painéis), Verificação 2FA
+- **💰 Advanced Economy** - Coins, shop, custom roles, trading, auctions, achievements, special events
+- **🎲 Games** - Interactive games (blackjack, slots, crash, coinflip, etc.)
+- **🎵 Music** - Music player with queue and controls
+- **⭐ Advanced Social** - XP, levels, customizable profiles, badges, marriages, streaks and history
+- **🎫 Tickets** - Professional support system with categories and management
+- **🛡️ Moderation** - Advanced system with logs, word filter, quarantine, appeals, anti-spam, anti-raid and NSFW detection
+- **📊 Monitoring** - Bot, server and user status
+- **🔧 Advanced Utilities** - Reminders, Polls, Announcements, Auto-roles (3 panels), 2FA Verification
 
 ### 🚀 Funcionalidades Avançadas
 
@@ -646,17 +646,40 @@ O bot possui um sistema social completo com XP, níveis, perfis customizáveis, 
 - Duração configurável em minutos
 - Remoção automática após tempo definido
 
-**Sistema de Appeals:**
+**Appeals System:**
 
 ```
-/setup_appeals <ativar> [#canal] - Configurar appeals
-/appeal <servidor_id> <motivo>   - Pedir unban (DM)
+/setup_appeals <enable> [#channel] - Configure appeals
+/appeal <server_id> <reason>       - Request unban (DM)
 ```
 
-- Usuários banidos podem pedir revisão
-- Appeals enviados para canal específico
-- Processo organizado para moderação
+- Banned users can request review
+- Appeals sent to specific channel
+- Organized process for moderation
 
+**Auto-Moderation:**
+
+```
+/setup_antispam [enable] [channel] [action]          - Anti-spam with channel whitelist
+/setup_antiraid [enable] [threshold] [interval]      - Anti-raid protection
+/setup_nsfw [enable] [channel] [action] [api_key]    - NSFW detection (DeepAI)
+```
+
+- **Anti-Spam**: Spam detection by rapid messages and duplicates
+  - Channel whitelist (add/remove/list)
+  - Configurable message threshold
+  - Automatic actions: warn, timeout, kick
+  
+- **Anti-Raid**: Suspicious join monitoring
+  - Configurable threshold (X members in Y seconds)
+  - Automatic action when raid detected
+  - Detailed logs with timestamps
+
+- **NSFW Detection**: AI-powered image analysis
+  - DeepAI API integration
+  - Whitelist for NSFW-allowed channels
+  - Adjustable confidence threshold
+  - Actions: delete, warn, timeout, kick
 ### 📊 Monitoramento
 
 ```
