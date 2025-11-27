@@ -198,7 +198,21 @@ class HelpCog(commands.Cog):
             "• `/botinfo` - Info do bot",
             "• `/lembrete` - Criar lembrete",
             "• `/poll` - Criar votação",
-            "• `/anuncio` - [ADMIN] Agendar anúncio"
+            "• `/anuncio` - [ADMIN] Agendar anúncio",
+            "• `/suggest <texto>` - Criar sugestão",
+            "• `/approve_suggestion <id> [nota]` - [MOD] Aprovar sugestão",
+            "• `/deny_suggestion <id> <razão>` - [MOD] Recusar sugestão",
+            "• `/setup_suggestions <canal>` - [ADMIN] Configurar sistema de sugestões",
+            "• `/giveaway <duração> <vencedores> <prêmio>` - [MOD] Criar giveaway",
+            "• `/timestamp <data_hora> [estilo]` - Gerar timestamp do Discord",
+            "• `/note_add <título> <conteúdo> [tags]` - Adicionar nota",
+            "• `/notes [tag]` - Listar notas pessoais",
+            "• `/note_view <id>` - Ver nota completa",
+            "• `/note_delete <id>` - Apagar nota",
+            "• `/voicestats [membro]` - Estatísticas de tempo em voz",
+            "• `/voiceleaderboard` - Top 10 tempo em voz",
+            "• `/setup_starboard <canal> [threshold] [emoji] [self_star]` - [ADMIN] Configurar Starboard",
+            "• `/afk [razão]` - Definir status AFK"
         ]
         embed3.add_field(name="🔧 **Utilidades**", value="\n".join(utility_commands), inline=False)
         
@@ -238,7 +252,15 @@ class HelpCog(commands.Cog):
             "• `/setup_antispam` - Anti-spam com whitelist",
             "• `/setup_antiraid` - Proteção anti-raid",
             "• `/setup_nsfw` - Detecção de NSFW",
-            "• `/setup_appeals` - Sistema de appeals"
+            "• `/setup_appeals` - Sistema de appeals",
+            "• `/setup_linkfilter` - Filtro de links maliciosos",
+            "• `/setup_strikes` - Configurar sistema de strikes",
+            "• `/setup_mentionspam` - Proteção contra mention spam",
+            "• `/setup_slowmode` - Auto-slowmode",
+            "• `/setup_rolebackup` - Backup/restauro de roles",
+            "• `/strike <membro> <motivo>` - Adicionar strike",
+            "• `/strikes [membro]` - Ver strikes",
+            "• `/clearstrikes <membro>` - Limpar strikes"
         ]
         embed4.add_field(name="🔧 **Moderação Avançada**", value="\n".join(moderation_advanced), inline=False)
         
