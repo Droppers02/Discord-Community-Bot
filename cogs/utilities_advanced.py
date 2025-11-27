@@ -922,6 +922,12 @@ class UtilitiesAdvanced(commands.Cog):
                 except Exception as e:
                     bot_logger.error(f"Erro ao enviar anúncio: {e}")
                     completed.append(announcement)
+        
+        # Remover anúncios completados da lista
+        for announcement in completed:
+            if announcement in self.scheduled_announcements:
+                self.scheduled_announcements.remove(announcement)
+        
         if completed:
             self.save_announcements()
     
