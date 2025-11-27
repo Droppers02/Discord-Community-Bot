@@ -185,7 +185,13 @@ class HelpCog(commands.Cog):
             "• `/skip` - Próxima música",
             "• `/stop` - Parar e limpar fila",
             "• `/queue` - Ver fila",
-            "• `/nowplaying` - Música atual"
+            "• `/nowplaying` - Música atual",
+            "• `/voteskip` - Votar para pular música",
+            "• `/letra` - Mostrar letra da música",
+            "• `/playlist_create <nome>` - Criar playlist",
+            "• `/playlist_add <nome> <url>` - Adicionar à playlist",
+            "• `/playlist_play <nome>` - Tocar playlist",
+            "• `/playlist_list` - Listar playlists"
         ]
         embed3.add_field(name="🎵 **Música**", value="\n".join(music_commands), inline=False)
         
