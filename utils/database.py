@@ -484,6 +484,179 @@ class Database:
             await db.execute("CREATE INDEX IF NOT EXISTS idx_strikes_active ON moderation_strikes(is_active, expires_at)")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_role_backups_user ON role_backups(user_id, guild_id)")
             
+            # ===== SISTEMA DE UTILIDADES AVANÇADO =====
+            
+            # Tabela de sugestões da comunidade
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS suggestions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    guild_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    channel_id TEXT NOT NULL,
+                    message_id TEXT UNIQUE NOT NULL,
+                    suggestion TEXT NOT NULL,
+                    status TEXT DEFAULT 'pending',
+                    upvotes INTEGER DEFAULT 0,
+                    downvotes INTEGER DEFAULT 0,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    reviewed_by TEXT,
+                    reviewed_at TEXT,
+                    review_note TEXT
+                )
+            """)
+            
+            # Tabela de votos em sugestões
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS suggestion_votes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    suggestion_id INTEGER NOT NULL,
+                    user_id TEXT NOT NULL,
+                    vote_type TEXT NOT NULL,
+                    voted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (suggestion_id) REFERENCES suggestions(id),
+                    UNIQUE(suggestion_id, user_id)
+                )
+            """)
+            
+            # Tabela de giveaways
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS giveaways (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    guild_id TEXT NOT NULL,
+                    channel_id TEXT NOT NULL,
+                    message_id TEXT UNIQUE NOT NULL,
+                    host_id TEXT NOT NULL,
+                    prize TEXT NOT NULL,
+                    winners_count INTEGER DEFAULT 1,
+                    requirements TEXT,
+                    entries TEXT,
+                    ends_at TEXT NOT NULL,
+                    status TEXT DEFAULT 'active',
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    ended_at TEXT
+                )
+            """)
+            
+            # Tabela de participantes em giveaways
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS giveaway_entries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    giveaway_id INTEGER NOT NULL,
+                    user_id TEXT NOT NULL,
+                    entries INTEGER DEFAULT 1,
+                    joined_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (giveaway_id) REFERENCES giveaways(id),
+                    UNIQUE(giveaway_id, user_id)
+                )
+            """)
+            
+            # Tabela de notas pessoais privadas
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS personal_notes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    guild_id TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    tags TEXT,
+                    pinned INTEGER DEFAULT 0,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # Tabela de contador de voz (voice tracker)
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS voice_stats (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    guild_id TEXT NOT NULL,
+                    channel_id TEXT NOT NULL,
+                    join_time TEXT NOT NULL,
+                    leave_time TEXT,
+                    duration INTEGER DEFAULT 0,
+                    date TEXT NOT NULL,
+                    UNIQUE(user_id, guild_id, join_time)
+                )
+            """)
+            
+            # Tabela de totais de voz (agregado)
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS voice_totals (
+                    user_id TEXT,
+                    guild_id TEXT,
+                    total_time INTEGER DEFAULT 0,
+                    sessions_count INTEGER DEFAULT 0,
+                    last_session TEXT,
+                    PRIMARY KEY (user_id, guild_id)
+                )
+            """)
+            
+            # Tabela de starboard (mensagens favoritas)
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS starboard (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    guild_id TEXT NOT NULL,
+                    message_id TEXT UNIQUE NOT NULL,
+                    channel_id TEXT NOT NULL,
+                    author_id TEXT NOT NULL,
+                    starboard_message_id TEXT,
+                    star_count INTEGER DEFAULT 0,
+                    content TEXT,
+                    attachment_urls TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    starred_at TEXT
+                )
+            """)
+            
+            # Tabela de reações de star
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS starboard_stars (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    starboard_id INTEGER NOT NULL,
+                    user_id TEXT NOT NULL,
+                    starred_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (starboard_id) REFERENCES starboard(id),
+                    UNIQUE(starboard_id, user_id)
+                )
+            """)
+            
+            # Tabela de configuração do starboard
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS starboard_config (
+                    guild_id TEXT PRIMARY KEY,
+                    channel_id TEXT,
+                    star_threshold INTEGER DEFAULT 3,
+                    emoji TEXT DEFAULT '⭐',
+                    enabled INTEGER DEFAULT 1,
+                    self_star INTEGER DEFAULT 0,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # Tabela de sistema AFK
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS afk_status (
+                    user_id TEXT,
+                    guild_id TEXT,
+                    reason TEXT,
+                    set_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (user_id, guild_id)
+                )
+            """)
+            
+            # Índices para utilidades
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_suggestions_guild ON suggestions(guild_id, status)")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_suggestions_user ON suggestions(user_id)")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_giveaways_status ON giveaways(status, ends_at)")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_giveaways_guild ON giveaways(guild_id)")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_notes_user ON personal_notes(user_id, guild_id)")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_voice_user ON voice_stats(user_id, guild_id)")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_voice_date ON voice_stats(guild_id, date)")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_starboard_guild ON starboard(guild_id, star_count)")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_starboard_msg ON starboard(message_id)")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_afk_guild ON afk_status(guild_id)")
+            
             await db.commit()
             self.logger.info("✅ Base de dados inicializada com sucesso")
     

@@ -4,6 +4,222 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [2.8.0] - 2025-11-27
+
+### 🔧 Sistema de Utilidades - Expansão Completa
+
+**Sistema de Sugestões da Comunidade**
+
+- ✅ **Sugestões com Upvote/Downvote**
+
+  - Comando `/suggest <sugestão>` para criar sugestões
+  - Sistema automático de reações (👍/👎)
+  - Canal dedicado para sugestões
+  - Status: Pendente, Aprovada, Recusada
+  - Notificações em DM para autores
+
+- ✅ **Gestão de Sugestões (Moderadores)**
+  - `/approve_suggestion <id> [nota]` - Aprovar sugestão
+  - `/deny_suggestion <id> <razão>` - Recusar sugestão
+  - `/setup_suggestions <canal>` - Configurar sistema
+  - Histórico completo em base de dados
+
+**Sistema de Giveaways Automatizado**
+
+- ✅ **Giveaways com Requisitos**
+
+  - `/giveaway <duração> <vencedores> <prêmio> [requisitos]`
+  - Seleção automática de vencedores aleatórios
+  - Reação 🎉 para participar
+  - Contagem regressiva com timestamps do Discord
+  - Requisitos personalizáveis opcionais
+  - Anúncio automático dos vencedores
+
+- ✅ **Funcionalidades Avançadas**
+  - Múltiplos vencedores possíveis
+  - Término automático após duração
+  - Notificações para vencedores
+  - Histórico de giveaways em database
+
+**Comandos de Timestamp**
+
+- ✅ **Gerador de Timestamps do Discord**
+  - `/timestamp <data_hora> [estilo]` - Gerar timestamp
+  - 7 estilos disponíveis:
+    - Data e Hora Curta (16:20)
+    - Data e Hora Longa (16:20:30)
+    - Data Curta (20/04/2021)
+    - Data Longa (20 Abril 2021)
+    - Relativo (há 2 meses)
+    - Data e Hora Completa
+    - Dia da Semana, Data
+  - Formato: DD/MM/YYYY HH:MM
+  - Preview automático do resultado
+
+**Sistema de Notas Pessoais**
+
+- ✅ **Notas Privadas por Usuário**
+  - `/note_add <título> <conteúdo> [tags]` - Criar nota
+  - `/notes [tag]` - Listar notas (filtro por tag opcional)
+  - `/note_view <id>` - Ver nota completa
+  - `/note_delete <id>` - Apagar nota
+  - Sistema de tags para organização
+  - Notas privadas (apenas visível para o autor)
+  - Suporte para notas fixadas (pin)
+
+**Contador de Membros em Voz**
+
+- ✅ **Voice Tracker Completo**
+
+  - Rastreamento automático de tempo em canais de voz
+  - Estatísticas por usuário:
+    - Tempo total em voz
+    - Número de sessões
+    - Média por sessão
+    - Última sessão
+  - Histórico de sessões por data
+  - Tempo mínimo configurável (padrão: 60s)
+  - Mudanças de canal rastreadas separadamente
+
+- ✅ **Comandos de Estatísticas**
+  - `/voicestats [membro]` - Ver estatísticas individuais
+  - `/voiceleaderboard` - Top 10 usuários por tempo
+  - Dados persistentes em database
+  - Formato legível (horas, minutos)
+
+**Starboard (Hall da Fama)**
+
+- ✅ **Sistema de Mensagens Favoritas**
+
+  - Mensagens com X⭐ vão para canal especial
+  - Threshold configurável (padrão: 3 reações)
+  - Emoji personalizável
+  - Contador de stars atualizado em tempo real
+  - Preservação de imagens e anexos
+  - Link direto para mensagem original
+
+- ✅ **Configuração do Starboard**
+  - `/setup_starboard <canal> [threshold] [emoji] [self_star]`
+  - Permitir/bloquear self-starring
+  - Atualização automática de contadores
+  - Embeds bonitos no canal starboard
+
+**Sistema AFK**
+
+- ✅ **Status AFK Automático**
+  - `/afk [razão]` - Definir status AFK
+  - Auto-resposta quando mencionado
+  - Remoção automática ao enviar mensagem
+  - Contagem de tempo AFK
+  - Notificações temporárias (auto-delete)
+  - Razão personalizada opcional
+
+### 🗄️ Base de Dados - Novas Tabelas
+
+- `suggestions` - Sugestões da comunidade
+- `suggestion_votes` - Votos em sugestões
+- `giveaways` - Giveaways ativos/terminados
+- `giveaway_entries` - Participantes em giveaways
+- `personal_notes` - Notas pessoais privadas
+- `voice_stats` - Histórico de sessões de voz
+- `voice_totals` - Totais agregados de voz
+- `starboard` - Mensagens no starboard
+- `starboard_stars` - Reações de star individuais
+- `starboard_config` - Configuração do starboard
+- `afk_status` - Status AFK dos usuários
+
+### 📊 Índices de Performance
+
+- `idx_suggestions_guild` - Busca rápida por servidor
+- `idx_suggestions_user` - Busca por autor
+- `idx_giveaways_status` - Filtro por status/data
+- `idx_notes_user` - Notas por usuário
+- `idx_voice_user` - Estatísticas de voz
+- `idx_voice_date` - Histórico por data
+- `idx_starboard_guild` - Starboard por servidor
+- `idx_starboard_msg` - Busca por mensagem
+- `idx_afk_guild` - Status AFK por servidor
+
+### 📝 Novos Comandos (23 no total)
+
+**Sugestões:**
+
+- `/suggest` - Criar sugestão
+- `/approve_suggestion` - Aprovar (mod)
+- `/deny_suggestion` - Recusar (mod)
+- `/setup_suggestions` - Configurar canal
+
+**Giveaways:**
+
+- `/giveaway` - Criar giveaway (mod)
+
+**Timestamps:**
+
+- `/timestamp` - Gerar timestamp formatado
+
+**Notas:**
+
+- `/note_add` - Adicionar nota
+- `/notes` - Listar notas
+- `/note_view` - Ver nota completa
+- `/note_delete` - Apagar nota
+
+**Voz:**
+
+- `/voicestats` - Ver estatísticas
+- `/voiceleaderboard` - Top 10
+
+**Starboard:**
+
+- `/setup_starboard` - Configurar starboard
+
+**AFK:**
+
+- `/afk` - Definir status AFK
+
+### 🎯 Event Listeners Adicionados
+
+- `on_message` - Sistema AFK (detecção e remoção)
+- `on_raw_reaction_add` - Starboard (contagem de stars)
+- `on_voice_state_update` - Voice Tracker (join/leave/switch)
+
+### ⏱️ Tasks em Background
+
+- `check_giveaways` - Verificar término de giveaways (1 min)
+
+### 🔧 Ficheiros de Configuração
+
+**`config/utilities_config.json` - Novas Secções:**
+
+```json
+{
+  "suggestions": {
+    "channel_id": 0,
+    "review_role_id": 0,
+    "auto_approve": false,
+    "min_upvotes_auto_approve": 10
+  },
+  "starboard": {
+    "channel_id": 0,
+    "star_threshold": 3,
+    "emoji": "⭐",
+    "enabled": false,
+    "self_star": false
+  },
+  "giveaways": {
+    "default_duration": 86400,
+    "ping_role_id": 0
+  },
+  "voice_tracker": {
+    "enabled": true,
+    "leaderboard_channel": 0,
+    "min_session_time": 60
+  }
+}
+```
+
+---
+
 ## [2.7.2] - 2025-11-27
 
 ### 🛡️ Sistema de Moderação - Extensões Avançadas

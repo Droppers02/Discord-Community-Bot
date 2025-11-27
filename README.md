@@ -38,7 +38,7 @@ Bot Discord completo com sistema de economia, jogos, música, moderação, ticke
 - **🎫 Tickets** - Sistema profissional de suporte com categorias e gestão
 - **🛡️ Moderação** - Sistema avançado com logs, filtro de palavras, quarentena, appeals, anti-spam, anti-raid, NSFW detection, filtro de links, strikes, mention spam protection, auto-slowmode e role backup
 - **📊 Monitoramento** - Status do bot, servidor e utilizadores
-- **🔧 Utilidades Avançadas** - Lembretes, Polls, Anúncios, Auto-roles (3 painéis), Verificação 2FA
+- **🔧 Utilidades Avançadas** - Lembretes, Polls, Anúncios, Auto-roles (3 painéis), Verificação 2FA, Sistema de Sugestões, Giveaways Automatizados, Timestamps, Notas Pessoais, Voice Tracker, Starboard, Sistema AFK
 
 ### 🚀 Funcionalidades Avançadas
 
@@ -756,6 +756,20 @@ O bot possui um sistema social completo com XP, níveis, perfis customizáveis, 
 /anuncio                 - [ADMIN] Agendar anúncio
 /setup_autoroles         - [ADMIN] Configurar 3 painéis de roles
 /setup_verificacao       - [ADMIN] Sistema de verificação 2FA
+/suggest                 - Criar sugestão para a comunidade
+/approve_suggestion      - [MOD] Aprovar sugestão
+/deny_suggestion         - [MOD] Recusar sugestão
+/setup_suggestions       - [ADMIN] Configurar sistema de sugestões
+/giveaway                - [MOD] Criar giveaway automatizado
+/timestamp               - Gerar timestamp do Discord
+/note_add                - Adicionar nota pessoal privada
+/notes                   - Ver as tuas notas (filtro por tag)
+/note_view               - Ver nota completa
+/note_delete             - Apagar nota
+/voicestats              - Ver estatísticas de tempo em voz
+/voiceleaderboard        - Top 10 usuários por tempo em voz
+/setup_starboard         - [ADMIN] Configurar Starboard
+/afk                     - Definir status AFK
 ```
 
 ### 👑 Admin

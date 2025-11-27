@@ -47,5 +47,35 @@
   "messages": {
     "verification_welcome": "• Pega nas tuas roles em <#{autoroles_channel}>\n• Lê as regras do servidor\n• Diverte-te!",
     "_comment_messages": "Use {autoroles_channel} para referenciar o canal de auto-roles"
+  },
+  
+  "suggestions": {
+    "channel_id": 0,
+    "review_role_id": 0,
+    "auto_approve": false,
+    "min_upvotes_auto_approve": 10,
+    "_comment": "Sistema de sugestões da comunidade com upvote/downvote"
+  },
+  
+  "starboard": {
+    "channel_id": 0,
+    "star_threshold": 3,
+    "emoji": "⭐",
+    "enabled": false,
+    "self_star": false,
+    "_comment": "Starboard - mensagens com X reações vão para canal especial"
+  },
+  
+  "giveaways": {
+    "default_duration": 86400,
+    "ping_role_id": 0,
+    "_comment": "Sistema de giveaways automatizado (duração padrão em segundos)"
+  },
+  
+  "voice_tracker": {
+    "enabled": true,
+    "leaderboard_channel": 0,
+    "min_session_time": 60,
+    "_comment": "Contador de tempo em voz (min_session_time em segundos)"
   }
 }
