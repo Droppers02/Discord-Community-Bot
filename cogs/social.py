@@ -106,15 +106,17 @@ class SocialCog(commands.Cog):
             await self.db.update_streak(user_id, guild_id, "messages", 1)
             
             # Registrar estatísticas diárias para gráficos
+            import aiosqlite
             today = datetime.utcnow().date().isoformat()
-            await self.db.execute(
-                """INSERT INTO message_stats (user_id, guild_id, date, message_count, xp_gained)
-                   VALUES (?, ?, ?, 1, ?)
-                   ON CONFLICT(user_id, guild_id, date)
-                   DO UPDATE SET message_count = message_count + 1, xp_gained = xp_gained + ?""",
-                (user_id, guild_id, today, xp_gain, xp_gain)
-            )
-            await self.db.commit()
+            async with aiosqlite.connect(self.db.db_path) as db:
+                await db.execute(
+                    """INSERT INTO message_stats (user_id, guild_id, date, message_count, xp_gained)
+                       VALUES (?, ?, ?, 1, ?)
+                       ON CONFLICT(user_id, guild_id, date)
+                       DO UPDATE SET message_count = message_count + 1, xp_gained = xp_gained + ?""",
+                    (user_id, guild_id, today, xp_gain, xp_gain)
+                )
+                await db.commit()
             
             # Verificar e dar achievements
             await self.check_and_award_achievements(user_id, guild_id)
