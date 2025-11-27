@@ -890,20 +890,21 @@ class Database:
     async def update_user_level(self, user_id: str, guild_id: str, xp: int, level: int, increment_messages: bool = True):
         """Atualiza XP e nível de um utilizador"""
         async with aiosqlite.connect(self.db_path) as db:
+            timestamp = datetime.utcnow().isoformat()
             if increment_messages:
                 await db.execute("""
                     INSERT INTO user_levels (user_id, guild_id, xp, level, messages_sent, updated_at)
                     VALUES (?, ?, ?, ?, 1, ?)
                     ON CONFLICT(user_id, guild_id) 
                     DO UPDATE SET xp = ?, level = ?, messages_sent = messages_sent + 1, updated_at = ?
-                """, (user_id, guild_id, xp, level, datetime.utcnow().isoformat(), xp, level, datetime.utcnow().isoformat()))
+                """, (user_id, guild_id, xp, level, timestamp, xp, level, timestamp))
             else:
                 await db.execute("""
                     INSERT INTO user_levels (user_id, guild_id, xp, level, updated_at)
                     VALUES (?, ?, ?, ?, ?)
                     ON CONFLICT(user_id, guild_id) 
                     DO UPDATE SET xp = ?, level = ?, updated_at = ?
-                """, (user_id, guild_id, xp, level, datetime.utcnow().isoformat(), xp, level, datetime.utcnow().isoformat()))
+                """, (user_id, guild_id, xp, level, timestamp, xp, level, timestamp))
             await db.commit()
     
     async def get_leaderboard(self, guild_id: str, limit: int = 10) -> List[Dict]:

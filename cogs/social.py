@@ -99,6 +99,9 @@ class SocialCog(commands.Cog):
             # Calcular novo nível
             new_level = self.calculate_level(new_xp)
             
+            # Debug log
+            self.bot.logger.debug(f"XP Update - User {user_id}: old_level={old_level}, old_xp={old_xp}, xp_gain={xp_gain}, new_xp={new_xp}, new_level={new_level}")
+            
             # Atualizar na base de dados
             await self.db.update_user_level(user_id, guild_id, new_xp, new_level)
             
@@ -124,39 +127,47 @@ class SocialCog(commands.Cog):
             # Se subiu de nível, enviar notificação
             if new_level > old_level:
                 # Verificar se já notificamos este level up (evitar duplicados)
+                # Usar timestamp para garantir que só notifica uma vez mesmo após restart
                 levelup_key = f"{user_id}_{guild_id}_{new_level}"
                 
-                if levelup_key not in self.levelup_notified:
-                    self.levelup_notified[levelup_key] = now
-                    
-                    embed = EmbedBuilder.level_up(
-                        user=message.author,
-                        level=new_level,
-                        xp=new_xp
-                    )
-                    
-                    try:
-                        await message.channel.send(embed=embed, delete_after=10)
-                    except:
-                        pass
-                    
-                    # Dar badge por marco de nível
-                    if new_level == 10:
-                        await self.db.add_badge(user_id, guild_id, "level_10", "Nível 10", "🔟", "Atingiu nível 10")
-                    elif new_level == 25:
-                        await self.db.add_badge(user_id, guild_id, "level_25", "Nível 25", "🎖️", "Atingiu nível 25")
-                    elif new_level == 50:
-                        await self.db.add_badge(user_id, guild_id, "level_50", "Nível 50", "⭐", "Atingiu nível 50")
-                    elif new_level == 100:
-                        await self.db.add_badge(user_id, guild_id, "level_100", "Nível 100", "👑", "Atingiu nível 100!")
-                    
-                    # Log de atividade
-                    await self.db.log_activity(user_id, guild_id, "level_up", f"Subiu para nível {new_level}")
+                # Verificar se notificamos nos últimos 5 minutos
+                if levelup_key in self.levelup_notified:
+                    time_since_notify = now - self.levelup_notified[levelup_key]
+                    if time_since_notify < 300:  # 5 minutos
+                        self.bot.logger.debug(f"Skipping duplicate level up notification for {user_id} to level {new_level}")
+                        return
                 
-                # Limpar notificações antigas (mais de 5 minutos)
-                old_keys = [k for k, v in self.levelup_notified.items() if now - v > 300]
-                for k in old_keys:
-                    del self.levelup_notified[k]
+                self.levelup_notified[levelup_key] = now
+                self.bot.logger.info(f"User {user_id} leveled up: {old_level} -> {new_level} (XP: {old_xp} -> {new_xp})")
+                
+                embed = EmbedBuilder.level_up(
+                    user=message.author,
+                    level=new_level,
+                    xp=new_xp
+                )
+                
+                try:
+                    await message.channel.send(embed=embed, delete_after=10)
+                except:
+                    pass
+                
+                # Dar badge por marco de nível
+                if new_level == 10:
+                    await self.db.add_badge(user_id, guild_id, "level_10", "Nível 10", "🔟", "Atingiu nível 10")
+                elif new_level == 25:
+                    await self.db.add_badge(user_id, guild_id, "level_25", "Nível 25", "🎖️", "Atingiu nível 25")
+                elif new_level == 50:
+                    await self.db.add_badge(user_id, guild_id, "level_50", "Nível 50", "⭐", "Atingiu nível 50")
+                elif new_level == 100:
+                    await self.db.add_badge(user_id, guild_id, "level_100", "Nível 100", "👑", "Atingiu nível 100!")
+                
+                # Log de atividade
+                await self.db.log_activity(user_id, guild_id, "level_up", f"Subiu para nível {new_level}")
+            
+            # Limpar notificações antigas (mais de 5 minutos) - fazer sempre, não só em level up
+            old_keys = [k for k, v in self.levelup_notified.items() if now - v > 300]
+            for k in old_keys:
+                del self.levelup_notified[k]
         
         except Exception as e:
             self.bot.logger.error(f"Erro ao processar XP: {e}")
