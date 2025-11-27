@@ -4,6 +4,66 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.9.0] - 2025-11-27
+
+### ⚡ Command Optimization
+
+**Command Consolidation into Groups**
+
+- 🔄 **Reduction from 122 → 94 commands** to comply with Discord's limit (100)
+- ✅ **`/setup` Group** - Consolidation of 10 configuration commands:
+
+  - `/setup modlogs` - Moderation logs
+  - `/setup wordfilter` - Enable/disable word filter
+  - `/setup quarantine` - Quarantine system
+  - `/setup antispam` - Anti-spam with whitelist
+  - `/setup antiraid` - Anti-raid protection
+  - `/setup nsfw` - NSFW detection
+  - `/setup appeals` - Appeals system
+  - `/setup linkfilter` - Malicious link filter
+  - `/setup strikes` - Strikes system
+  - `/setup mentionspam` - Mention spam protection
+  - `/setup slowmode` - Auto-slowmode
+  - `/setup rolebackup` - Role backup/restore
+
+- ✅ **`/wordfilter` Group** - Forbidden words management:
+
+  - `/wordfilter add <word>` - Add word
+  - `/wordfilter remove <word>` - Remove word
+  - `/wordfilter list` - List words
+
+- ✅ **`/nota` Group** - Personal notes:
+
+  - `/nota add` - Add note
+  - `/nota list` - List notes
+  - `/nota view` - View note
+  - `/nota delete` - Delete note
+
+- ✅ **`/voz` Group** - Voice tracking:
+
+  - `/voz stats` - Voice statistics
+  - `/voz leaderboard` - Top 10 voice time
+
+- ✅ **`/sugestao` Group** - Suggestions system:
+
+  - `/sugestao enviar` - Create suggestion
+  - `/sugestao aprovar` - Approve suggestion
+  - `/sugestao negar` - Deny suggestion
+
+- ✅ **`/playlist` Group** - Music playlists:
+
+  - `/playlist create` - Create playlist
+  - `/playlist add` - Add song
+  - `/playlist play` - Play playlist
+  - `/playlist list` - List playlists
+
+**Removed/Commented Commands**
+
+- 🗑️ Removed 13 debug/redundant commands (test_url, test_ffmpeg, voice_debug, etc.)
+- 📉 Result: 94 total commands (6 below limit)
+
+---
+
 ## [2.8.0] - 2025-11-27
 
 ### 🔧 Utilities System - Complete Expansion

@@ -509,7 +509,7 @@ O bot possui um sistema social completo com XP, níveis, perfis customizáveis, 
 **Sistema de Logs:**
 
 ```
-/setup_modlogs <#canal>  - Configurar canal de logs de moderação
+/setup modlogs <#canal>  - Configurar canal de logs de moderação
 ```
 
 - Logs automáticos de todas as ações (kick, ban, timeout, warn)
@@ -519,10 +519,10 @@ O bot possui um sistema social completo com XP, níveis, perfis customizáveis, 
 **Filtro de Palavras:**
 
 ```
-/setup_wordfilter <ativar> [ação] - Configurar filtro (warn/timeout/kick/ban)
-/addword <palavra>                - Adicionar palavra proibida
-/removeword <palavra>             - Remover palavra
-/listwords                        - Listar palavras proibidas
+/setup wordfilter <ativar> [ação] - Configurar filtro (warn/timeout/kick/ban)
+/wordfilter add <palavra>         - Adicionar palavra proibida
+/wordfilter remove <palavra>      - Remover palavra
+/wordfilter list                  - Listar palavras proibidas
 ```
 
 - Detecção automática de palavras proibidas
@@ -532,7 +532,7 @@ O bot possui um sistema social completo com XP, níveis, perfis customizáveis, 
 **Sistema de Quarentena:**
 
 ```
-/setup_quarantine <ativar> [role] [duração] - Configurar quarentena
+/setup quarantine <ativar> [role] [duração] - Configurar quarentena
 ```
 
 - Role automática para novos membros
@@ -542,7 +542,7 @@ O bot possui um sistema social completo com XP, níveis, perfis customizáveis, 
 **Sistema de Appeals:**
 
 ```
-/setup_appeals <ativar> [#canal] - Configurar appeals
+/setup appeals <ativar> [#canal] - Configurar appeals
 /appeal <servidor_id> <motivo>   - Pedir unban (DM)
 ```
 
@@ -553,14 +553,14 @@ O bot possui um sistema social completo com XP, níveis, perfis customizáveis, 
 **Auto-Moderação:**
 
 ```
-/setup_antispam [ativar] [canal] [ação]          - Anti-spam com whitelist de canais
-/setup_antiraid [ativar] [threshold] [intervalo] - Proteção anti-raid
-/setup_nsfw [ativar] [canal] [ação] [api_key]   - Detecção de NSFW (DeepAI)
-/setup_linkfilter [ativar] [bloquear_convites] [bloquear_phishing] [canal] [acao_canal] - Filtro de links maliciosos
-/setup_strikes [ativar] [strikes_ban] [dias_expiracao] - Sistema de strikes
-/setup_mentionspam [ativar] [max_mencoes] [max_mencoes_roles] - Proteção mention spam
-/setup_slowmode [ativar] [threshold] [janela] [duracao] - Auto-slowmode
-/setup_rolebackup [ativar] [restaurar_unban] - Backup de roles
+/setup antispam [ativar] [canal] [ação]          - Anti-spam com whitelist de canais
+/setup antiraid [ativar] [threshold] [intervalo] - Proteção anti-raid
+/setup nsfw [ativar] [canal] [ação] [api_key]   - Detecção de NSFW (DeepAI)
+/setup linkfilter [ativar] [bloquear_convites] [bloquear_phishing] [canal] [acao_canal] - Filtro de links maliciosos
+/setup strikes [ativar] [strikes_ban] [dias_expiracao] - Sistema de strikes
+/setup mentionspam [ativar] [max_mencoes] [max_mencoes_roles] - Proteção mention spam
+/setup slowmode [ativar] [threshold] [janela] [duracao] - Auto-slowmode
+/setup rolebackup [ativar] [restaurar_unban] - Backup de roles
 ```
 
 - **Anti-Spam**: Deteção de spam por mensagens rápidas e duplicadas
