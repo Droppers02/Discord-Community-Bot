@@ -95,6 +95,13 @@
 - **Reminders** - Schedule reminders
 - **Polls** - Create interactive polls
 - **Announcements** - Schedule announcements
+- **Community Suggestions** (v2.8.0) - Upvote/downvote system
+- **Automated Giveaways** (v2.8.0) - Random winner selection
+- **Timestamp Generator** (v2.8.0) - Discord timestamp codes
+- **Personal Notes** (v2.8.0) - Private notes with tags
+- **Voice Tracker** (v2.8.0) - Time in voice statistics
+- **Starboard** (v2.8.0) - Hall of fame for messages
+- **AFK System** (v2.8.0) - Auto-reply when mentioned
 
 ---
 

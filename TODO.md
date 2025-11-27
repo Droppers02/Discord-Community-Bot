@@ -129,13 +129,13 @@ Lista de tarefas, melhorias e correções planeadas para versões futuras.
 - [x] Sistema de configuração JSON para roles/canais personalizáveis
 - [x] Documentação de setup integrada no README
 - [x] Correções do sistema 2FA (remoção de role, modals, DMs)
-- [ ] Sistema de sugestões da comunidade (upvote/downvote)
-- [ ] Sistema de giveaways automatizado com requisitos
-- [ ] Comandos de utilidade para timestamps (<t:timestamp:F>)
-- [ ] Sistema de notas pessoais privadas
-- [ ] Contador de membros em voz (voice tracker)
-- [ ] Starboard (mensagens com X reações vão para canal especial)
-- [ ] AFK system (auto-resposta quando mencionado)
+- [x] Sistema de sugestões da comunidade (upvote/downvote)
+- [x] Sistema de giveaways automatizado com requisitos
+- [x] Comandos de utilidade para timestamps (<t:timestamp:F>)
+- [x] Sistema de notas pessoais privadas
+- [x] Contador de membros em voz (voice tracker)
+- [x] Starboard (mensagens com X reações vão para canal especial)
+- [x] AFK system (auto-resposta quando mencionado)
 
 ### Interface & UX
 

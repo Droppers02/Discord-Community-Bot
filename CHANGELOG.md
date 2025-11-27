@@ -4,6 +4,210 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.8.0] - 2025-11-27
+
+### 🔧 Utilities System - Complete Expansion
+
+**Community Suggestions System**
+
+- ✅ **Suggestions with Upvote/Downvote**
+  - `/suggest <suggestion>` command to create suggestions
+  - Automatic reactions system (👍/👎)
+  - Dedicated channel for suggestions
+  - Status: Pending, Approved, Denied
+  - DM notifications for authors
+
+- ✅ **Suggestion Management (Moderators)**
+  - `/approve_suggestion <id> [note]` - Approve suggestion
+  - `/deny_suggestion <id> <reason>` - Deny suggestion
+  - `/setup_suggestions <channel>` - Configure system
+  - Complete history in database
+
+**Automated Giveaway System**
+
+- ✅ **Giveaways with Requirements**
+  - `/giveaway <duration> <winners> <prize> [requirements]`
+  - Automatic random winner selection
+  - React with 🎉 to participate
+  - Countdown with Discord timestamps
+  - Optional customizable requirements
+  - Automatic winner announcements
+
+- ✅ **Advanced Features**
+  - Multiple winners possible
+  - Automatic end after duration
+  - Winner notifications
+  - Giveaway history in database
+
+**Timestamp Commands**
+
+- ✅ **Discord Timestamp Generator**
+  - `/timestamp <date_time> [style]` - Generate timestamp
+  - 7 available styles:
+    - Short Time (16:20)
+    - Long Time (16:20:30)
+    - Short Date (20/04/2021)
+    - Long Date (20 April 2021)
+    - Relative (2 months ago)
+    - Full Date & Time
+    - Day of Week, Date
+  - Format: DD/MM/YYYY HH:MM
+  - Automatic result preview
+
+**Personal Notes System**
+
+- ✅ **Private Notes per User**
+  - `/note_add <title> <content> [tags]` - Create note
+  - `/notes [tag]` - List notes (optional tag filter)
+  - `/note_view <id>` - View complete note
+  - `/note_delete <id>` - Delete note
+  - Tag system for organization
+  - Private notes (only visible to author)
+  - Pinned notes support
+
+**Voice Member Counter**
+
+- ✅ **Complete Voice Tracker**
+  - Automatic tracking of time in voice channels
+  - Per-user statistics:
+    - Total time in voice
+    - Number of sessions
+    - Average per session
+    - Last session
+  - Session history by date
+  - Configurable minimum time (default: 60s)
+  - Channel switches tracked separately
+
+- ✅ **Statistics Commands**
+  - `/voicestats [member]` - View individual stats
+  - `/voiceleaderboard` - Top 10 users by time
+  - Persistent data in database
+  - Readable format (hours, minutes)
+
+**Starboard (Hall of Fame)**
+
+- ✅ **Favorite Messages System**
+  - Messages with X⭐ go to special channel
+  - Configurable threshold (default: 3 reactions)
+  - Customizable emoji
+  - Real-time star counter updates
+  - Image and attachment preservation
+  - Direct link to original message
+
+- ✅ **Starboard Configuration**
+  - `/setup_starboard <channel> [threshold] [emoji] [self_star]`
+  - Allow/block self-starring
+  - Automatic counter updates
+  - Beautiful embeds in starboard channel
+
+**AFK System**
+
+- ✅ **Automatic AFK Status**
+  - `/afk [reason]` - Set AFK status
+  - Auto-reply when mentioned
+  - Automatic removal when sending message
+  - AFK time tracking
+  - Temporary notifications (auto-delete)
+  - Optional custom reason
+
+### 🗄️ Database - New Tables
+
+- `suggestions` - Community suggestions
+- `suggestion_votes` - Suggestion votes
+- `giveaways` - Active/ended giveaways
+- `giveaway_entries` - Giveaway participants
+- `personal_notes` - Private personal notes
+- `voice_stats` - Voice session history
+- `voice_totals` - Aggregated voice totals
+- `starboard` - Messages in starboard
+- `starboard_stars` - Individual star reactions
+- `starboard_config` - Starboard configuration
+- `afk_status` - User AFK status
+
+### 📊 Performance Indexes
+
+- `idx_suggestions_guild` - Fast server lookup
+- `idx_suggestions_user` - Author lookup
+- `idx_giveaways_status` - Status/date filter
+- `idx_notes_user` - Notes by user
+- `idx_voice_user` - Voice statistics
+- `idx_voice_date` - History by date
+- `idx_starboard_guild` - Starboard by server
+- `idx_starboard_msg` - Message lookup
+- `idx_afk_guild` - AFK status by server
+
+### 📝 New Commands (23 total)
+
+**Suggestions:**
+- `/suggest` - Create suggestion
+- `/approve_suggestion` - Approve (mod)
+- `/deny_suggestion` - Deny (mod)
+- `/setup_suggestions` - Configure channel
+
+**Giveaways:**
+- `/giveaway` - Create giveaway (mod)
+
+**Timestamps:**
+- `/timestamp` - Generate formatted timestamp
+
+**Notes:**
+- `/note_add` - Add note
+- `/notes` - List notes
+- `/note_view` - View complete note
+- `/note_delete` - Delete note
+
+**Voice:**
+- `/voicestats` - View statistics
+- `/voiceleaderboard` - Top 10
+
+**Starboard:**
+- `/setup_starboard` - Configure starboard
+
+**AFK:**
+- `/afk` - Set AFK status
+
+### 🎯 Event Listeners Added
+
+- `on_message` - AFK system (detection and removal)
+- `on_raw_reaction_add` - Starboard (star counting)
+- `on_voice_state_update` - Voice Tracker (join/leave/switch)
+
+### ⏱️ Background Tasks
+
+- `check_giveaways` - Check giveaway completion (1 min)
+
+### 🔧 Configuration Files
+
+**`config/utilities_config.json` - New Sections:**
+```json
+{
+  "suggestions": {
+    "channel_id": 0,
+    "review_role_id": 0,
+    "auto_approve": false,
+    "min_upvotes_auto_approve": 10
+  },
+  "starboard": {
+    "channel_id": 0,
+    "star_threshold": 3,
+    "emoji": "⭐",
+    "enabled": false,
+    "self_star": false
+  },
+  "giveaways": {
+    "default_duration": 86400,
+    "ping_role_id": 0
+  },
+  "voice_tracker": {
+    "enabled": true,
+    "leaderboard_channel": 0,
+    "min_session_time": 60
+  }
+}
+```
+
+---
+
 ## [2.7.2] - 2025-11-27
 
 ### 🛡️ Moderation System - Advanced Extensions

@@ -736,6 +736,9 @@ class UtilitiesAdvanced(commands.Cog):
         self.scheduled_announcements_file = "data/scheduled_announcements.json"
         self.config_file = "config/utilities_config.json"
         
+        # Tracking de voz
+        self.voice_sessions = {}  # {user_id: {'join_time': datetime, 'channel_id': int}}
+        
         # Carregar configuração
         self.load_config()
         
@@ -745,6 +748,7 @@ class UtilitiesAdvanced(commands.Cog):
         # Iniciar tasks
         self.check_reminders.start()
         self.check_announcements.start()
+        self.check_giveaways.start()
     
     def load_config(self):
         """Carregar configuração de IDs"""
@@ -913,20 +917,378 @@ class UtilitiesAdvanced(commands.Cog):
                 except Exception as e:
                     bot_logger.error(f"Erro ao enviar anúncio: {e}")
                     completed.append(announcement)
-        
-        # Remover anúncios completados
-        for announcement in completed:
-            if announcement in self.scheduled_announcements:
-                self.scheduled_announcements.remove(announcement)
-        
         if completed:
             self.save_announcements()
     
+    @tasks.loop(minutes=1)
+    async def check_giveaways(self):
+        """Verificar giveaways que devem terminar"""
+        import aiosqlite
+        
+        now = datetime.utcnow()
+        
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            cursor = await db.execute("""
+                SELECT message_id, guild_id
+                FROM giveaways
+                WHERE status = 'active' AND datetime(ends_at) <= datetime('now')
+            """)
+            rows = await cursor.fetchall()
+            
+            for message_id, guild_id in rows:
+                await self.end_giveaway(int(message_id), int(guild_id))
+    
     @check_reminders.before_loop
     @check_announcements.before_loop
+    @check_giveaways.before_loop
     async def before_tasks(self):
         """Aguardar bot estar pronto"""
         await self.bot.wait_until_ready()
+    
+    # ===== EVENT LISTENERS =====
+    
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        """Listener para AFK system"""
+        if message.author.bot:
+            return
+        
+        import aiosqlite
+        
+        # Verificar se autor está AFK e remover
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            cursor = await db.execute("""
+                SELECT reason, set_at FROM afk_status
+                WHERE user_id = ? AND guild_id = ?
+            """, (str(message.author.id), str(message.guild.id)))
+            row = await cursor.fetchone()
+            
+            if row:
+                reason, set_at = row
+                # Remover AFK
+                await db.execute("""
+                    DELETE FROM afk_status
+                    WHERE user_id = ? AND guild_id = ?
+                """, (str(message.author.id), str(message.guild.id)))
+                await db.commit()
+                
+                # Calcular tempo AFK
+                try:
+                    afk_start = datetime.fromisoformat(set_at)
+                    duration = datetime.utcnow() - afk_start
+                    duration_str = self.format_duration(duration)
+                    
+                    await message.channel.send(
+                        f"👋 Bem-vindo de volta {message.author.mention}! "
+                        f"Estiveste AFK por **{duration_str}**.",
+                        delete_after=5
+                    )
+                except:
+                    await message.channel.send(
+                        f"👋 Bem-vindo de volta {message.author.mention}!",
+                        delete_after=5
+                    )
+        
+        # Verificar se alguém mencionado está AFK
+        if message.mentions:
+            async with aiosqlite.connect(self.bot.db.db_path) as db:
+                for mentioned_user in message.mentions:
+                    if mentioned_user.bot:
+                        continue
+                    
+                    cursor = await db.execute("""
+                        SELECT reason, set_at FROM afk_status
+                        WHERE user_id = ? AND guild_id = ?
+                    """, (str(mentioned_user.id), str(message.guild.id)))
+                    row = await cursor.fetchone()
+                    
+                    if row:
+                        reason, set_at = row
+                        try:
+                            afk_start = datetime.fromisoformat(set_at)
+                            duration = datetime.utcnow() - afk_start
+                            duration_str = self.format_duration(duration)
+                            
+                            await message.channel.send(
+                                f"💤 {mentioned_user.display_name} está AFK há **{duration_str}**: {reason}",
+                                delete_after=10
+                            )
+                        except:
+                            await message.channel.send(
+                                f"💤 {mentioned_user.display_name} está AFK: {reason}",
+                                delete_after=10
+                            )
+    
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        """Listener para Starboard"""
+        if payload.member.bot:
+            return
+        
+        # Verificar configuração do starboard
+        starboard_config = self.config.get('starboard', {})
+        if not starboard_config.get('enabled', False):
+            return
+        
+        star_emoji = starboard_config.get('emoji', '⭐')
+        if str(payload.emoji) != star_emoji:
+            return
+        
+        import aiosqlite
+        guild = self.bot.get_guild(payload.guild_id)
+        channel = guild.get_channel(payload.channel_id)
+        
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except:
+            return
+        
+        # Verificar se autor está reagindo à própria mensagem
+        if not starboard_config.get('self_star', False) and payload.user_id == message.author.id:
+            try:
+                await message.remove_reaction(star_emoji, payload.member)
+            except:
+                pass
+            return
+        
+        # Contar reações
+        reaction = discord.utils.get(message.reactions, emoji=star_emoji)
+        if not reaction:
+            return
+        
+        star_count = reaction.count
+        threshold = starboard_config.get('star_threshold', 3)
+        
+        if star_count >= threshold:
+            await self.add_to_starboard(message, star_count, guild)
+    
+    async def add_to_starboard(self, message, star_count, guild):
+        """Adicionar mensagem ao starboard"""
+        import aiosqlite
+        
+        starboard_config = self.config.get('starboard', {})
+        starboard_channel_id = starboard_config.get('channel_id', 0)
+        
+        if starboard_channel_id == 0:
+            return
+        
+        starboard_channel = guild.get_channel(starboard_channel_id)
+        if not starboard_channel:
+            return
+        
+        # Verificar se já está no starboard
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            cursor = await db.execute("""
+                SELECT id, starboard_message_id, star_count
+                FROM starboard
+                WHERE message_id = ? AND guild_id = ?
+            """, (str(message.id), str(guild.id)))
+            row = await cursor.fetchone()
+            
+            star_emoji = starboard_config.get('emoji', '⭐')
+            
+            # Criar embed
+            embed = discord.Embed(
+                description=message.content or "*[Sem conteúdo de texto]*",
+                color=discord.Color.gold(),
+                timestamp=message.created_at
+            )
+            embed.set_author(
+                name=message.author.display_name,
+                icon_url=message.author.display_avatar.url
+            )
+            embed.add_field(
+                name="Link",
+                value=f"[Ir para mensagem]({message.jump_url})",
+                inline=False
+            )
+            
+            # Adicionar imagens
+            if message.attachments:
+                embed.set_image(url=message.attachments[0].url)
+                if len(message.attachments) > 1:
+                    embed.set_footer(text=f"+{len(message.attachments)-1} anexos adicionais")
+            
+            content = f"{star_emoji} **{star_count}** | {message.channel.mention}"
+            
+            if row:
+                # Atualizar mensagem existente
+                starboard_id, starboard_msg_id, old_count = row
+                
+                if starboard_msg_id:
+                    try:
+                        starboard_msg = await starboard_channel.fetch_message(int(starboard_msg_id))
+                        await starboard_msg.edit(content=content, embed=embed)
+                        
+                        await db.execute("""
+                            UPDATE starboard
+                            SET star_count = ?
+                            WHERE id = ?
+                        """, (star_count, starboard_id))
+                        await db.commit()
+                    except discord.NotFound:
+                        pass
+            else:
+                # Criar nova entrada
+                starboard_msg = await starboard_channel.send(content=content, embed=embed)
+                
+                # Salvar attachments
+                attachment_urls = json.dumps([att.url for att in message.attachments]) if message.attachments else None
+                
+                await db.execute("""
+                    INSERT INTO starboard 
+                    (guild_id, message_id, channel_id, author_id, starboard_message_id, star_count, content, attachment_urls, starred_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                """, (
+                    str(guild.id),
+                    str(message.id),
+                    str(message.channel.id),
+                    str(message.author.id),
+                    str(starboard_msg.id),
+                    star_count,
+                    message.content,
+                    attachment_urls
+                ))
+                await db.commit()
+    
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        """Listener para Voice Tracker"""
+        if member.bot:
+            return
+        
+        voice_config = self.config.get('voice_tracker', {})
+        if not voice_config.get('enabled', True):
+            return
+        
+        import aiosqlite
+        
+        # Membro entrou em canal de voz
+        if before.channel is None and after.channel is not None:
+            self.voice_sessions[member.id] = {
+                'join_time': datetime.utcnow(),
+                'channel_id': after.channel.id
+            }
+            bot_logger.info(f"{member} entrou em {after.channel.name}")
+        
+        # Membro saiu de canal de voz
+        elif before.channel is not None and after.channel is None:
+            if member.id in self.voice_sessions:
+                session = self.voice_sessions.pop(member.id)
+                join_time = session['join_time']
+                channel_id = session['channel_id']
+                
+                duration = int((datetime.utcnow() - join_time).total_seconds())
+                min_session_time = voice_config.get('min_session_time', 60)
+                
+                # Só salvar se duração >= mínimo
+                if duration >= min_session_time:
+                    async with aiosqlite.connect(self.bot.db.db_path) as db:
+                        # Salvar sessão
+                        date_str = join_time.strftime('%Y-%m-%d')
+                        await db.execute("""
+                            INSERT INTO voice_stats 
+                            (user_id, guild_id, channel_id, join_time, leave_time, duration, date)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """, (
+                            str(member.id),
+                            str(member.guild.id),
+                            str(channel_id),
+                            join_time.isoformat(),
+                            datetime.utcnow().isoformat(),
+                            duration,
+                            date_str
+                        ))
+                        
+                        # Atualizar totais
+                        await db.execute("""
+                            INSERT INTO voice_totals (user_id, guild_id, total_time, sessions_count, last_session)
+                            VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
+                            ON CONFLICT(user_id, guild_id) DO UPDATE SET
+                                total_time = total_time + ?,
+                                sessions_count = sessions_count + 1,
+                                last_session = CURRENT_TIMESTAMP
+                        """, (
+                            str(member.id),
+                            str(member.guild.id),
+                            duration,
+                            duration
+                        ))
+                        
+                        await db.commit()
+                    
+                    bot_logger.info(f"{member} saiu de canal de voz - Duração: {duration}s")
+        
+        # Membro mudou de canal (contar como saída + entrada)
+        elif before.channel is not None and after.channel is not None and before.channel.id != after.channel.id:
+            if member.id in self.voice_sessions:
+                # Processar saída do canal anterior
+                session = self.voice_sessions[member.id]
+                join_time = session['join_time']
+                channel_id = session['channel_id']
+                
+                duration = int((datetime.utcnow() - join_time).total_seconds())
+                min_session_time = voice_config.get('min_session_time', 60)
+                
+                if duration >= min_session_time:
+                    async with aiosqlite.connect(self.bot.db.db_path) as db:
+                        date_str = join_time.strftime('%Y-%m-%d')
+                        await db.execute("""
+                            INSERT INTO voice_stats 
+                            (user_id, guild_id, channel_id, join_time, leave_time, duration, date)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """, (
+                            str(member.id),
+                            str(member.guild.id),
+                            str(channel_id),
+                            join_time.isoformat(),
+                            datetime.utcnow().isoformat(),
+                            duration,
+                            date_str
+                        ))
+                        
+                        await db.execute("""
+                            INSERT INTO voice_totals (user_id, guild_id, total_time, sessions_count, last_session)
+                            VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
+                            ON CONFLICT(user_id, guild_id) DO UPDATE SET
+                                total_time = total_time + ?,
+                                sessions_count = sessions_count + 1,
+                                last_session = CURRENT_TIMESTAMP
+                        """, (
+                            str(member.id),
+                            str(member.guild.id),
+                            duration,
+                            duration
+                        ))
+                        
+                        await db.commit()
+                
+                # Registrar entrada no novo canal
+                self.voice_sessions[member.id] = {
+                    'join_time': datetime.utcnow(),
+                    'channel_id': after.channel.id
+                }
+    
+    def format_duration(self, duration):
+        """Formatar duração para texto legível"""
+        total_seconds = int(duration.total_seconds())
+        
+        days = total_seconds // 86400
+        hours = (total_seconds % 86400) // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+        
+        parts = []
+        if days > 0:
+            parts.append(f"{days}d")
+        if hours > 0:
+            parts.append(f"{hours}h")
+        if minutes > 0:
+            parts.append(f"{minutes}m")
+        if seconds > 0 and not parts:  # Só mostrar segundos se for muito curto
+            parts.append(f"{seconds}s")
+        
+        return " ".join(parts) if parts else "0s"
     
     def format_time_ago(self, timestamp):
         """Formatar tempo decorrido"""
@@ -1439,6 +1801,873 @@ class UtilitiesAdvanced(commands.Cog):
                 ephemeral=True
             )
             bot_logger.error(f"Erro ao sincronizar comandos: {e}")
+    
+    # ===== SISTEMA DE SUGESTÕES DA COMUNIDADE =====
+    
+    @app_commands.command(
+        name="suggest",
+        description="📝 Criar uma sugestão para a comunidade"
+    )
+    @app_commands.describe(
+        sugestao="Descreve a tua sugestão"
+    )
+    async def suggest(self, interaction: discord.Interaction, sugestao: str):
+        """Criar sugestão com sistema de upvote/downvote"""
+        
+        if len(sugestao) < 10:
+            await interaction.response.send_message(
+                "❌ A sugestão deve ter pelo menos 10 caracteres!",
+                ephemeral=True
+            )
+            return
+        
+        # Obter canal de sugestões do config
+        import json
+        with open('config/utilities_config.json', 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        
+        channel_id = config.get('suggestions', {}).get('channel_id', 0)
+        if channel_id == 0:
+            await interaction.response.send_message(
+                "❌ O sistema de sugestões não está configurado neste servidor!\n"
+                "Um administrador precisa configurar o canal de sugestões.",
+                ephemeral=True
+            )
+            return
+        
+        channel = interaction.guild.get_channel(channel_id)
+        if not channel:
+            await interaction.response.send_message(
+                "❌ Canal de sugestões não encontrado!",
+                ephemeral=True
+            )
+            return
+        
+        # Criar embed da sugestão
+        embed = discord.Embed(
+            title="💡 Nova Sugestão",
+            description=sugestao,
+            color=discord.Color.blue(),
+            timestamp=datetime.utcnow()
+        )
+        embed.set_author(
+            name=f"{interaction.user.display_name}",
+            icon_url=interaction.user.display_avatar.url
+        )
+        embed.add_field(name="👍 Upvotes", value="0", inline=True)
+        embed.add_field(name="👎 Downvotes", value="0", inline=True)
+        embed.add_field(name="📊 Status", value="🔄 Pendente", inline=True)
+        embed.set_footer(text=f"ID do Utilizador: {interaction.user.id}")
+        
+        # Enviar para canal de sugestões
+        msg = await channel.send(embed=embed)
+        await msg.add_reaction("👍")
+        await msg.add_reaction("👎")
+        
+        # Salvar na database
+        import aiosqlite
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            await db.execute("""
+                INSERT INTO suggestions (guild_id, user_id, channel_id, message_id, suggestion, status)
+                VALUES (?, ?, ?, ?, ?, 'pending')
+            """, (str(interaction.guild.id), str(interaction.user.id), str(channel.id), str(msg.id), sugestao))
+            await db.commit()
+        
+        await interaction.response.send_message(
+            f"✅ Sugestão criada com sucesso em {channel.mention}!",
+            ephemeral=True
+        )
+        bot_logger.info(f"Sugestão criada por {interaction.user} em {interaction.guild}")
+    
+    @app_commands.command(
+        name="approve_suggestion",
+        description="✅ Aprovar uma sugestão (Moderadores)"
+    )
+    @app_commands.describe(
+        suggestion_id="ID da sugestão (número da mensagem)",
+        nota="Nota de aprovação (opcional)"
+    )
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def approve_suggestion(self, interaction: discord.Interaction, suggestion_id: str, nota: str = None):
+        """Aprovar sugestão"""
+        
+        import aiosqlite
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            cursor = await db.execute("""
+                SELECT channel_id, message_id, suggestion, user_id 
+                FROM suggestions 
+                WHERE message_id = ? AND guild_id = ?
+            """, (suggestion_id, str(interaction.guild.id)))
+            row = await cursor.fetchone()
+            
+            if not row:
+                await interaction.response.send_message(
+                    "❌ Sugestão não encontrada!",
+                    ephemeral=True
+                )
+                return
+            
+            channel_id, message_id, suggestion, user_id = row
+            channel = interaction.guild.get_channel(int(channel_id))
+            
+            try:
+                msg = await channel.fetch_message(int(message_id))
+                
+                # Atualizar embed
+                embed = msg.embeds[0]
+                embed.color = discord.Color.green()
+                embed.remove_field(2)  # Remover status antigo
+                embed.add_field(
+                    name="📊 Status", 
+                    value=f"✅ Aprovada por {interaction.user.mention}", 
+                    inline=True
+                )
+                if nota:
+                    embed.add_field(name="📝 Nota", value=nota, inline=False)
+                
+                await msg.edit(embed=embed)
+                
+                # Atualizar database
+                await db.execute("""
+                    UPDATE suggestions 
+                    SET status = 'approved', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP, review_note = ?
+                    WHERE message_id = ?
+                """, (str(interaction.user.id), nota, suggestion_id))
+                await db.commit()
+                
+                # Notificar autor
+                try:
+                    author = await interaction.guild.fetch_member(int(user_id))
+                    await author.send(
+                        f"✅ A tua sugestão foi aprovada!\n\n**Sugestão:** {suggestion}\n"
+                        f"**Aprovada por:** {interaction.user.mention}\n"
+                        f"{'**Nota:** ' + nota if nota else ''}"
+                    )
+                except:
+                    pass
+                
+                await interaction.response.send_message(
+                    "✅ Sugestão aprovada com sucesso!",
+                    ephemeral=True
+                )
+                
+            except discord.NotFound:
+                await interaction.response.send_message(
+                    "❌ Mensagem da sugestão não encontrada!",
+                    ephemeral=True
+                )
+    
+    @app_commands.command(
+        name="deny_suggestion",
+        description="❌ Recusar uma sugestão (Moderadores)"
+    )
+    @app_commands.describe(
+        suggestion_id="ID da sugestão (número da mensagem)",
+        razao="Razão da recusa"
+    )
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def deny_suggestion(self, interaction: discord.Interaction, suggestion_id: str, razao: str = "Não especificada"):
+        """Recusar sugestão"""
+        
+        import aiosqlite
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            cursor = await db.execute("""
+                SELECT channel_id, message_id, suggestion, user_id 
+                FROM suggestions 
+                WHERE message_id = ? AND guild_id = ?
+            """, (suggestion_id, str(interaction.guild.id)))
+            row = await cursor.fetchone()
+            
+            if not row:
+                await interaction.response.send_message(
+                    "❌ Sugestão não encontrada!",
+                    ephemeral=True
+                )
+                return
+            
+            channel_id, message_id, suggestion, user_id = row
+            channel = interaction.guild.get_channel(int(channel_id))
+            
+            try:
+                msg = await channel.fetch_message(int(message_id))
+                
+                # Atualizar embed
+                embed = msg.embeds[0]
+                embed.color = discord.Color.red()
+                embed.remove_field(2)  # Remover status antigo
+                embed.add_field(
+                    name="📊 Status", 
+                    value=f"❌ Recusada por {interaction.user.mention}", 
+                    inline=True
+                )
+                embed.add_field(name="📝 Razão", value=razao, inline=False)
+                
+                await msg.edit(embed=embed)
+                
+                # Atualizar database
+                await db.execute("""
+                    UPDATE suggestions 
+                    SET status = 'denied', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP, review_note = ?
+                    WHERE message_id = ?
+                """, (str(interaction.user.id), razao, suggestion_id))
+                await db.commit()
+                
+                # Notificar autor
+                try:
+                    author = await interaction.guild.fetch_member(int(user_id))
+                    await author.send(
+                        f"❌ A tua sugestão foi recusada.\n\n**Sugestão:** {suggestion}\n"
+                        f"**Recusada por:** {interaction.user.mention}\n"
+                        f"**Razão:** {razao}"
+                    )
+                except:
+                    pass
+                
+                await interaction.response.send_message(
+                    "✅ Sugestão recusada!",
+                    ephemeral=True
+                )
+                
+            except discord.NotFound:
+                await interaction.response.send_message(
+                    "❌ Mensagem da sugestão não encontrada!",
+                    ephemeral=True
+                )
+    
+    # ===== SISTEMA DE GIVEAWAYS =====
+    
+    @app_commands.command(
+        name="giveaway",
+        description="🎉 Criar um giveaway"
+    )
+    @app_commands.describe(
+        duracao="Duração em minutos",
+        vencedores="Número de vencedores",
+        premio="Prêmio do giveaway",
+        requisitos="Requisitos para participar (opcional)"
+    )
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def giveaway(
+        self, 
+        interaction: discord.Interaction, 
+        duracao: int, 
+        vencedores: int, 
+        premio: str,
+        requisitos: str = None
+    ):
+        """Criar giveaway automatizado"""
+        
+        if duracao < 1:
+            await interaction.response.send_message(
+                "❌ A duração deve ser de pelo menos 1 minuto!",
+                ephemeral=True
+            )
+            return
+        
+        if vencedores < 1:
+            await interaction.response.send_message(
+                "❌ Deve haver pelo menos 1 vencedor!",
+                ephemeral=True
+            )
+            return
+        
+        # Calcular tempo de término
+        ends_at = datetime.utcnow() + timedelta(minutes=duracao)
+        
+        # Criar embed
+        embed = discord.Embed(
+            title="🎉 GIVEAWAY 🎉",
+            description=f"**Prêmio:** {premio}\n\n"
+                       f"React com 🎉 para participar!\n"
+                       f"**Vencedores:** {vencedores}\n"
+                       f"**Termina:** <t:{int(ends_at.timestamp())}:R>",
+            color=discord.Color.gold(),
+            timestamp=ends_at
+        )
+        
+        if requisitos:
+            embed.add_field(name="📋 Requisitos", value=requisitos, inline=False)
+        
+        embed.set_footer(text=f"Hosted by {interaction.user.display_name}")
+        
+        # Enviar mensagem
+        await interaction.response.send_message("✅ Giveaway criado!", ephemeral=True)
+        msg = await interaction.channel.send(embed=embed)
+        await msg.add_reaction("🎉")
+        
+        # Salvar na database
+        import aiosqlite
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            await db.execute("""
+                INSERT INTO giveaways 
+                (guild_id, channel_id, message_id, host_id, prize, winners_count, requirements, ends_at, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')
+            """, (
+                str(interaction.guild.id), 
+                str(interaction.channel.id), 
+                str(msg.id),
+                str(interaction.user.id),
+                premio,
+                vencedores,
+                requisitos,
+                ends_at.isoformat()
+            ))
+            await db.commit()
+        
+        bot_logger.info(f"Giveaway criado por {interaction.user} - Premio: {premio}")
+        
+        # Aguardar término
+        await asyncio.sleep(duracao * 60)
+        await self.end_giveaway(msg.id, interaction.guild.id)
+    
+    async def end_giveaway(self, message_id: int, guild_id: int):
+        """Terminar giveaway e escolher vencedores"""
+        
+        import aiosqlite
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            cursor = await db.execute("""
+                SELECT channel_id, winners_count, prize, host_id
+                FROM giveaways
+                WHERE message_id = ? AND guild_id = ? AND status = 'active'
+            """, (str(message_id), str(guild_id)))
+            row = await cursor.fetchone()
+            
+            if not row:
+                return
+            
+            channel_id, winners_count, prize, host_id = row
+            
+            guild = self.bot.get_guild(int(guild_id))
+            channel = guild.get_channel(int(channel_id))
+            
+            try:
+                msg = await channel.fetch_message(int(message_id))
+                
+                # Obter participantes
+                reaction = discord.utils.get(msg.reactions, emoji="🎉")
+                if not reaction:
+                    await channel.send("❌ Nenhum participante no giveaway!")
+                    return
+                
+                participants = []
+                async for user in reaction.users():
+                    if not user.bot:
+                        participants.append(user)
+                
+                if len(participants) == 0:
+                    await channel.send("❌ Nenhum participante válido no giveaway!")
+                    return
+                
+                # Escolher vencedores
+                winners = random.sample(participants, min(winners_count, len(participants)))
+                
+                # Anunciar vencedores
+                winners_mention = ", ".join([winner.mention for winner in winners])
+                
+                embed = discord.Embed(
+                    title="🎉 GIVEAWAY TERMINADO 🎉",
+                    description=f"**Prêmio:** {prize}\n\n"
+                               f"**{'Vencedor' if len(winners) == 1 else 'Vencedores'}:** {winners_mention}",
+                    color=discord.Color.green(),
+                    timestamp=datetime.utcnow()
+                )
+                
+                await msg.edit(embed=embed)
+                await channel.send(
+                    f"🎊 Parabéns {winners_mention}! Ganhaste **{prize}**!\n"
+                    f"Contacta <@{host_id}> para reclamar o prémio."
+                )
+                
+                # Atualizar database
+                await db.execute("""
+                    UPDATE giveaways 
+                    SET status = 'ended', ended_at = CURRENT_TIMESTAMP
+                    WHERE message_id = ?
+                """, (str(message_id),))
+                await db.commit()
+                
+                bot_logger.info(f"Giveaway terminado - Vencedores: {[w.name for w in winners]}")
+                
+            except discord.NotFound:
+                bot_logger.error(f"Mensagem de giveaway não encontrada: {message_id}")
+    
+    # ===== COMANDOS DE TIMESTAMP =====
+    
+    @app_commands.command(
+        name="timestamp",
+        description="🕒 Gerar timestamp do Discord"
+    )
+    @app_commands.describe(
+        data_hora="Data e hora (formato: DD/MM/YYYY HH:MM)",
+        estilo="Estilo de exibição do timestamp"
+    )
+    @app_commands.choices(estilo=[
+        app_commands.Choice(name="Data e Hora Curta (16:20)", value="t"),
+        app_commands.Choice(name="Data e Hora Longa (16:20:30)", value="T"),
+        app_commands.Choice(name="Data Curta (20/04/2021)", value="d"),
+        app_commands.Choice(name="Data Longa (20 Abril 2021)", value="D"),
+        app_commands.Choice(name="Relativo (há 2 meses)", value="R"),
+        app_commands.Choice(name="Data e Hora Completa (Terça, 20 Abril 2021 16:20)", value="F"),
+        app_commands.Choice(name="Dia da Semana, Data (Terça, 20 Abril 2021)", value="f"),
+    ])
+    async def timestamp(self, interaction: discord.Interaction, data_hora: str, estilo: str = "F"):
+        """Gerar timestamp formatado"""
+        
+        try:
+            # Parse da data
+            dt = datetime.strptime(data_hora, "%d/%m/%Y %H:%M")
+            timestamp = int(dt.timestamp())
+            
+            # Gerar código
+            code = f"<t:{timestamp}:{estilo}>"
+            
+            embed = discord.Embed(
+                title="🕒 Timestamp Gerado",
+                description=f"**Código:**\n```{code}```\n\n**Preview:** {code}",
+                color=discord.Color.blue()
+            )
+            embed.add_field(
+                name="📋 Copiar",
+                value=f"Copia o código acima e cola na tua mensagem!",
+                inline=False
+            )
+            
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            
+        except ValueError:
+            await interaction.response.send_message(
+                "❌ Formato inválido! Use: DD/MM/YYYY HH:MM\n"
+                "Exemplo: 25/12/2024 18:30",
+                ephemeral=True
+            )
+    
+    # ===== SISTEMA DE NOTAS PESSOAIS =====
+    
+    @app_commands.command(
+        name="note_add",
+        description="📝 Adicionar nota pessoal privada"
+    )
+    @app_commands.describe(
+        titulo="Título da nota",
+        conteudo="Conteúdo da nota",
+        tags="Tags separadas por vírgula (opcional)"
+    )
+    async def note_add(self, interaction: discord.Interaction, titulo: str, conteudo: str, tags: str = None):
+        """Adicionar nota pessoal"""
+        
+        import aiosqlite
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            await db.execute("""
+                INSERT INTO personal_notes (user_id, guild_id, title, content, tags)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                str(interaction.user.id),
+                str(interaction.guild.id),
+                titulo,
+                conteudo,
+                tags
+            ))
+            await db.commit()
+        
+        embed = discord.Embed(
+            title="✅ Nota Criada",
+            description=f"**Título:** {titulo}\n**Conteúdo:** {conteudo[:100]}{'...' if len(conteudo) > 100 else ''}",
+            color=discord.Color.green()
+        )
+        if tags:
+            embed.add_field(name="🏷️ Tags", value=tags, inline=False)
+        
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        bot_logger.info(f"Nota criada por {interaction.user}: {titulo}")
+    
+    @app_commands.command(
+        name="notes",
+        description="📋 Ver as tuas notas pessoais"
+    )
+    @app_commands.describe(
+        tag="Filtrar por tag (opcional)"
+    )
+    async def notes(self, interaction: discord.Interaction, tag: str = None):
+        """Listar notas pessoais"""
+        
+        import aiosqlite
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            if tag:
+                cursor = await db.execute("""
+                    SELECT id, title, content, tags, created_at, pinned
+                    FROM personal_notes
+                    WHERE user_id = ? AND guild_id = ? AND tags LIKE ?
+                    ORDER BY pinned DESC, created_at DESC
+                """, (str(interaction.user.id), str(interaction.guild.id), f"%{tag}%"))
+            else:
+                cursor = await db.execute("""
+                    SELECT id, title, content, tags, created_at, pinned
+                    FROM personal_notes
+                    WHERE user_id = ? AND guild_id = ?
+                    ORDER BY pinned DESC, created_at DESC
+                """, (str(interaction.user.id), str(interaction.guild.id)))
+            
+            notes = await cursor.fetchall()
+        
+        if not notes:
+            await interaction.response.send_message(
+                "📝 Não tens notas guardadas!" + (f" com a tag **{tag}**" if tag else ""),
+                ephemeral=True
+            )
+            return
+        
+        embed = discord.Embed(
+            title=f"📋 As Tuas Notas" + (f" (Tag: {tag})" if tag else ""),
+            color=discord.Color.blue()
+        )
+        
+        for note_id, title, content, tags, created_at, pinned in notes[:10]:
+            pin_emoji = "📌 " if pinned else ""
+            embed.add_field(
+                name=f"{pin_emoji}{title} (ID: {note_id})",
+                value=f"{content[:50]}{'...' if len(content) > 50 else ''}\n"
+                      f"{'🏷️ ' + tags if tags else ''}\n"
+                      f"📅 {created_at}",
+                inline=False
+            )
+        
+        if len(notes) > 10:
+            embed.set_footer(text=f"A mostrar 10 de {len(notes)} notas. Use /note_view para ver mais.")
+        
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    
+    @app_commands.command(
+        name="note_view",
+        description="👁️ Ver nota completa"
+    )
+    @app_commands.describe(
+        note_id="ID da nota"
+    )
+    async def note_view(self, interaction: discord.Interaction, note_id: int):
+        """Ver nota completa"""
+        
+        import aiosqlite
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            cursor = await db.execute("""
+                SELECT title, content, tags, created_at, updated_at
+                FROM personal_notes
+                WHERE id = ? AND user_id = ?
+            """, (note_id, str(interaction.user.id)))
+            row = await cursor.fetchone()
+        
+        if not row:
+            await interaction.response.send_message(
+                "❌ Nota não encontrada!",
+                ephemeral=True
+            )
+            return
+        
+        title, content, tags, created_at, updated_at = row
+        
+        embed = discord.Embed(
+            title=f"📝 {title}",
+            description=content,
+            color=discord.Color.blue()
+        )
+        if tags:
+            embed.add_field(name="🏷️ Tags", value=tags, inline=False)
+        embed.add_field(name="📅 Criada", value=created_at, inline=True)
+        if updated_at != created_at:
+            embed.add_field(name="🔄 Atualizada", value=updated_at, inline=True)
+        embed.set_footer(text=f"ID: {note_id}")
+        
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    
+    @app_commands.command(
+        name="note_delete",
+        description="🗑️ Apagar nota"
+    )
+    @app_commands.describe(
+        note_id="ID da nota a apagar"
+    )
+    async def note_delete(self, interaction: discord.Interaction, note_id: int):
+        """Apagar nota"""
+        
+        import aiosqlite
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            cursor = await db.execute("""
+                DELETE FROM personal_notes
+                WHERE id = ? AND user_id = ?
+            """, (note_id, str(interaction.user.id)))
+            await db.commit()
+            
+            if cursor.rowcount == 0:
+                await interaction.response.send_message(
+                    "❌ Nota não encontrada!",
+                    ephemeral=True
+                )
+                return
+        
+        await interaction.response.send_message(
+            f"✅ Nota #{note_id} apagada com sucesso!",
+            ephemeral=True
+        )
+    
+    # ===== SISTEMA AFK =====
+    
+    @app_commands.command(
+        name="afk",
+        description="💤 Definir status AFK"
+    )
+    @app_commands.describe(
+        razao="Razão do AFK (opcional)"
+    )
+    async def afk(self, interaction: discord.Interaction, razao: str = "AFK"):
+        """Definir status AFK"""
+        
+        import aiosqlite
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            await db.execute("""
+                INSERT OR REPLACE INTO afk_status (user_id, guild_id, reason, set_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            """, (str(interaction.user.id), str(interaction.guild.id), razao))
+            await db.commit()
+        
+        await interaction.response.send_message(
+            f"💤 Definiste o teu status como AFK: **{razao}**\n"
+            f"Quando enviares uma mensagem, o AFK será removido automaticamente.",
+            ephemeral=True
+        )
+        bot_logger.info(f"{interaction.user} definiu AFK: {razao}")
+    
+    # ===== VOICE TRACKER =====
+    
+    @app_commands.command(
+        name="voicestats",
+        description="🎤 Ver estatísticas de tempo em voz"
+    )
+    @app_commands.describe(
+        membro="Membro a ver estatísticas (opcional)"
+    )
+    async def voicestats(self, interaction: discord.Interaction, membro: discord.Member = None):
+        """Ver estatísticas de voz"""
+        
+        target = membro or interaction.user
+        
+        import aiosqlite
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            cursor = await db.execute("""
+                SELECT total_time, sessions_count, last_session
+                FROM voice_totals
+                WHERE user_id = ? AND guild_id = ?
+            """, (str(target.id), str(interaction.guild.id)))
+            row = await cursor.fetchone()
+            
+            if not row:
+                await interaction.response.send_message(
+                    f"📊 {target.mention} ainda não tem tempo registado em canais de voz!",
+                    ephemeral=True
+                )
+                return
+            
+            total_time, sessions_count, last_session = row
+            
+            # Formatar tempo
+            hours = total_time // 3600
+            minutes = (total_time % 3600) // 60
+            
+            # Calcular média por sessão
+            avg_time = total_time // sessions_count if sessions_count > 0 else 0
+            avg_minutes = avg_time // 60
+            
+            embed = discord.Embed(
+                title=f"🎤 Estatísticas de Voz - {target.display_name}",
+                color=discord.Color.blue(),
+                timestamp=datetime.utcnow()
+            )
+            embed.set_thumbnail(url=target.display_avatar.url)
+            
+            embed.add_field(
+                name="⏱️ Tempo Total",
+                value=f"**{hours}h {minutes}m**",
+                inline=True
+            )
+            embed.add_field(
+                name="🔢 Sessões",
+                value=f"**{sessions_count}**",
+                inline=True
+            )
+            embed.add_field(
+                name="📊 Média/Sessão",
+                value=f"**{avg_minutes}m**",
+                inline=True
+            )
+            
+            if last_session:
+                embed.add_field(
+                    name="🕒 Última Sessão",
+                    value=f"<t:{int(datetime.fromisoformat(last_session).timestamp())}:R>",
+                    inline=False
+                )
+            
+            await interaction.response.send_message(embed=embed)
+    
+    @app_commands.command(
+        name="voiceleaderboard",
+        description="🏆 Top utilizadores em tempo de voz"
+    )
+    async def voiceleaderboard(self, interaction: discord.Interaction):
+        """Leaderboard de voz"""
+        
+        import aiosqlite
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            cursor = await db.execute("""
+                SELECT user_id, total_time, sessions_count
+                FROM voice_totals
+                WHERE guild_id = ?
+                ORDER BY total_time DESC
+                LIMIT 10
+            """, (str(interaction.guild.id),))
+            rows = await cursor.fetchall()
+        
+        if not rows:
+            await interaction.response.send_message(
+                "📊 Ainda não há dados de voz registados!",
+                ephemeral=True
+            )
+            return
+        
+        embed = discord.Embed(
+            title="🏆 Top 10 - Tempo em Voz",
+            color=discord.Color.gold(),
+            timestamp=datetime.utcnow()
+        )
+        
+        medals = ["🥇", "🥈", "🥉"]
+        
+        for i, (user_id, total_time, sessions_count) in enumerate(rows, 1):
+            user = interaction.guild.get_member(int(user_id))
+            if not user:
+                continue
+            
+            hours = total_time // 3600
+            minutes = (total_time % 3600) // 60
+            
+            medal = medals[i-1] if i <= 3 else f"`#{i}`"
+            
+            embed.add_field(
+                name=f"{medal} {user.display_name}",
+                value=f"⏱️ **{hours}h {minutes}m** | 🔢 {sessions_count} sessões",
+                inline=False
+            )
+        
+        await interaction.response.send_message(embed=embed)
+    
+    # ===== STARBOARD SETUP =====
+    
+    @app_commands.command(
+        name="setup_starboard",
+        description="⭐ Configurar sistema de Starboard"
+    )
+    @app_commands.describe(
+        canal="Canal para o starboard",
+        threshold="Número mínimo de reações (padrão: 3)",
+        emoji="Emoji para usar (padrão: ⭐)",
+        self_star="Permitir reagir às próprias mensagens (padrão: Não)"
+    )
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def setup_starboard(
+        self,
+        interaction: discord.Interaction,
+        canal: discord.TextChannel,
+        threshold: int = 3,
+        emoji: str = "⭐",
+        self_star: bool = False
+    ):
+        """Configurar Starboard"""
+        
+        if threshold < 1:
+            await interaction.response.send_message(
+                "❌ O threshold deve ser pelo menos 1!",
+                ephemeral=True
+            )
+            return
+        
+        # Atualizar configuração
+        if 'starboard' not in self.config:
+            self.config['starboard'] = {}
+        
+        self.config['starboard']['channel_id'] = canal.id
+        self.config['starboard']['star_threshold'] = threshold
+        self.config['starboard']['emoji'] = emoji
+        self.config['starboard']['enabled'] = True
+        self.config['starboard']['self_star'] = self_star
+        
+        # Salvar configuração
+        with open(self.config_file, 'w', encoding='utf-8') as f:
+            json.dump(self.config, f, indent=2, ensure_ascii=False)
+        
+        # Atualizar database config
+        import aiosqlite
+        async with aiosqlite.connect(self.bot.db.db_path) as db:
+            await db.execute("""
+                INSERT OR REPLACE INTO starboard_config 
+                (guild_id, channel_id, star_threshold, emoji, enabled, self_star)
+                VALUES (?, ?, ?, ?, 1, ?)
+            """, (
+                str(interaction.guild.id),
+                str(canal.id),
+                threshold,
+                emoji,
+                1 if self_star else 0
+            ))
+            await db.commit()
+        
+        embed = discord.Embed(
+            title="⭐ Starboard Configurado",
+            description=f"O sistema de Starboard foi configurado com sucesso!",
+            color=discord.Color.gold()
+        )
+        embed.add_field(name="📢 Canal", value=canal.mention, inline=True)
+        embed.add_field(name="🔢 Threshold", value=str(threshold), inline=True)
+        embed.add_field(name="⭐ Emoji", value=emoji, inline=True)
+        embed.add_field(name="🔄 Self-Star", value="✅ Sim" if self_star else "❌ Não", inline=True)
+        
+        await interaction.response.send_message(embed=embed)
+        bot_logger.info(f"Starboard configurado por {interaction.user} em {interaction.guild}")
+    
+    # ===== SUGGESTIONS SETUP =====
+    
+    @app_commands.command(
+        name="setup_suggestions",
+        description="💡 Configurar sistema de sugestões"
+    )
+    @app_commands.describe(
+        canal="Canal para sugestões"
+    )
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def setup_suggestions(self, interaction: discord.Interaction, canal: discord.TextChannel):
+        """Configurar sistema de sugestões"""
+        
+        # Atualizar configuração
+        if 'suggestions' not in self.config:
+            self.config['suggestions'] = {}
+        
+        self.config['suggestions']['channel_id'] = canal.id
+        
+        # Salvar configuração
+        with open(self.config_file, 'w', encoding='utf-8') as f:
+            json.dump(self.config, f, indent=2, ensure_ascii=False)
+        
+        embed = discord.Embed(
+            title="💡 Sistema de Sugestões Configurado",
+            description=f"As sugestões serão enviadas para {canal.mention}",
+            color=discord.Color.green()
+        )
+        embed.add_field(
+            name="📝 Como usar",
+            value="Os membros podem usar `/suggest` para criar sugestões!\n"
+                  "Use `/approve_suggestion` ou `/deny_suggestion` para gerir.",
+            inline=False
+        )
+        
+        await interaction.response.send_message(embed=embed)
+        bot_logger.info(f"Sistema de sugestões configurado por {interaction.user} em {interaction.guild}")
 
 
 async def setup(bot):
