@@ -122,7 +122,7 @@ Quando adicionas uma nova funcionalidade, traduz estes ficheiros:
 
 - `cogs/help.py` - Atualizar lista de comandos
 - `CHANGELOG.md` - Documentar mudanças
-- `README.md` (main) ou `README_EN.md` (en) - Atualizar documentação
+- `README.md` - Atualizar documentação em ambos os branches (PT no main, EN no en)
 
 ---
 
@@ -189,7 +189,7 @@ git push origin en
 - `cogs/help.py` - Comando /help
 - `config/i18n.py` - Sistema de traduções
 - `config/settings.py` - Suporte a idioma
-- `README_EN.md` - Documentação em inglês
+- `README.md` (branch en) - Documentação em inglês
 - `CHANGELOG.md` - Ambas as versões
 
 ### 🚧 A Traduzir (Futuro)

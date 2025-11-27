@@ -301,18 +301,19 @@ class SocialAdvancedCog(commands.Cog):
     
     # ===== TOP UTILIZADORES POR CATEGORIA =====
     
-    @app_commands.command(name="top_categoria", description="Top utilizadores por categoria")
-    @app_commands.describe(
-        categoria="Categoria para ver ranking"
-    )
-    @app_commands.choices(categoria=[
-        app_commands.Choice(name="🏆 Level mais alto", value="level"),
-        app_commands.Choice(name="💬 Mais mensagens", value="messages"),
-        app_commands.Choice(name="⭐ Mais reputação", value="reputation"),
-        app_commands.Choice(name="🏅 Mais badges", value="badges"),
-        app_commands.Choice(name="🔥 Melhor streak diário", value="streak")
-    ])
-    async def top_category(self, interaction: discord.Interaction, categoria: str):
+    # TEMPORARIAMENTE DESATIVADO - USE /leaderboard <categoria>
+    # @app_commands.command(name="top_categoria", description="Top utilizadores por categoria")
+    # @app_commands.describe(
+    #     categoria="Categoria para ver ranking"
+    # )
+    # @app_commands.choices(categoria=[
+    #     app_commands.Choice(name="🏆 Level mais alto", value="level"),
+    #     app_commands.Choice(name="💬 Mais mensagens", value="messages"),
+    #     app_commands.Choice(name="⭐ Mais reputação", value="reputation"),
+    #     app_commands.Choice(name="🏅 Mais badges", value="badges"),
+    #     app_commands.Choice(name="🔥 Melhor streak diário", value="streak")
+    # ])
+    async def top_category_disabled(self, interaction: discord.Interaction, categoria: str):
         """Ver top utilizadores por categoria"""
         await interaction.response.defer()
         

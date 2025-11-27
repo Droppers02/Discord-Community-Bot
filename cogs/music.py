@@ -64,6 +64,9 @@ class MusicQueue:
 class MusicCog(commands.Cog):
     """Cog para funcionalidades de música"""
     
+    # Definir grupos de comandos
+    playlist_group = app_commands.Group(name="playlist", description="🎵 Gerenciar playlists pessoais")
+    
     def __init__(self, bot):
         self.bot = bot
         self.queues: Dict[int, MusicQueue] = {}
@@ -124,20 +127,21 @@ class MusicCog(commands.Cog):
         }
         
         # Verificar se FFmpeg existe
+        import shutil
         ffmpeg_path = self.bot.config.ffmpeg_path
-        if os.path.exists(ffmpeg_path):
-            self.ffmpeg_options["executable"] = ffmpeg_path
-            self.bot.logger.info(f"✅ FFmpeg encontrado: {ffmpeg_path}")
-        else:
-            self.bot.logger.warning(f"⚠️ FFmpeg não encontrado em: {ffmpeg_path}")
-            # Tentar usar FFmpeg do sistema
-            import shutil
+        
+        # Se for apenas "ffmpeg", verificar no PATH do sistema
+        if ffmpeg_path == "ffmpeg" or not os.path.exists(ffmpeg_path):
             system_ffmpeg = shutil.which("ffmpeg")
             if system_ffmpeg:
                 self.ffmpeg_options["executable"] = system_ffmpeg
                 self.bot.logger.info(f"✅ Usando FFmpeg do sistema: {system_ffmpeg}")
             else:
                 self.bot.logger.error("❌ FFmpeg não encontrado no sistema!")
+        else:
+            # Caminho específico (Windows)
+            self.ffmpeg_options["executable"] = ffmpeg_path
+            self.bot.logger.info(f"✅ FFmpeg encontrado: {ffmpeg_path}")
 
     async def cog_load(self):
         """Método chamado quando o cog é carregado"""
@@ -1086,7 +1090,7 @@ class MusicCog(commands.Cog):
                 
                 # Estratégias múltiplas para contornar restrições do YouTube
                 extraction_strategies = [
-                    # Estratégia 1: Cliente Android (mais eficaz)
+                    # Estratégia 1: Android client mais recente
                     {
                         "format": "bestaudio/best",
                         "quiet": True,
@@ -1094,16 +1098,36 @@ class MusicCog(commands.Cog):
                         "extract_flat": False,
                         "extractor_args": {
                             "youtube": {
-                                "player_client": ["android"],
-                                "player_skip": ["configs", "webpage"]
+                                "player_client": ["android", "web"],
+                                "player_skip": ["webpage", "configs"]
                             }
                         },
                         "http_headers": {
-                            "User-Agent": "com.google.android.youtube/17.31.35 (Linux; U; Android 11) gzip"
+                            "User-Agent": "com.google.android.youtube/19.09.37 (Linux; U; Android 13) gzip",
+                            "Accept": "*/*",
+                            "Accept-Language": "en-US,en;q=0.9",
                         }
                     },
                     
-                    # Estratégia 2: Cliente Web Embedded
+                    # Estratégia 2: iOS client (muito eficaz)
+                    {
+                        "format": "bestaudio/best",
+                        "quiet": True,
+                        "no_warnings": True,
+                        "extract_flat": False,
+                        "extractor_args": {
+                            "youtube": {
+                                "player_client": ["ios", "web"],
+                                "player_skip": ["webpage"]
+                            }
+                        },
+                        "http_headers": {
+                            "User-Agent": "com.google.ios.youtube/19.09.3 (iPhone14,3; U; CPU iOS 15_6 like Mac OS X)",
+                            "Accept": "*/*",
+                        }
+                    },
+                    
+                    # Estratégia 3: Web Embedded com headers atualizados
                     {
                         "format": "bestaudio/best",
                         "quiet": True,
@@ -1116,33 +1140,27 @@ class MusicCog(commands.Cog):
                             }
                         },
                         "http_headers": {
-                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                            "Accept-Language": "en-US,en;q=0.9",
+                            "Referer": "https://www.youtube.com/"
                         }
                     },
                     
-                    # Estratégia 3: Headers customizados
+                    # Estratégia 4: TV client (alternativa)
                     {
                         "format": "bestaudio/best",
                         "quiet": True,
                         "no_warnings": True,
                         "extract_flat": False,
-                        "geo_bypass": True,
+                        "extractor_args": {
+                            "youtube": {
+                                "player_client": ["tv_embedded"],
+                            }
+                        },
                         "http_headers": {
-                            "User-Agent": "yt-dlp/2023.09.24",
-                            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                            "Accept-Language": "en-us,en;q=0.5",
-                            "Accept-Encoding": "gzip,deflate",
+                            "User-Agent": "Mozilla/5.0 (PlayStation; PlayStation 5/2.26) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0 Safari/605.1.15",
                         }
                     },
-                    
-                    # Estratégia 4: Configuração ultra-simples (fallback)
-                    {
-                        "format": "worst",
-                        "quiet": True,
-                        "no_warnings": True,
-                        "ignoreerrors": True,
-                        "no_check_certificate": True,
-                    }
                 ]
                 
                 data = None
@@ -1268,8 +1286,9 @@ class MusicCog(commands.Cog):
             except:
                 pass  # Evitar erro duplo
 
-    @app_commands.command(name="test_url", description="Testa a extração de URL (modo debug)")
-    async def test_url(self, interaction: discord.Interaction, url: str):
+    # COMANDO DE DEBUG - DESATIVADO PARA ECONOMIZAR SLOTS
+    # @app_commands.command(name="test_url", description="Testa a extração de URL (modo debug)")
+    async def test_url_disabled(self, interaction: discord.Interaction, url: str):
         """Testa diferentes estratégias de extração de URL"""
         try:
             self.bot.logger.info(f"Comando test_url usado por {interaction.user} com URL: {url}")
@@ -1396,8 +1415,9 @@ class MusicCog(commands.Cog):
         except Exception as e:
             self.bot.logger.error(f"Erro ao salvar playlists: {e}")
 
-    @app_commands.command(name="music_update", description="[ADMIN] Atualiza o yt-dlp para resolver problemas do YouTube")
-    async def music_update(self, interaction: discord.Interaction):
+    # COMANDO DE DEBUG - DESATIVADO PARA ECONOMIZAR SLOTS
+    # @app_commands.command(name="music_update", description="[ADMIN] Atualiza o yt-dlp para resolver problemas do YouTube")
+    async def music_update_disabled(self, interaction: discord.Interaction):
         """Atualiza o yt-dlp para a versão mais recente"""
         if not interaction.user.guild_permissions.administrator:
             await interaction.response.send_message("❌ Apenas administradores podem usar este comando!", ephemeral=True)
@@ -1454,7 +1474,7 @@ class MusicCog(commands.Cog):
         
         await interaction.edit_original_response(embed=embed)
 
-    @app_commands.command(name="playlist_create", description="Cria uma nova playlist pessoal")
+    @playlist_group.command(name="create", description="Cria uma nova playlist pessoal")
     @app_commands.describe(nome="Nome da playlist")
     async def playlist_create(self, interaction: discord.Interaction, nome: str):
         """Criar uma nova playlist"""
@@ -1541,7 +1561,7 @@ class MusicCog(commands.Cog):
         
         await interaction.followup.send(embed=embed)
 
-    @app_commands.command(name="playlist_play", description="Toca uma playlist completa")
+    @playlist_group.command(name="play", description="Toca uma playlist completa")
     @app_commands.describe(playlist="Nome da playlist para tocar")
     async def playlist_play(self, interaction: discord.Interaction, playlist: str):
         """Tocar playlist completa"""
@@ -1620,7 +1640,7 @@ class MusicCog(commands.Cog):
         if guild_id not in self.current_tracks or not self.current_tracks[guild_id]:
             await self.play_next(guild_id)
 
-    @app_commands.command(name="playlist_list", description="Lista as tuas playlists")
+    @playlist_group.command(name="list", description="Lista as tuas playlists")
     async def playlist_list(self, interaction: discord.Interaction):
         """Listar playlists do utilizador"""
         user_id = str(interaction.user.id)
@@ -1761,9 +1781,10 @@ class MusicCog(commands.Cog):
         
         await interaction.followup.send(embed=embed)
 
-    @app_commands.command(name="music_retry", description="[ADMIN] Força retry de URL que falhou recentemente")
-    @app_commands.describe(url="URL que falhou e está em cooldown")
-    async def music_retry(self, interaction: discord.Interaction, url: str):
+    # COMANDO DE DEBUG - DESATIVADO PARA ECONOMIZAR SLOTS
+    # @app_commands.command(name="music_retry", description="[ADMIN] Força retry de URL que falhou recentemente")
+    # @app_commands.describe(url="URL que falhou e está em cooldown")
+    async def music_retry_disabled(self, interaction: discord.Interaction, url: str):
         """Força retry de URL que está em cache negativo"""
         try:
             # Verificar se é admin
@@ -1809,8 +1830,9 @@ class MusicCog(commands.Cog):
             self.bot.logger.error(f"Erro no comando music_retry: {e}")
             await interaction.followup.send("❌ Erro interno no comando de retry.")
 
-    @app_commands.command(name="music_cache", description="[ADMIN] Mostra estatísticas do cache de música")
-    async def music_cache(self, interaction: discord.Interaction):
+    # COMANDO DE DEBUG - DESATIVADO PARA ECONOMIZAR SLOTS
+    # @app_commands.command(name="music_cache", description="[ADMIN] Mostra estatísticas do cache de música")
+    async def music_cache_disabled(self, interaction: discord.Interaction):
         """Mostra estatísticas do cache"""
         try:
             # Verificar se é admin
@@ -1865,8 +1887,9 @@ class MusicCog(commands.Cog):
             self.bot.logger.error(f"Erro no comando music_cache: {e}")
             await interaction.response.send_message("❌ Erro interno no comando de cache.")
 
-    @app_commands.command(name="voice_debug", description="[ADMIN] Diagnóstico detalhado da conexão de voz")
-    async def voice_debug(self, interaction: discord.Interaction):
+    # COMANDO DE DEBUG - DESATIVADO PARA ECONOMIZAR SLOTS
+    # @app_commands.command(name="voice_debug", description="[ADMIN] Diagnóstico detalhado da conexão de voz")
+    async def voice_debug_disabled(self, interaction: discord.Interaction):
         """Diagnóstico detalhado da conexão de voz"""
         try:
             # Verificar se é admin
@@ -1941,9 +1964,10 @@ class MusicCog(commands.Cog):
             self.bot.logger.error(f"Erro no comando voice_debug: {e}")
             await interaction.response.send_message("❌ Erro interno no comando de debug.")
 
-    @app_commands.command(name="test_ffmpeg", description="[ADMIN] Testa o FFmpeg com um URL específico")
-    @app_commands.describe(url="URL para testar com FFmpeg")
-    async def test_ffmpeg(self, interaction: discord.Interaction, url: str):
+    # COMANDO DE DEBUG - DESATIVADO PARA ECONOMIZAR SLOTS
+    # @app_commands.command(name="test_ffmpeg", description="[ADMIN] Testa o FFmpeg com um URL específico")
+    # @app_commands.describe(url="URL para testar com FFmpeg")
+    async def test_ffmpeg_disabled(self, interaction: discord.Interaction, url: str):
         """Testa o FFmpeg diretamente com um URL"""
         try:
             # Verificar se é admin

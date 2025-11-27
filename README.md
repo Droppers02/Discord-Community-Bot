@@ -4,9 +4,18 @@
 >
 > **Branch: `en` (English) | Main branch: `main` (Portuguese)**
 
+<<<<<<< HEAD
 [![Discord.py](https://img.shields.io/badge/discord.py-2.4.0-blue)](https://github.com/Rapptz/discord.py)
 [![Python](https://img.shields.io/badge/python-3.10+-green)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-orange)](LICENSE)
+=======
+Bot Discord completo com sistema de economia, jogos, música, moderação, tickets e muito mais!
+
+**Autor:** Droppers  
+**Linguagem:** Python 3.10+
+
+> 🌍 **English version available!** → [Switch to branch `en`](https://github.com/Droppers02/Discord-Community-Bot/tree/en)
+>>>>>>> main
 
 ---
 
@@ -26,6 +35,7 @@
 
 ### 🎮 Games (9 Games)
 
+<<<<<<< HEAD
 - **Tic-Tac-Toe** - Challenge players with 30s turn timer
 - **Connect 4** - 4-in-a-row with 45s turn timer
 - **Hangman** - Improved with text detection
@@ -35,6 +45,16 @@
 - **Math** - Math challenges (20s)
 - **Memory** - Number sequence memory (120s)
 - **Statistics & Leaderboards** - Track wins, losses, and rankings
+=======
+- **💰 Economia Avançada** - Moedas, loja, custom roles, trading, leilões, achievements, eventos especiais
+- **🎲 Jogos** - Jogos interativos (blackjack, slots, crash, coinflip, etc.)
+- **🎵 Música** - Player de música com fila e controles
+- **⭐ Social Avançado** - XP, níveis, perfis customizáveis, badges, casamentos, streaks e histórico
+- **🎫 Tickets** - Sistema profissional de suporte com categorias e gestão
+- **🛡️ Moderação** - Sistema avançado com logs, filtro de palavras, quarentena, appeals, anti-spam, anti-raid, NSFW detection, filtro de links, strikes, mention spam protection, auto-slowmode e role backup
+- **📊 Monitoramento** - Status do bot, servidor e utilizadores
+- **🔧 Utilidades Avançadas** - Lembretes, Polls, Anúncios, Auto-roles (3 painéis), Verificação 2FA, Sistema de Sugestões, Giveaways Automatizados, Timestamps, Notas Pessoais, Voice Tracker, Starboard, Sistema AFK
+>>>>>>> main
 
 ### 💰 Advanced Economy
 
@@ -266,6 +286,7 @@ TRANSLATIONS = {
 ### Project Structure
 
 ```
+<<<<<<< HEAD
 EPA BOTCHI/
 ├── cogs/                   # Command modules (cogs)
 │   ├── games.py           # Main games (TicTacToe, Connect4)
@@ -281,6 +302,387 @@ EPA BOTCHI/
 │   ├── utilities_advanced.py # Advanced utilities
 │   ├── help.py            # Help command (TRANSLATED)
 │   └── fun.py             # Fun commands
+=======
+https://discord.com/api/oauth2/authorize?client_id=CLIENT_ID&permissions=8&scope=bot%20applications.commands
+```
+
+**Permissões Necessárias:**
+
+- Administrator (recomendado)
+- OU: Manage Channels, Manage Roles, Kick Members, Ban Members, Manage Messages, etc.
+
+---
+
+## 🎯 Comandos
+
+### 💰 Economia
+
+**Básico:**
+
+```
+/saldo [@user]            - Ver saldo de EPA Coins
+/daily                    - Recompensa diária (streak bonus)
+/trabalho                 - Trabalhar por coins (cooldown: 1h)
+/crime                    - Crime arriscado (cooldown: 2h)
+/doar <@user> <valor>     - Doar coins a alguém
+/perfil [@user]           - Ver perfil económico completo
+```
+
+**Loja & Itens:**
+
+```
+/loja                     - Ver itens disponíveis
+/comprar <item>           - Comprar item da loja
+/inventario [@user]       - Ver inventário
+```
+
+**Economia Avançada:**
+
+```
+/comprar_role <nome> <cor> - Comprar Custom Role (50k coins)
+/editar_role [nome] [cor]  - Editar a tua Custom Role
+/remover_role              - Remover Custom Role
+/propor_trade <@user> <coins_tuas> <coins_deles> - Propor troca
+/trades_pendentes          - Ver trades pendentes
+/conquistas [@user]        - Ver achievements desbloqueados
+```
+
+**Leilões:**
+
+```
+/criar_leilao <nome> <desc> <lance> [compra_ja] [horas] - Criar leilão
+/leiloes                   - Ver leilões ativos
+/dar_lance <id> <valor>    - Dar lance em leilão
+```
+
+**Eventos (Admin):**
+
+```
+/criar_evento <tipo> <horas> [multiplicador] - Criar evento especial
+/eventos_ativos             - Ver eventos ativos
+```
+
+### 🎲 Jogos de Aposta
+
+```
+/blackjack <aposta>      - Jogar blackjack
+/slots <aposta>          - Slot machine
+/coinflip <aposta> <lado> - Cara ou coroa
+/crash <aposta>          - Jogo crash
+/roulette <aposta> <tipo> - Roleta
+/mines <aposta>          - Campo minado
+```
+
+### 🎮 Jogos Clássicos
+
+```
+/galo [@adversário]      - Jogo do Galo (Tic-Tac-Toe)
+/4emlinha [@adversário]  - 4 em Linha (Connect Four)
+/forca                   - Jogo da Forca (melhorado com botões)
+/quiz                    - Quiz de conhecimentos
+```
+
+### ⚡ Mini-Jogos de Reação
+
+```
+/reacao                  - Clica no emoji mais rápido!
+/matematica              - Resolve cálculos matemáticos
+/memoria                 - Jogo de memória com emojis
+```
+
+### 📊 Estatísticas de Jogos
+
+```
+/gamestats [@user] [jogo] - Ver estatísticas de jogos
+/gameleaderboard <jogo>   - Top 10 jogadores por jogo
+```
+
+**Jogos disponíveis para stats:** `galo`, `4emlinha`, `forca`, `quiz`, `blackjack`, `reacao`, `matematica`, `memoria`
+
+### 🎵 Música
+
+```
+/play <música>           - Tocar música
+/pause                   - Pausar
+/resume                  - Retomar
+/skip                    - Próxima música
+/stop                    - Parar e limpar fila
+/queue                   - Ver fila
+/nowplaying              - Música atual
+/volume <0-100>          - Ajustar volume
+```
+
+### ⭐ Sistema Social Avançado
+
+O bot possui um sistema social completo com XP, níveis, perfis customizáveis, badges, casamentos e histórico de atividades.
+
+**Comandos Básicos:**
+
+```
+/rank [@user]            - Ver nível, XP e progresso
+/like <@user>            - Dar reputação (cooldown: 1h)
+/leaderboard [tipo]      - Rankings (XP ou Reputação)
+```
+
+**Sistema de Perfis:**
+
+```
+/perfil [@user]          - Ver perfil completo com badges e casamento
+/editarperfil            - Customizar bio, pronomes, aniversário, jogo favorito
+/badges [@user]          - Ver todos os badges conquistados
+```
+
+**Perfis incluem:**
+
+- 📊 Estatísticas (Level, XP, Reputação, Mensagens)
+- 🎨 Customização (Bio, Cor do embed, Banner, Pronomes)
+- 🏅 Badges conquistados
+- 💍 Status de casamento
+- 🎮 2 campos personalizados
+
+**Sistema de Casamento:**
+
+```
+/casar <@user>           - Pedir utilizador em casamento
+/divorcio                - Divorciar-se (requer confirmação)
+```
+
+- Propostas interativas com botões aceitar/recusar
+- Badge 💍 automático ao casar
+- Exibição de parceiro no perfil
+- Sistema de ring tiers (💍/💎)
+
+**Histórico e Streaks:**
+
+```
+/historico [@user]       - Ver últimas 20 atividades
+/streaks                 - Ver streaks (Daily, Mensagens, Jogos)
+/top_categoria [cat]     - Top por Level, Mensagens, Reputação, Badges, Streak
+```
+
+**Badges Automáticos:**
+
+- 🔟 Nível 10
+- 🎖️ Nível 25
+- ⭐ Nível 50
+- 👑 Nível 100
+- 💍 Casamento
+
+**Sistema de XP:**
+
+- 15-25 XP por mensagem (cooldown: 60s)
+- Cálculo: Level = ⌊√(XP/100)⌋ + 1
+- Notificações automáticas de level up
+- Streaks de mensagens registados
+- Tudo armazenado em SQLite
+
+### 🎫 Tickets
+
+```
+/setup_tickets           - [ADMIN] Configurar painel com categorias
+/rename <novo_nome>      - [STAFF] Renomear ticket atual
+```
+
+**Funcionalidades:**
+
+- 5 categorias: Suporte Técnico, Dúvidas, Reports, Sugestões, Outros
+- Limite de 1 ticket por utilizador
+- Formato: 🎫┃username-0001 (ID sequencial)
+- Botão para fechar tickets
+- Sistema de permissões automático
+
+### 🛡️ Moderação
+
+**Comandos Básicos:**
+
+```
+/kick <@user> [razão]    - Expulsar membro
+/ban <@user> [razão]     - Banir membro
+/unban <user_id>         - Desbanir
+/timeout <@user> <preset> - Timeout com presets (1m, 5m, 10m, 30m, 1h, 6h, 12h, 1d, 3d, 1w)
+/untimeout <@user>       - Remover timeout
+/warn <@user> <razão>    - Avisar utilizador
+/warnings <@user>        - Ver avisos
+/clear <quantidade>      - Limpar mensagens
+```
+
+**Sistema de Logs:**
+
+```
+/setup_modlogs <#canal>  - Configurar canal de logs de moderação
+```
+
+- Logs automáticos de todas as ações (kick, ban, timeout, warn)
+- Embeds formatados com informações completas
+- Registro de filtro de palavras e quarentena
+
+**Filtro de Palavras:**
+
+```
+/setup_wordfilter <ativar> [ação] - Configurar filtro (warn/timeout/kick/ban)
+/addword <palavra>                - Adicionar palavra proibida
+/removeword <palavra>             - Remover palavra
+/listwords                        - Listar palavras proibidas
+```
+
+- Detecção automática de palavras proibidas
+- Ações configuráveis (aviso, timeout, kick, ban)
+- Logs detalhados de violações
+
+**Sistema de Quarentena:**
+
+```
+/setup_quarantine <ativar> [role] [duração] - Configurar quarentena
+```
+
+- Role automática para novos membros
+- Duração configurável em minutos
+- Remoção automática após tempo definido
+
+**Sistema de Appeals:**
+
+```
+/setup_appeals <ativar> [#canal] - Configurar appeals
+/appeal <servidor_id> <motivo>   - Pedir unban (DM)
+```
+
+- Usuários banidos podem pedir revisão
+- Appeals enviados para canal específico
+- Processo organizado para moderação
+
+**Auto-Moderação:**
+
+```
+/setup_antispam [ativar] [canal] [ação]          - Anti-spam com whitelist de canais
+/setup_antiraid [ativar] [threshold] [intervalo] - Proteção anti-raid
+/setup_nsfw [ativar] [canal] [ação] [api_key]   - Detecção de NSFW (DeepAI)
+/setup_linkfilter [ativar] [bloquear_convites] [bloquear_phishing] [canal] [acao_canal] - Filtro de links maliciosos
+/setup_strikes [ativar] [strikes_ban] [dias_expiracao] - Sistema de strikes
+/setup_mentionspam [ativar] [max_mencoes] [max_mencoes_roles] - Proteção mention spam
+/setup_slowmode [ativar] [threshold] [janela] [duracao] - Auto-slowmode
+/setup_rolebackup [ativar] [restaurar_unban] - Backup de roles
+```
+
+- **Anti-Spam**: Deteção de spam por mensagens rápidas e duplicadas
+
+  - Whitelist de canais (add/remove/list)
+  - Threshold configurável de mensagens
+  - Ações automáticas: warn, timeout, kick
+
+- **Anti-Raid**: Monitoramento de joins suspeitos
+
+  - Threshold configurável (X membros em Y segundos)
+  - Ação automática ao detetar raid
+  - Logs detalhados com timestamps
+
+- **NSFW Detection**: Análise de imagens com IA
+
+  - Integração com DeepAI API
+  - Whitelist de canais NSFW permitidos
+  - Confidence threshold ajustável
+  - Ações: delete, warn, timeout, kick
+
+- **Link Filter**: Proteção contra links maliciosos
+
+  - Bloqueio de convites do Discord (discord.gg, discord.com/invite)
+  - Deteção de domínios de phishing conhecidos
+  - Whitelist/blacklist de domínios
+  - Whitelist de canais
+  - Integração com sistema de strikes
+
+- **Sistema de Strikes**: Infrações progressivas (3 strikes = ban)
+
+  - Strikes automáticos em violações
+  - Strikes manuais: `/strike <user> <reason>`
+  - Ver strikes: `/strikes [user]`
+  - Limpar strikes: `/clearstrikes <user>` (admin)
+  - Expiração automática (padrão: 30 dias)
+  - Ações progressivas:
+    - Strike 1: Aviso em DM
+    - Strike 2: Timeout de 24 horas
+    - Strike 3: Ban automático
+
+- **Mention Spam Protection**: Limites de menções
+
+  - Máximo de menções de usuários (padrão: 5)
+  - Máximo de menções de roles (padrão: 2)
+  - Bloqueio de @everyone/@here não autorizado
+  - Timeout automático (padrão: 10 minutos)
+  - Integração com strikes
+
+- **Auto-Slowmode**: Slowmode durante alta atividade
+
+  - Threshold configurável (padrão: 20 msgs em 10s)
+  - Duração ajustável (padrão: 10s por 5 minutos)
+  - Remoção automática após expiração
+  - Notificação no canal
+
+- **Role Backup**: Preservação de roles em bans
+  - Backup automático ao banir
+  - Restauração automática ao desbanir (configurável)
+  - Verificação de hierarquia de roles
+
+### 📊 Monitoramento
+
+```
+/status                  - Status do bot
+/ping                    - Latência
+/serverinfo              - Info do servidor
+/userinfo [@user]        - Info do utilizador
+```
+
+### 🔧 Utilidades Básicas
+
+```
+/avatar [@user]          - Ver avatar de um utilizador
+/userinfo [@user]        - Informações de utilizador
+/serverinfo              - Informações do servidor
+/botinfo                 - Informações do bot
+```
+
+### 🔧 Utilidades Avançadas
+
+```
+/lembrete                - Criar lembrete (simples ou recorrente)
+/meus_lembretes          - Ver lembretes ativos
+/poll                    - Criar poll interativa (até 5 opções)
+/anuncio                 - [ADMIN] Agendar anúncio
+/setup_autoroles         - [ADMIN] Configurar 3 painéis de roles
+/setup_verificacao       - [ADMIN] Sistema de verificação 2FA
+/suggest                 - Criar sugestão para a comunidade
+/approve_suggestion      - [MOD] Aprovar sugestão
+/deny_suggestion         - [MOD] Recusar sugestão
+/setup_suggestions       - [ADMIN] Configurar sistema de sugestões
+/giveaway                - [MOD] Criar giveaway automatizado
+/timestamp               - Gerar timestamp do Discord
+/note_add                - Adicionar nota pessoal privada
+/notes                   - Ver as tuas notas (filtro por tag)
+/note_view               - Ver nota completa
+/note_delete             - Apagar nota
+/voicestats              - Ver estatísticas de tempo em voz
+/voiceleaderboard        - Top 10 usuários por tempo em voz
+/setup_starboard         - [ADMIN] Configurar Starboard
+/afk                     - Definir status AFK
+```
+
+### 👑 Admin
+
+```
+/reload <cog>            - Recarregar módulo
+/sync                    - Sincronizar comandos
+```
+
+---
+
+## 📁 Estrutura
+
+```
+EPA-BOT/
+├── main.py              # Arquivo principal
+├── requirements.txt     # Dependências
+├── .env                 # Configuração (NÃO COMMITAR!)
+├── .gitignore          # Arquivos ignorados
+>>>>>>> main
 │
 ├── config/                 # Configuration
 │   ├── settings.py        # Bot settings

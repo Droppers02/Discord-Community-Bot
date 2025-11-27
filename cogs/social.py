@@ -892,21 +892,21 @@ class SocialCog(commands.Cog):
         except Exception as e:
             self.bot.logger.error(f"Erro ao dar recompensa de streak: {e}")
     
-    @app_commands.command(name="friends", description="Manage your friends list")
-    @app_commands.describe(action="Action to perform", user="Target user")
-    @app_commands.choices(action=[
-        app_commands.Choice(name="📋 View friends list", value="list"),
-        app_commands.Choice(name="➕ Add friend", value="add"),
-        app_commands.Choice(name="➖ Remove friend", value="remove"),
-        app_commands.Choice(name="📬 Pending requests", value="pending")
+    @app_commands.command(name="amigos", description="Gerenciar a tua lista de amigos")
+    @app_commands.describe(acao="Ação a realizar", utilizador="Utilizador alvo")
+    @app_commands.choices(acao=[
+        app_commands.Choice(name="📋 Ver lista de amigos", value="list"),
+        app_commands.Choice(name="➕ Adicionar amigo", value="add"),
+        app_commands.Choice(name="➖ Remover amigo", value="remove"),
+        app_commands.Choice(name="📬 Pedidos pendentes", value="pending")
     ])
     async def friends(
         self, 
         interaction: discord.Interaction, 
-        action: str,
-        user: Optional[discord.Member] = None
+        acao: str,
+        utilizador: Optional[discord.Member] = None
     ):
-        """Friends/friend list system"""
+        """Sistema de amizades/friend list"""
         if not self.db:
             await interaction.response.send_message("❌ Database não disponível!", ephemeral=True)
             return
@@ -1072,9 +1072,9 @@ class SocialCog(commands.Cog):
             self.bot.logger.error(f"Erro no sistema de amigos: {e}")
             await interaction.response.send_message("❌ Erro ao processar pedido!", ephemeral=True)
     
-    @app_commands.command(name="friends_accept", description="Accept a friend request")
-    @app_commands.describe(user="User who sent the request")
-    async def accept_friend(self, interaction: discord.Interaction, user: discord.Member):
+    @app_commands.command(name="amigos_aceitar", description="Aceitar um pedido de amizade")
+    @app_commands.describe(utilizador="Utilizador que enviou o pedido")
+    async def accept_friend(self, interaction: discord.Interaction, utilizador: discord.Member):
         """Aceitar pedido de amizade"""
         if not self.db:
             await interaction.response.send_message("❌ Database não disponível!", ephemeral=True)
@@ -1133,9 +1133,9 @@ class SocialCog(commands.Cog):
             self.bot.logger.error(f"Erro ao aceitar amizade: {e}")
             await interaction.response.send_message("❌ Erro ao aceitar pedido!", ephemeral=True)
     
-    @app_commands.command(name="friends_reject", description="Reject a friend request")
-    @app_commands.describe(user="User who sent the request")
-    async def reject_friend(self, interaction: discord.Interaction, user: discord.Member):
+    @app_commands.command(name="amigos_rejeitar", description="Rejeitar um pedido de amizade")
+    @app_commands.describe(utilizador="Utilizador que enviou o pedido")
+    async def reject_friend(self, interaction: discord.Interaction, utilizador: discord.Member):
         """Rejeitar pedido de amizade"""
         if not self.db:
             await interaction.response.send_message("❌ Database não disponível!", ephemeral=True)
@@ -1231,14 +1231,14 @@ class SocialCog(commands.Cog):
         except Exception as e:
             self.bot.logger.error(f"Erro ao verificar achievements: {e}")
     
-    @app_commands.command(name="marriage_upgrade", description="Upgrade your marriage ring")
-    @app_commands.describe(tier="Desired ring tier (1-5)")
+    @app_commands.command(name="casamento_upgrade", description="Fazer upgrade do anel de casamento")
+    @app_commands.describe(tier="Nível do anel desejado (1-5)")
     @app_commands.choices(tier=[
-        app_commands.Choice(name="🥉 Bronze (Tier 1) - Free", value=1),
-        app_commands.Choice(name="🥈 Silver (Tier 2) - $50,000", value=2),
-        app_commands.Choice(name="🥇 Gold (Tier 3) - $150,000", value=3),
-        app_commands.Choice(name="💎 Diamond (Tier 4) - $500,000", value=4),
-        app_commands.Choice(name="👑 Platinum (Tier 5) - $1,000,000", value=5),
+        app_commands.Choice(name="🥉 Bronze (Tier 1) - Grátis", value=1),
+        app_commands.Choice(name="🥈 Prata (Tier 2) - $50,000", value=2),
+        app_commands.Choice(name="🥇 Ouro (Tier 3) - $150,000", value=3),
+        app_commands.Choice(name="💎 Diamante (Tier 4) - $500,000", value=4),
+        app_commands.Choice(name="👑 Platina (Tier 5) - $1,000,000", value=5),
     ])
     async def marriage_upgrade(self, interaction: discord.Interaction, tier: int):
         """Sistema de ring tier upgrades"""
@@ -1441,15 +1441,15 @@ class SocialCog(commands.Cog):
         except Exception as e:
             self.bot.logger.error(f"Erro ao verificar aniversários: {e}")
     
-    @app_commands.command(name="activity", description="View activity chart (messages/XP)")
+    @app_commands.command(name="atividade", description="Ver gráfico de atividade (mensagens/XP)")
     @app_commands.describe(
-        user="User to view activity (optional)",
-        period="Time period"
+        utilizador="Utilizador para ver atividade (opcional)",
+        periodo="Período de tempo"
     )
-    @app_commands.choices(period=[
-        app_commands.Choice(name="📅 Last Week (7 days)", value="7"),
-        app_commands.Choice(name="📆 Last Month (30 days)", value="30"),
-        app_commands.Choice(name="📊 Last 3 Months (90 days)", value="90"),
+    @app_commands.choices(periodo=[
+        app_commands.Choice(name="📅 Última Semana (7 dias)", value="7"),
+        app_commands.Choice(name="📆 Último Mês (30 dias)", value="30"),
+        app_commands.Choice(name="📊 Últimos 3 Meses (90 dias)", value="90"),
     ])
     async def activity_chart(
         self,

@@ -98,12 +98,21 @@ Lista de tarefas, melhorias e correções planeadas para versões futuras.
 - [x] Anti-spam com whitelist de canais
 - [x] Anti-raid com monitoramento de joins
 - [x] Moderação de imagens (NSFW detection via DeepAI)
+<<<<<<< HEAD
 - [x] Configuração por canal (whitelists)
 - [ ] Detecção de links maliciosos/phishing
 - [ ] Sistema de strikes (3 strikes = ban automático)
 - [ ] Auto-mute em menção em massa (@everyone/@here spam)
 - [ ] Auto-slowmode em raids
 - [ ] Backup automático de roles ao banir (restaurar ao desbanir)
+=======
+- [x] Filtro de links maliciosos (convites Discord, phishing)
+- [x] Sistema de strikes (3 strikes = auto-ban)
+- [x] Proteção contra mention spam (@everyone, @here)
+- [x] Auto-slowmode durante alta atividade
+- [x] Backup/restore de roles em bans/unbans
+- [x] Configuração por canal (whitelists)
+>>>>>>> main
 
 ### Tickets
 
@@ -123,7 +132,7 @@ Lista de tarefas, melhorias e correções planeadas para versões futuras.
 - [x] Sistema de lembretes recorrentes
 - [x] Polls/votações avançadas
 - [x] Sistema de anúncios agendados
-- [x] Welcome messages customizáveis
+- [x] Welcome messages customizáveisG
 - [x] Auto-roles em 3 painéis separados (Jogos, Plataformas, DM)
 - [x] Sistema de verificação 2FA (desafio matemático + código DM)
 - [x] Sistema de configuração JSON para roles/canais personalizáveis

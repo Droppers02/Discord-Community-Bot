@@ -145,6 +145,7 @@ class HelpCog(commands.Cog):
         embed2.add_field(name="🎊 **Special Events**", value="\n".join(events_commands), inline=False)
         
         social_commands = [
+<<<<<<< HEAD
             "• `/rank [user]` - View level, XP and progress",
             "• `/like <user>` - Give reputation (1h cooldown)",
             "• `/leaderboard <category>` - Rankings (XP/Rep/Money/Games/Msgs/Streaks)",
@@ -155,10 +156,23 @@ class HelpCog(commands.Cog):
             "• `/divorcio` - Divorce",
             "• `/historico [user]` - View activities",
             "• `/streaks` - View streaks (Daily/Messages/Games)"
+=======
+            "• `/rank [user]` - Ver nível, XP e progresso",
+            "• `/like <user>` - Dar reputação (1h cooldown)",
+            "• `/leaderboard <categoria>` - Rankings (XP/Rep/Dinheiro/Jogos/Msgs/Streaks)",
+            "• `/perfil [user]` - Ver perfil completo",
+            "• `/editarperfil` - Customizar perfil",
+            "• `/badges [user]` - Ver badges conquistados",
+            "• `/casar <user>` - Pedir em casamento",
+            "• `/divorcio` - Divorciar-se",
+            "• `/historico [user]` - Ver atividades",
+            "• `/streaks` - Ver streaks (Daily/Mensagens/Jogos)"
+>>>>>>> main
         ]
         embed2.add_field(name="⭐ **Advanced Social**", value="\n".join(social_commands), inline=False)
         
         social_new = [
+<<<<<<< HEAD
             "• `/amigos <action> [user]` - Friends system",
             "• `/amigos_aceitar <user>` - Accept request",
             "• `/amigos_rejeitar <user>` - Reject request",
@@ -168,6 +182,17 @@ class HelpCog(commands.Cog):
         embed2.add_field(name="👥 **New Features**", value="\n".join(social_new), inline=False)
         
         embed2.set_footer(text="Page 2/5 • Use buttons to navigate")
+=======
+            "• `/amigos <acao> [user]` - Sistema de amizades",
+            "• `/amigos_aceitar <user>` - Aceitar pedido",
+            "• `/amigos_rejeitar <user>` - Rejeitar pedido",
+            "• `/casamento_upgrade <tier>` - Upgrade anel (1-5)",
+            "• `/atividade [periodo] [user]` - Gráficos de atividade"
+        ]
+        embed2.add_field(name="👥 **Funcionalidades Novas**", value="\n".join(social_new), inline=False)
+        
+        embed2.set_footer(text="Página 2/5 • Use os botões para navegar")
+>>>>>>> main
         embeds.append(embed2)
         
         # ===== PAGE 3: Music & Utilities =====
@@ -179,6 +204,7 @@ class HelpCog(commands.Cog):
             embed3.set_thumbnail(url=self.bot.user.avatar.url)
         
         music_commands = [
+<<<<<<< HEAD
             "• `/play <song>` - Play music",
             "• `/pause` - Pause",
             "• `/resume` - Resume",
@@ -192,10 +218,26 @@ class HelpCog(commands.Cog):
             "• `/playlist_add <name> <url>` - Add to playlist",
             "• `/playlist_play <name>` - Play playlist",
             "• `/playlist_list` - List playlists"
+=======
+            "• `/play <música>` - Tocar música",
+            "• `/pause` - Pausar",
+            "• `/resume` - Retomar",
+            "• `/skip` - Próxima música",
+            "• `/stop` - Parar e limpar fila",
+            "• `/queue` - Ver fila",
+            "• `/nowplaying` - Música atual",
+            "• `/voteskip` - Votar para pular música",
+            "• `/letra` - Mostrar letra da música",
+            "• `/playlist create <nome>` - Criar playlist",
+            "• `/playlist add <nome> <url>` - Adicionar à playlist",
+            "• `/playlist play <nome>` - Tocar playlist",
+            "• `/playlist list` - Listar playlists"
+>>>>>>> main
         ]
         embed3.add_field(name="🎵 **Music**", value="\n".join(music_commands), inline=False)
         
         utility_commands = [
+<<<<<<< HEAD
             "• `/avatar [user]` - View avatar",
             "• `/emoji <emoji>` - Enlarge custom emoji",
             "• `/emojiinfo <emoji>` - Emoji technical info",
@@ -219,6 +261,31 @@ class HelpCog(commands.Cog):
             "• `/voiceleaderboard` - Top 10 voice time",
             "• `/setup_starboard <channel> [threshold] [emoji] [self_star]` - [ADMIN] Setup Starboard",
             "• `/afk [reason]` - Set AFK status"
+=======
+            "• `/avatar [user]` - Ver avatar",
+            "• `/emoji <emoji>` - Ampliar emoji customizado",
+            "• `/emojiinfo <emoji>` - Info técnica de emoji",
+            "• `/userinfo [user]` - Info de utilizador",
+            "• `/serverinfo` - Info do servidor",
+            "• `/botinfo` - Info do bot",
+            "• `/lembrete` - Criar lembrete",
+            "• `/poll` - Criar votação",
+            "• `/anuncio` - [ADMIN] Agendar anúncio",
+            "• `/sugestao enviar <texto>` - Criar sugestão",
+            "• `/sugestao aprovar <id> [nota]` - [MOD] Aprovar sugestão",
+            "• `/sugestao negar <id> <razão>` - [MOD] Recusar sugestão",
+            "• `/setup_suggestions <canal>` - [ADMIN] Configurar sistema de sugestões",
+            "• `/giveaway <duração> <vencedores> <prêmio>` - [MOD] Criar giveaway",
+            "• `/timestamp <data_hora> [estilo]` - Gerar timestamp do Discord",
+            "• `/nota add <título> <conteúdo> [tags]` - Adicionar nota",
+            "• `/nota list [tag]` - Listar notas pessoais",
+            "• `/nota view <id>` - Ver nota completa",
+            "• `/nota delete <id>` - Apagar nota",
+            "• `/voz stats [membro]` - Estatísticas de tempo em voz",
+            "• `/voz leaderboard` - Top 10 tempo em voz",
+            "• `/setup_starboard <canal> [threshold] [emoji] [self_star]` - [ADMIN] Configurar Starboard",
+            "• `/afk [razão]` - Definir status AFK"
+>>>>>>> main
         ]
         embed3.add_field(name="🔧 **Utilities**", value="\n".join(utility_commands), inline=False)
         
@@ -238,9 +305,15 @@ class HelpCog(commands.Cog):
             "• `/ban <user> [reason]` - Ban",
             "• `/unban <user_id>` - Unban",
             "• `/timeout <user> <preset>` - Timeout",
+<<<<<<< HEAD
             "• `/untimeout <user>` - Remove timeout",
             "• `/warn <user> <reason>` - Warn",
             "• `/warnings <user>` - View warnings"
+=======
+            "• `/untimeout <user>` - Remover timeout",
+            "• `/warn <user> <razão>` - Avisar",
+            "• `/warnings <user>` - Ver avisos"
+>>>>>>> main
         ]
         embed4.add_field(name="🛡️ **Basic Moderation**", value="\n".join(moderation_commands), inline=False)
         
@@ -251,7 +324,15 @@ class HelpCog(commands.Cog):
         ]
         embed4.add_field(name="🗑️ **Message Cleanup**", value="\n".join(clear_commands), inline=False)
         
+        clear_commands = [
+            "• `/clear quantidade <número>` - Limpar N mensagens",
+            "• `/clear apartir <msg_id> [limite]` - A partir de mensagem",
+            "• `/clear intervalo <msg1> <msg2>` - Entre duas mensagens"
+        ]
+        embed4.add_field(name="🗑️ **Limpeza de Mensagens**", value="\n".join(clear_commands), inline=False)
+        
         moderation_advanced = [
+<<<<<<< HEAD
             "• `/setup_modlogs <channel>` - Moderation logs",
             "• `/setup_wordfilter` - Word filter",
             "• `/setup_quarantine` - Quarantine system",
@@ -267,6 +348,23 @@ class HelpCog(commands.Cog):
             "• `/strike <member> <reason>` - Add strike",
             "• `/strikes [member]` - View strikes",
             "• `/clearstrikes <member>` - Clear strikes"
+=======
+            "• `/setup_modlogs <canal>` - Logs de moderação",
+            "• `/setup_wordfilter` - Filtro de palavras",
+            "• `/setup_quarantine` - Sistema de quarentena",
+            "• `/setup_antispam` - Anti-spam com whitelist",
+            "• `/setup_antiraid` - Proteção anti-raid",
+            "• `/setup_nsfw` - Detecção de NSFW",
+            "• `/setup_appeals` - Sistema de appeals",
+            "• `/setup_linkfilter` - Filtro de links maliciosos",
+            "• `/setup_strikes` - Configurar sistema de strikes",
+            "• `/setup_mentionspam` - Proteção contra mention spam",
+            "• `/setup_slowmode` - Auto-slowmode",
+            "• `/setup_rolebackup` - Backup/restauro de roles",
+            "• `/strike <membro> <motivo>` - Adicionar strike",
+            "• `/strikes [membro]` - Ver strikes",
+            "• `/clearstrikes <membro>` - Limpar strikes"
+>>>>>>> main
         ]
         embed4.add_field(name="🔧 **Advanced Moderation**", value="\n".join(moderation_advanced), inline=False)
         
