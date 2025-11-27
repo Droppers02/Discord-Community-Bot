@@ -188,10 +188,10 @@ class HelpCog(commands.Cog):
             "• `/nowplaying` - Música atual",
             "• `/voteskip` - Votar para pular música",
             "• `/letra` - Mostrar letra da música",
-            "• `/playlist_create <nome>` - Criar playlist",
-            "• `/playlist_add <nome> <url>` - Adicionar à playlist",
-            "• `/playlist_play <nome>` - Tocar playlist",
-            "• `/playlist_list` - Listar playlists"
+            "• `/playlist create <nome>` - Criar playlist",
+            "• `/playlist add <nome> <url>` - Adicionar à playlist",
+            "• `/playlist play <nome>` - Tocar playlist",
+            "• `/playlist list` - Listar playlists"
         ]
         embed3.add_field(name="🎵 **Música**", value="\n".join(music_commands), inline=False)
         
@@ -205,18 +205,18 @@ class HelpCog(commands.Cog):
             "• `/lembrete` - Criar lembrete",
             "• `/poll` - Criar votação",
             "• `/anuncio` - [ADMIN] Agendar anúncio",
-            "• `/suggest <texto>` - Criar sugestão",
-            "• `/approve_suggestion <id> [nota]` - [MOD] Aprovar sugestão",
-            "• `/deny_suggestion <id> <razão>` - [MOD] Recusar sugestão",
+            "• `/sugestao enviar <texto>` - Criar sugestão",
+            "• `/sugestao aprovar <id> [nota]` - [MOD] Aprovar sugestão",
+            "• `/sugestao negar <id> <razão>` - [MOD] Recusar sugestão",
             "• `/setup_suggestions <canal>` - [ADMIN] Configurar sistema de sugestões",
             "• `/giveaway <duração> <vencedores> <prêmio>` - [MOD] Criar giveaway",
             "• `/timestamp <data_hora> [estilo]` - Gerar timestamp do Discord",
-            "• `/note_add <título> <conteúdo> [tags]` - Adicionar nota",
-            "• `/notes [tag]` - Listar notas pessoais",
-            "• `/note_view <id>` - Ver nota completa",
-            "• `/note_delete <id>` - Apagar nota",
-            "• `/voicestats [membro]` - Estatísticas de tempo em voz",
-            "• `/voiceleaderboard` - Top 10 tempo em voz",
+            "• `/nota add <título> <conteúdo> [tags]` - Adicionar nota",
+            "• `/nota list [tag]` - Listar notas pessoais",
+            "• `/nota view <id>` - Ver nota completa",
+            "• `/nota delete <id>` - Apagar nota",
+            "• `/voz stats [membro]` - Estatísticas de tempo em voz",
+            "• `/voz leaderboard` - Top 10 tempo em voz",
             "• `/setup_starboard <canal> [threshold] [emoji] [self_star]` - [ADMIN] Configurar Starboard",
             "• `/afk [razão]` - Definir status AFK"
         ]

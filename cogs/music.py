@@ -64,6 +64,9 @@ class MusicQueue:
 class MusicCog(commands.Cog):
     """Cog para funcionalidades de música"""
     
+    # Definir grupos de comandos
+    playlist_group = app_commands.Group(name="playlist", description="🎵 Gerenciar playlists pessoais")
+    
     def __init__(self, bot):
         self.bot = bot
         self.queues: Dict[int, MusicQueue] = {}
@@ -1283,8 +1286,9 @@ class MusicCog(commands.Cog):
             except:
                 pass  # Evitar erro duplo
 
-    @app_commands.command(name="test_url", description="Testa a extração de URL (modo debug)")
-    async def test_url(self, interaction: discord.Interaction, url: str):
+    # COMANDO DE DEBUG - DESATIVADO PARA ECONOMIZAR SLOTS
+    # @app_commands.command(name="test_url", description="Testa a extração de URL (modo debug)")
+    async def test_url_disabled(self, interaction: discord.Interaction, url: str):
         """Testa diferentes estratégias de extração de URL"""
         try:
             self.bot.logger.info(f"Comando test_url usado por {interaction.user} com URL: {url}")
@@ -1411,8 +1415,9 @@ class MusicCog(commands.Cog):
         except Exception as e:
             self.bot.logger.error(f"Erro ao salvar playlists: {e}")
 
-    @app_commands.command(name="music_update", description="[ADMIN] Atualiza o yt-dlp para resolver problemas do YouTube")
-    async def music_update(self, interaction: discord.Interaction):
+    # COMANDO DE DEBUG - DESATIVADO PARA ECONOMIZAR SLOTS
+    # @app_commands.command(name="music_update", description="[ADMIN] Atualiza o yt-dlp para resolver problemas do YouTube")
+    async def music_update_disabled(self, interaction: discord.Interaction):
         """Atualiza o yt-dlp para a versão mais recente"""
         if not interaction.user.guild_permissions.administrator:
             await interaction.response.send_message("❌ Apenas administradores podem usar este comando!", ephemeral=True)
@@ -1469,7 +1474,7 @@ class MusicCog(commands.Cog):
         
         await interaction.edit_original_response(embed=embed)
 
-    @app_commands.command(name="playlist_create", description="Cria uma nova playlist pessoal")
+    @playlist_group.command(name="create", description="Cria uma nova playlist pessoal")
     @app_commands.describe(nome="Nome da playlist")
     async def playlist_create(self, interaction: discord.Interaction, nome: str):
         """Criar uma nova playlist"""
@@ -1556,7 +1561,7 @@ class MusicCog(commands.Cog):
         
         await interaction.followup.send(embed=embed)
 
-    @app_commands.command(name="playlist_play", description="Toca uma playlist completa")
+    @playlist_group.command(name="play", description="Toca uma playlist completa")
     @app_commands.describe(playlist="Nome da playlist para tocar")
     async def playlist_play(self, interaction: discord.Interaction, playlist: str):
         """Tocar playlist completa"""
@@ -1635,7 +1640,7 @@ class MusicCog(commands.Cog):
         if guild_id not in self.current_tracks or not self.current_tracks[guild_id]:
             await self.play_next(guild_id)
 
-    @app_commands.command(name="playlist_list", description="Lista as tuas playlists")
+    @playlist_group.command(name="list", description="Lista as tuas playlists")
     async def playlist_list(self, interaction: discord.Interaction):
         """Listar playlists do utilizador"""
         user_id = str(interaction.user.id)
@@ -1776,9 +1781,10 @@ class MusicCog(commands.Cog):
         
         await interaction.followup.send(embed=embed)
 
-    @app_commands.command(name="music_retry", description="[ADMIN] Força retry de URL que falhou recentemente")
-    @app_commands.describe(url="URL que falhou e está em cooldown")
-    async def music_retry(self, interaction: discord.Interaction, url: str):
+    # COMANDO DE DEBUG - DESATIVADO PARA ECONOMIZAR SLOTS
+    # @app_commands.command(name="music_retry", description="[ADMIN] Força retry de URL que falhou recentemente")
+    # @app_commands.describe(url="URL que falhou e está em cooldown")
+    async def music_retry_disabled(self, interaction: discord.Interaction, url: str):
         """Força retry de URL que está em cache negativo"""
         try:
             # Verificar se é admin
@@ -1824,8 +1830,9 @@ class MusicCog(commands.Cog):
             self.bot.logger.error(f"Erro no comando music_retry: {e}")
             await interaction.followup.send("❌ Erro interno no comando de retry.")
 
-    @app_commands.command(name="music_cache", description="[ADMIN] Mostra estatísticas do cache de música")
-    async def music_cache(self, interaction: discord.Interaction):
+    # COMANDO DE DEBUG - DESATIVADO PARA ECONOMIZAR SLOTS
+    # @app_commands.command(name="music_cache", description="[ADMIN] Mostra estatísticas do cache de música")
+    async def music_cache_disabled(self, interaction: discord.Interaction):
         """Mostra estatísticas do cache"""
         try:
             # Verificar se é admin
@@ -1880,8 +1887,9 @@ class MusicCog(commands.Cog):
             self.bot.logger.error(f"Erro no comando music_cache: {e}")
             await interaction.response.send_message("❌ Erro interno no comando de cache.")
 
-    @app_commands.command(name="voice_debug", description="[ADMIN] Diagnóstico detalhado da conexão de voz")
-    async def voice_debug(self, interaction: discord.Interaction):
+    # COMANDO DE DEBUG - DESATIVADO PARA ECONOMIZAR SLOTS
+    # @app_commands.command(name="voice_debug", description="[ADMIN] Diagnóstico detalhado da conexão de voz")
+    async def voice_debug_disabled(self, interaction: discord.Interaction):
         """Diagnóstico detalhado da conexão de voz"""
         try:
             # Verificar se é admin
@@ -1956,9 +1964,10 @@ class MusicCog(commands.Cog):
             self.bot.logger.error(f"Erro no comando voice_debug: {e}")
             await interaction.response.send_message("❌ Erro interno no comando de debug.")
 
-    @app_commands.command(name="test_ffmpeg", description="[ADMIN] Testa o FFmpeg com um URL específico")
-    @app_commands.describe(url="URL para testar com FFmpeg")
-    async def test_ffmpeg(self, interaction: discord.Interaction, url: str):
+    # COMANDO DE DEBUG - DESATIVADO PARA ECONOMIZAR SLOTS
+    # @app_commands.command(name="test_ffmpeg", description="[ADMIN] Testa o FFmpeg com um URL específico")
+    # @app_commands.describe(url="URL para testar com FFmpeg")
+    async def test_ffmpeg_disabled(self, interaction: discord.Interaction, url: str):
         """Testa o FFmpeg diretamente com um URL"""
         try:
             # Verificar se é admin

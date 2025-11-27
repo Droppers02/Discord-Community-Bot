@@ -527,8 +527,9 @@ class GamesExtraCog(commands.Cog):
             # Para interações de botões, usar response.edit_message
             await interaction.response.edit_message(embed=embed, view=view)
 
-    @app_commands.command(name="memes", description="Envia um meme aleatório")
-    async def memes(self, interaction: discord.Interaction):
+    # TEMPORARIAMENTE DESATIVADO PARA ECONOMIZAR SLOTS
+    # @app_commands.command(name="memes", description="Envia um meme aleatório")
+    async def memes_disabled(self, interaction: discord.Interaction):
         """Envia memes aleatórios"""
         await interaction.response.defer()
         

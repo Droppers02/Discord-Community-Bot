@@ -729,6 +729,11 @@ class MathChallengeButton(discord.ui.View):
 class UtilitiesAdvanced(commands.Cog):
     """Sistema avançado de utilidades"""
     
+    # Definir grupos de comandos
+    nota_group = app_commands.Group(name="nota", description="📝 Sistema de notas pessoais")
+    voz_group = app_commands.Group(name="voz", description="🎤 Estatísticas de voz")
+    sugestao_group = app_commands.Group(name="sugestao", description="💡 Sistema de sugestões")
+    
     def __init__(self, bot):
         self.bot = bot
         self.reminders_file = "data/reminders.json"
@@ -1736,16 +1741,10 @@ class UtilitiesAdvanced(commands.Cog):
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
     
-    @app_commands.command(name="sync", description="🔄 Sincronizar comandos slash (Apenas Donos)")
-    @app_commands.describe(
-        modo="Modo de sincronização"
-    )
-    @app_commands.choices(modo=[
-        app_commands.Choice(name="Global (todos os servidores)", value="global"),
-        app_commands.Choice(name="Servidor Atual (imediato)", value="guild"),
-        app_commands.Choice(name="Limpar Servidor Atual", value="clear_guild")
-    ])
-    async def sync_commands(self, interaction: discord.Interaction, modo: str = "global"):
+    # COMANDO DE DEBUG - DESATIVADO PARA ECONOMIZAR SLOTS
+    # Use bot owner commands ou terminal para sincronizar
+    # @app_commands.command(name="sync", description="🔄 Sincronizar comandos slash (Apenas Donos)")
+    async def sync_commands_disabled(self, interaction: discord.Interaction, modo: str = "global"):
         """Sincronizar comandos slash manualmente"""
         
         # Verificar se é dono do bot
@@ -1879,8 +1878,8 @@ class UtilitiesAdvanced(commands.Cog):
         )
         bot_logger.info(f"Sugestão criada por {interaction.user} em {interaction.guild}")
     
-    @app_commands.command(
-        name="approve_suggestion",
+    @sugestao_group.command(
+        name="aprovar",
         description="✅ Aprovar uma sugestão (Moderadores)"
     )
     @app_commands.describe(
@@ -1957,8 +1956,8 @@ class UtilitiesAdvanced(commands.Cog):
                     ephemeral=True
                 )
     
-    @app_commands.command(
-        name="deny_suggestion",
+    @sugestao_group.command(
+        name="negar",
         description="❌ Recusar uma sugestão (Moderadores)"
     )
     @app_commands.describe(
@@ -2241,10 +2240,10 @@ class UtilitiesAdvanced(commands.Cog):
                 ephemeral=True
             )
     
-    # ===== SISTEMA DE NOTAS PESSOAIS =====
+    # ===== SISTEMA DE NOTAS PESSOAIS (GRUPO) =====
     
-    @app_commands.command(
-        name="note_add",
+    @nota_group.command(
+        name="add",
         description="📝 Adicionar nota pessoal privada"
     )
     @app_commands.describe(
@@ -2280,14 +2279,14 @@ class UtilitiesAdvanced(commands.Cog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
         bot_logger.info(f"Nota criada por {interaction.user}: {titulo}")
     
-    @app_commands.command(
-        name="notes",
+    @nota_group.command(
+        name="list",
         description="📋 Ver as tuas notas pessoais"
     )
     @app_commands.describe(
         tag="Filtrar por tag (opcional)"
     )
-    async def notes(self, interaction: discord.Interaction, tag: str = None):
+    async def note_list(self, interaction: discord.Interaction, tag: str = None):
         """Listar notas pessoais"""
         
         import aiosqlite
@@ -2336,8 +2335,8 @@ class UtilitiesAdvanced(commands.Cog):
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
     
-    @app_commands.command(
-        name="note_view",
+    @nota_group.command(
+        name="view",
         description="👁️ Ver nota completa"
     )
     @app_commands.describe(
@@ -2378,8 +2377,8 @@ class UtilitiesAdvanced(commands.Cog):
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
     
-    @app_commands.command(
-        name="note_delete",
+    @nota_group.command(
+        name="delete",
         description="🗑️ Apagar nota"
     )
     @app_commands.describe(
@@ -2435,10 +2434,10 @@ class UtilitiesAdvanced(commands.Cog):
         )
         bot_logger.info(f"{interaction.user} definiu AFK: {razao}")
     
-    # ===== VOICE TRACKER =====
+    # ===== VOICE TRACKER (GRUPO) =====
     
-    @app_commands.command(
-        name="voicestats",
+    @voz_group.command(
+        name="stats",
         description="🎤 Ver estatísticas de tempo em voz"
     )
     @app_commands.describe(
@@ -2507,11 +2506,11 @@ class UtilitiesAdvanced(commands.Cog):
             
             await interaction.response.send_message(embed=embed)
     
-    @app_commands.command(
-        name="voiceleaderboard",
+    @voz_group.command(
+        name="leaderboard",
         description="🏆 Top utilizadores em tempo de voz"
     )
-    async def voiceleaderboard(self, interaction: discord.Interaction):
+    async def voice_leaderboard(self, interaction: discord.Interaction):
         """Leaderboard de voz"""
         
         import aiosqlite

@@ -905,12 +905,13 @@ class SimpleEconomy(commands.Cog):
         
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="criar_role", description="Cria/personaliza a tua Custom Role (requer compra)")
-    @app_commands.describe(
-        nome="Nome da tua role personalizada",
-        cor="Cor da role (hex: #FF0000 ou nome: red, blue, green, etc.)"
-    )
-    async def create_custom_role(self, interaction: discord.Interaction, nome: str, cor: str = "#7289DA"):
+    # DESATIVADO - USE /comprar_role E /editar_role
+    # @app_commands.command(name="criar_role", description="Cria/personaliza a tua Custom Role (requer compra)")
+    # @app_commands.describe(
+    #     nome="Nome da tua role personalizada",
+    #     cor="Cor da role (hex: #FF0000 ou nome: red, blue, green, etc.)"
+    # )
+    async def create_custom_role_disabled(self, interaction: discord.Interaction, nome: str, cor: str = "#7289DA"):
         """Criar/personalizar Custom Role"""
         user_id = str(interaction.user.id)
         user_data = self.get_user_data(user_id)
@@ -1132,18 +1133,19 @@ class SimpleEconomy(commands.Cog):
         
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="apostar_pvp", description="Aposta contra outro utilizador")
-    @app_commands.describe(
-        utilizador="Utilizador para apostar contra",
-        quantia="Quantia a apostar",
-        jogo="Tipo de jogo"
-    )
-    @app_commands.choices(jogo=[
-        app_commands.Choice(name="Cara ou Coroa", value="coinflip"),
-        app_commands.Choice(name="Dados", value="dice"),
-        app_commands.Choice(name="Número Aleatório", value="random")
-    ])
-    async def apostar_pvp(self, interaction: discord.Interaction, utilizador: discord.Member, quantia: int, jogo: str):
+    # TEMPORARIAMENTE DESATIVADO - USE /apostar
+    # @app_commands.command(name="apostar_pvp", description="Aposta contra outro utilizador")
+    # @app_commands.describe(
+    #     utilizador="Utilizador para apostar contra",
+    #     quantia="Quantia a apostar",
+    #     jogo="Tipo de jogo"
+    # )
+    # @app_commands.choices(jogo=[
+    #     app_commands.Choice(name="Cara ou Coroa", value="coinflip"),
+    #     app_commands.Choice(name="Dados", value="dice"),
+    #     app_commands.Choice(name="Número Aleatório", value="random")
+    # ])
+    async def apostar_pvp_disabled(self, interaction: discord.Interaction, utilizador: discord.Member, quantia: int, jogo: str):
         """Sistema de apostas PvP"""
         user_id = str(interaction.user.id)
         target_id = str(utilizador.id)
@@ -1278,8 +1280,9 @@ class SimpleEconomy(commands.Cog):
         
         await interaction.edit_original_response(embed=embed, view=None)
 
-    @app_commands.command(name="loteria", description="Participa na loteria semanal")
-    async def loteria(self, interaction: discord.Interaction):
+    # TEMPORARIAMENTE DESATIVADO PARA ECONOMIZAR SLOTS
+    # @app_commands.command(name="loteria", description="Participa na loteria semanal")
+    async def loteria_disabled(self, interaction: discord.Interaction):
         """Sistema de loteria semanal"""
         user_id = str(interaction.user.id)
         
@@ -1351,17 +1354,18 @@ class SimpleEconomy(commands.Cog):
         self.save_data()
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="evento_especial", description="[ADMIN] Criar evento especial de economia")
-    @app_commands.describe(
-        tipo="Tipo de evento",
-        multiplicador="Multiplicador de recompensas (padrão: 2.0)"
-    )
-    @app_commands.choices(tipo=[
-        app_commands.Choice(name="Daily Duplo", value="double_daily"),
-        app_commands.Choice(name="Apostas com Bónus", value="bet_bonus"),
-        app_commands.Choice(name="Chuva de Coins", value="coin_rain")
-    ])
-    async def evento_especial(self, interaction: discord.Interaction, tipo: str, multiplicador: float = 2.0):
+    # DESATIVADO - USE /criar_evento (em economy_advanced.py)
+    # @app_commands.command(name="evento_especial", description="[ADMIN] Criar evento especial de economia")
+    # @app_commands.describe(
+    #     tipo="Tipo de evento",
+    #     multiplicador="Multiplicador de recompensas (padrão: 2.0)"
+    # )
+    # @app_commands.choices(tipo=[
+    #     app_commands.Choice(name="Daily Duplo", value="double_daily"),
+    #     app_commands.Choice(name="Apostas com Bónus", value="bet_bonus"),
+    #     app_commands.Choice(name="Chuva de Coins", value="coin_rain")
+    # ])
+    async def evento_especial_disabled(self, interaction: discord.Interaction, tipo: str, multiplicador: float = 2.0):
         """Criar eventos especiais (apenas admin)"""
         if not interaction.user.guild_permissions.administrator:
             await interaction.response.send_message("❌ Apenas administradores podem usar este comando!", ephemeral=True)
