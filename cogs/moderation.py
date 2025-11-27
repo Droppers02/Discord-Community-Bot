@@ -22,6 +22,10 @@ from utils.logger import bot_logger
 class Moderation(commands.Cog):
     """Sistema de moderação avançado"""
     
+    # Definir grupos de comandos
+    setup_group = app_commands.Group(name="setup", description="⚙️ Configurar sistemas de moderação")
+    wordfilter_group = app_commands.Group(name="wordfilter", description="🔤 Gerenciar filtro de palavras")
+    
     def __init__(self, bot):
         self.bot = bot
         self.logger = bot.logger
@@ -1664,7 +1668,7 @@ class Moderation(commands.Cog):
             self.logger.error(f"Erro ao apagar mensagens: {e}")
             await interaction.followup.send(f"❌ Erro ao apagar mensagens: {str(e)}", ephemeral=True)
     
-    @app_commands.command(name="setup_modlogs", description="Configura o canal de logs de moderação")
+    @setup_group.command(name="modlogs", description="Configura o canal de logs de moderação")
     @app_commands.describe(canal="Canal para receber logs de moderação")
     @app_commands.checks.has_permissions(administrator=True)
     async def setup_modlogs(
@@ -1693,7 +1697,7 @@ class Moderation(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
     
-    @app_commands.command(name="setup_wordfilter", description="Configura o filtro de palavras proibidas")
+    @setup_group.command(name="wordfilter", description="Configura o filtro de palavras proibidas")
     @app_commands.describe(
         ativar="Ativar ou desativar o filtro",
         acao="Ação ao detectar palavra: warn, timeout, kick, ban"
@@ -1734,7 +1738,7 @@ class Moderation(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
     
-    @app_commands.command(name="addword", description="Adiciona uma palavra à lista de proibidas")
+    @wordfilter_group.command(name="add", description="Adiciona uma palavra à lista de proibidas")
     @app_commands.describe(palavra="Palavra a adicionar à lista")
     @app_commands.checks.has_permissions(administrator=True)
     async def addword(
@@ -1773,7 +1777,7 @@ class Moderation(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
     
-    @app_commands.command(name="removeword", description="Remove uma palavra da lista de proibidas")
+    @wordfilter_group.command(name="remove", description="Remove uma palavra da lista de proibidas")
     @app_commands.describe(palavra="Palavra a remover da lista")
     @app_commands.checks.has_permissions(administrator=True)
     async def removeword(
@@ -1807,7 +1811,7 @@ class Moderation(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
     
-    @app_commands.command(name="listwords", description="Lista todas as palavras proibidas")
+    @wordfilter_group.command(name="list", description="Lista todas as palavras proibidas")
     @app_commands.checks.has_permissions(manage_messages=True)
     async def listwords(self, interaction: discord.Interaction):
         """Lista palavras proibidas"""
@@ -1836,7 +1840,7 @@ class Moderation(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
     
-    @app_commands.command(name="setup_quarantine", description="Configura quarentena para novos membros")
+    @setup_group.command(name="quarantine", description="Configura quarentena para novos membros")
     @app_commands.describe(
         ativar="Ativar ou desativar quarentena",
         role="Role de quarentena",
@@ -1970,7 +1974,7 @@ class Moderation(commands.Cog):
             bot_logger.error(f"Erro no appeal: {e}")
             await interaction.response.send_message(f"❌ Erro ao enviar appeal: {e}", ephemeral=True)
     
-    @app_commands.command(name="setup_antispam", description="Configurar anti-spam")
+    @setup_group.command(name="antispam", description="Configurar anti-spam")
     @app_commands.describe(
         ativar="Ativar ou desativar anti-spam",
         canal="Canal para adicionar/remover da whitelist",
@@ -2050,7 +2054,7 @@ class Moderation(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
     
-    @app_commands.command(name="setup_antiraid", description="Configurar anti-raid")
+    @setup_group.command(name="antiraid", description="Configurar anti-raid")
     @app_commands.describe(
         ativar="Ativar ou desativar anti-raid",
         threshold="Número de joins para considerar raid",
@@ -2106,7 +2110,7 @@ class Moderation(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
     
-    @app_commands.command(name="setup_nsfw", description="Configurar detecção de NSFW")
+    @setup_group.command(name="nsfw", description="Configurar detecção de NSFW")
     @app_commands.describe(
         ativar="Ativar ou desativar detecção NSFW",
         canal="Canal para adicionar/remover da whitelist (permitir NSFW)",
@@ -2198,7 +2202,7 @@ class Moderation(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
     
-    @app_commands.command(name="setup_appeals", description="Configura sistema de appeals")
+    @setup_group.command(name="appeals", description="Configura sistema de appeals")
     @app_commands.describe(
         ativar="Ativar ou desativar appeals",
         canal="Canal para receber pedidos de unban"
@@ -2244,7 +2248,7 @@ class Moderation(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
     
-    @app_commands.command(name="setup_linkfilter", description="Configurar filtro de links")
+    @setup_group.command(name="linkfilter", description="Configurar filtro de links")
     @app_commands.describe(
         ativar="Ativar ou desativar filtro de links",
         bloquear_convites="Bloquear convites do Discord",
@@ -2311,7 +2315,7 @@ class Moderation(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
     
-    @app_commands.command(name="setup_strikes", description="Configurar sistema de strikes")
+    @setup_group.command(name="strikes", description="Configurar sistema de strikes")
     @app_commands.describe(
         ativar="Ativar ou desativar sistema de strikes",
         strikes_ban="Número de strikes para ban automático",
@@ -2366,7 +2370,7 @@ class Moderation(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
     
-    @app_commands.command(name="setup_mentionspam", description="Configurar proteção contra spam de menções")
+    @setup_group.command(name="mentionspam", description="Configurar proteção contra spam de menções")
     @app_commands.describe(
         ativar="Ativar ou desativar proteção",
         max_mencoes="Máximo de menções de usuários",
@@ -2415,7 +2419,7 @@ class Moderation(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
     
-    @app_commands.command(name="setup_slowmode", description="Configurar auto-slowmode")
+    @setup_group.command(name="slowmode", description="Configurar auto-slowmode")
     @app_commands.describe(
         ativar="Ativar ou desativar auto-slowmode",
         threshold="Número de mensagens para ativar",
@@ -2476,7 +2480,7 @@ class Moderation(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
     
-    @app_commands.command(name="setup_rolebackup", description="Configurar backup de roles")
+    @setup_group.command(name="rolebackup", description="Configurar backup de roles")
     @app_commands.describe(
         ativar="Ativar ou desativar backup de roles",
         restaurar_unban="Restaurar roles automaticamente após unban"
