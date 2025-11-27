@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 **Community Suggestions System**
 
 - ✅ **Suggestions with Upvote/Downvote**
+
   - `/suggest <suggestion>` command to create suggestions
   - Automatic reactions system (👍/👎)
   - Dedicated channel for suggestions
@@ -26,6 +27,7 @@ All notable changes to this project will be documented in this file.
 **Automated Giveaway System**
 
 - ✅ **Giveaways with Requirements**
+
   - `/giveaway <duration> <winners> <prize> [requirements]`
   - Automatic random winner selection
   - React with 🎉 to participate
@@ -68,6 +70,7 @@ All notable changes to this project will be documented in this file.
 **Voice Member Counter**
 
 - ✅ **Complete Voice Tracker**
+
   - Automatic tracking of time in voice channels
   - Per-user statistics:
     - Total time in voice
@@ -87,6 +90,7 @@ All notable changes to this project will be documented in this file.
 **Starboard (Hall of Fame)**
 
 - ✅ **Favorite Messages System**
+
   - Messages with X⭐ go to special channel
   - Configurable threshold (default: 3 reactions)
   - Customizable emoji
@@ -139,31 +143,38 @@ All notable changes to this project will be documented in this file.
 ### 📝 New Commands (23 total)
 
 **Suggestions:**
+
 - `/suggest` - Create suggestion
 - `/approve_suggestion` - Approve (mod)
 - `/deny_suggestion` - Deny (mod)
 - `/setup_suggestions` - Configure channel
 
 **Giveaways:**
+
 - `/giveaway` - Create giveaway (mod)
 
 **Timestamps:**
+
 - `/timestamp` - Generate formatted timestamp
 
 **Notes:**
+
 - `/note_add` - Add note
 - `/notes` - List notes
 - `/note_view` - View complete note
 - `/note_delete` - Delete note
 
 **Voice:**
+
 - `/voicestats` - View statistics
 - `/voiceleaderboard` - Top 10
 
 **Starboard:**
+
 - `/setup_starboard` - Configure starboard
 
 **AFK:**
+
 - `/afk` - Set AFK status
 
 ### 🎯 Event Listeners Added
@@ -179,6 +190,7 @@ All notable changes to this project will be documented in this file.
 ### 🔧 Configuration Files
 
 **`config/utilities_config.json` - New Sections:**
+
 ```json
 {
   "suggestions": {
@@ -215,6 +227,7 @@ All notable changes to this project will be documented in this file.
 **Malicious Link Filter**
 
 - ✅ **Dangerous Link Detection**
+
   - Block Discord invites (discord.gg, discord.com/invite)
   - Detect known phishing domains
   - Customizable domain whitelist/blacklist
@@ -231,6 +244,7 @@ All notable changes to this project will be documented in this file.
 **Strikes System (3 Strikes = Ban)**
 
 - ✅ **Progressive Infraction Management**
+
   - Automatic strikes on violations (malicious links, mention spam)
   - Manual strikes with `/strike <user> <reason>` command
   - 3 strikes = automatic ban
@@ -238,6 +252,7 @@ All notable changes to this project will be documented in this file.
   - Complete strike history per user
 
 - ✅ **Progressive Actions**
+
   - Strike 1: DM warning
   - Strike 2: 24-hour timeout
   - Strike 3: Permanent automatic ban
@@ -251,6 +266,7 @@ All notable changes to this project will be documented in this file.
 **Mention Spam Protection**
 
 - ✅ **Mention Limits**
+
   - Maximum user mentions (default: 5)
   - Maximum role mentions (default: 2)
   - Block unauthorized @everyone/@here
@@ -266,6 +282,7 @@ All notable changes to this project will be documented in this file.
 **Auto-Slowmode During Raids**
 
 - ✅ **Smart Activation**
+
   - Configurable message threshold (default: 20 messages in 10s)
   - Adjustable slowmode duration (default: 10s)
   - Configurable slowmode time (default: 5 minutes)
@@ -280,6 +297,7 @@ All notable changes to this project will be documented in this file.
 **Role Backup on Bans**
 
 - ✅ **Role Preservation**
+
   - Automatic role backup when banning users
   - Automatic restoration on unban (configurable)
   - Manual restoration available
@@ -313,6 +331,7 @@ All notable changes to this project will be documented in this file.
 **Anti-Spam with Channel Whitelist**
 
 - ✅ **Intelligent Spam Detection**
+
   - Configurable message limit per time interval
   - Duplicate/identical message detection
   - Cumulative warning system
@@ -327,6 +346,7 @@ All notable changes to this project will be documented in this file.
 **Anti-Raid Protection**
 
 - ✅ **Suspicious Join Monitoring**
+
   - Configurable threshold (X members in Y seconds)
   - Automatic action when raid detected (kick by default)
   - Detailed logs with join timestamps
@@ -340,6 +360,7 @@ All notable changes to this project will be documented in this file.
 **NSFW Detection**
 
 - ✅ **Análise de Imagens com IA**
+
   - Integração com DeepAI API
   - Confidence threshold ajustável (0.0-1.0)
   - Suporte para: PNG, JPG, JPEG, GIF, WEBP
@@ -359,6 +380,7 @@ All notable changes to this project will be documented in this file.
 **Melhorias na Configuração**
 
 - ✅ Config JSON expandido com novas opções:
+
   - `anti_spam`: message_threshold, time_window, duplicate_threshold, whitelisted_channels
   - `anti_raid`: join_threshold, time_window, action, lockdown_duration
   - `nsfw_detection`: api_key, confidence_threshold, whitelisted_channels, action
@@ -382,6 +404,7 @@ All notable changes to this project will be documented in this file.
 **Nova Branch: `en` (English)**
 
 - ✅ Sistema completo de tradução implementado
+
   - Branch `main` = Português de Portugal (padrão)
   - Branch `en` = English
   - Infraestrutura i18n completa em `config/i18n.py`
@@ -392,6 +415,7 @@ All notable changes to this project will be documented in this file.
   - Sistema de configuração de idioma
 
 **Como usar:**
+
 - Para Português: `git checkout main`
 - Para English: `git checkout en`
 
