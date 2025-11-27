@@ -4,6 +4,60 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [2.9.0] - 2025-11-27
+
+### ⚡ Otimização de Comandos
+
+**Consolidação de Comandos em Grupos**
+
+- 🔄 **Redução de 122 → 94 comandos** para cumprir limite do Discord (100)
+- ✅ **Grupo `/setup`** - Consolidação de 10 comandos de configuração:
+  - `/setup modlogs` - Logs de moderação
+  - `/setup wordfilter` - Ativar/desativar filtro de palavras
+  - `/setup quarantine` - Sistema de quarentena
+  - `/setup antispam` - Anti-spam com whitelist
+  - `/setup antiraid` - Proteção anti-raid
+  - `/setup nsfw` - Detecção de NSFW
+  - `/setup appeals` - Sistema de appeals
+  - `/setup linkfilter` - Filtro de links maliciosos
+  - `/setup strikes` - Sistema de strikes
+  - `/setup mentionspam` - Proteção contra mention spam
+  - `/setup slowmode` - Auto-slowmode
+  - `/setup rolebackup` - Backup/restauro de roles
+
+- ✅ **Grupo `/wordfilter`** - Gestão de palavras proibidas:
+  - `/wordfilter add <palavra>` - Adicionar palavra
+  - `/wordfilter remove <palavra>` - Remover palavra
+  - `/wordfilter list` - Listar palavras
+
+- ✅ **Grupo `/nota`** - Notas pessoais:
+  - `/nota add` - Adicionar nota
+  - `/nota list` - Listar notas
+  - `/nota view` - Ver nota
+  - `/nota delete` - Deletar nota
+
+- ✅ **Grupo `/voz`** - Voice tracking:
+  - `/voz stats` - Estatísticas de voz
+  - `/voz leaderboard` - Top 10 tempo de voz
+
+- ✅ **Grupo `/sugestao`** - Sistema de sugestões:
+  - `/sugestao enviar` - Criar sugestão
+  - `/sugestao aprovar` - Aprovar sugestão
+  - `/sugestao negar` - Recusar sugestão
+
+- ✅ **Grupo `/playlist`** - Playlists de música:
+  - `/playlist create` - Criar playlist
+  - `/playlist add` - Adicionar música
+  - `/playlist play` - Tocar playlist
+  - `/playlist list` - Listar playlists
+
+**Comandos Removidos/Comentados**
+
+- 🗑️ Removidos 13 comandos debug/redundantes (test_url, test_ffmpeg, voice_debug, etc.)
+- 📉 Resultado: 94 comandos totais (6 abaixo do limite)
+
+---
+
 ## [2.8.0] - 2025-11-27
 
 ### 🔧 Sistema de Utilidades - Expansão Completa
@@ -658,7 +712,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 **Logs Detalhados de Moderação**
 
-- ✅ Comando `/setup_modlogs` para configurar canal de logs
+- ✅ Comando `/setup modlogs` para configurar canal de logs
 - ✅ Logs automáticos para todas as ações (kick, ban, timeout, warn, unban)
 - ✅ Embeds formatados com informações completas (usuário, moderador, motivo, timestamp)
 - ✅ Logs de filtro de palavras e sistema de quarentena
@@ -666,10 +720,10 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 **Filtro de Palavras Proibidas**
 
-- ✅ `/setup_wordfilter` - Ativar/desativar e configurar ação
-- ✅ `/addword` - Adicionar palavras à lista proibida
-- ✅ `/removeword` - Remover palavras da lista
-- ✅ `/listwords` - Listar palavras (com spoiler)
+- ✅ `/setup wordfilter` - Ativar/desativar e configurar ação
+- ✅ `/wordfilter add` - Adicionar palavras à lista proibida
+- ✅ `/wordfilter remove` - Remover palavras da lista
+- ✅ `/wordfilter list` - Listar palavras (com spoiler)
 - ✅ Detecção automática em mensagens (regex boundary)
 - ✅ Ações configuráveis: warn, timeout (10min), kick, ban
 - ✅ Moderadores têm bypass automático
