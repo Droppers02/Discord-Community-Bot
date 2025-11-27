@@ -332,39 +332,24 @@ class HelpCog(commands.Cog):
         embed4.add_field(name="🗑️ **Limpeza de Mensagens**", value="\n".join(clear_commands), inline=False)
         
         moderation_advanced = [
-<<<<<<< HEAD
-            "• `/setup_modlogs <channel>` - Moderation logs",
-            "• `/setup_wordfilter` - Word filter",
-            "• `/setup_quarantine` - Quarantine system",
-            "• `/setup_antispam` - Anti-spam with whitelist",
-            "• `/setup_antiraid` - Anti-raid protection",
-            "• `/setup_nsfw` - NSFW detection",
-            "• `/setup_appeals` - Appeals system",
-            "• `/setup_linkfilter` - Malicious link filter",
-            "• `/setup_strikes` - Setup strikes system",
-            "• `/setup_mentionspam` - Mention spam protection",
-            "• `/setup_slowmode` - Auto-slowmode",
-            "• `/setup_rolebackup` - Role backup/restore",
+            "• `/setup modlogs <channel>` - Moderation logs",
+            "• `/setup wordfilter` - Word filter (enable/disable)",
+            "• `/setup quarantine` - Quarantine system",
+            "• `/setup antispam` - Anti-spam with whitelist",
+            "• `/setup antiraid` - Anti-raid protection",
+            "• `/setup nsfw` - NSFW detection",
+            "• `/setup appeals` - Appeals system",
+            "• `/setup linkfilter` - Malicious link filter",
+            "• `/setup strikes` - Setup strikes system",
+            "• `/setup mentionspam` - Mention spam protection",
+            "• `/setup slowmode` - Auto-slowmode",
+            "• `/setup rolebackup` - Role backup/restore",
+            "• `/wordfilter add <word>` - Add forbidden word",
+            "• `/wordfilter remove <word>` - Remove word",
+            "• `/wordfilter list` - List forbidden words",
             "• `/strike <member> <reason>` - Add strike",
             "• `/strikes [member]` - View strikes",
             "• `/clearstrikes <member>` - Clear strikes"
-=======
-            "• `/setup_modlogs <canal>` - Logs de moderação",
-            "• `/setup_wordfilter` - Filtro de palavras",
-            "• `/setup_quarantine` - Sistema de quarentena",
-            "• `/setup_antispam` - Anti-spam com whitelist",
-            "• `/setup_antiraid` - Proteção anti-raid",
-            "• `/setup_nsfw` - Detecção de NSFW",
-            "• `/setup_appeals` - Sistema de appeals",
-            "• `/setup_linkfilter` - Filtro de links maliciosos",
-            "• `/setup_strikes` - Configurar sistema de strikes",
-            "• `/setup_mentionspam` - Proteção contra mention spam",
-            "• `/setup_slowmode` - Auto-slowmode",
-            "• `/setup_rolebackup` - Backup/restauro de roles",
-            "• `/strike <membro> <motivo>` - Adicionar strike",
-            "• `/strikes [membro]` - Ver strikes",
-            "• `/clearstrikes <membro>` - Limpar strikes"
->>>>>>> main
         ]
         embed4.add_field(name="🔧 **Advanced Moderation**", value="\n".join(moderation_advanced), inline=False)
         
