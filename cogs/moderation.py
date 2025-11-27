@@ -12,6 +12,7 @@ import asyncio
 import json
 import os
 import re
+import aiosqlite
 
 from utils.embeds import EmbedBuilder
 from utils.database import get_database
@@ -33,6 +34,17 @@ class Moderation(commands.Cog):
         
         # Anti-raid tracking
         self.recent_joins = []  # [(user_id, timestamp)]
+        
+        # Auto-slowmode tracking
+        self.channel_messages = {}  # {channel_id: [timestamps]}
+        self.slowmode_active = {}  # {channel_id: end_timestamp}
+        
+        # Phishing domains (lista básica - expandir conforme necessário)
+        self.phishing_domains = [
+            "discordnitro.com", "discord-nitro.com", "discordgift.com",
+            "discord-app.com", "discord-give.com", "steamcommunlty.com",
+            "steamcommunity.ru", "stearncommunity.com"
+        ]
         
         self.load_config()
     
@@ -118,7 +130,22 @@ class Moderation(commands.Cog):
     
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
-        """Aplicar quarentena a novos membros e monitorar raids"""
+        """Aplicar quarentena a novos membros, monitorar raids e restaurar roles"""
+        # Restaurar roles se veio de um unban
+        if self.config.get("role_backup", {}).get("enabled", False) and \
+           self.config.get("role_backup", {}).get("restore_on_unban", True):
+            # Esperar um pouco para garantir que o membro foi totalmente adicionado
+            await asyncio.sleep(2)
+            restored = await self.restore_user_roles(member.id, member.guild.id)
+            if restored:
+                embed = discord.Embed(
+                    title="♻️ Roles Restaurados",
+                    description=f"Roles de {member.mention} foram restaurados após unban",
+                    color=discord.Color.green(),
+                    timestamp=datetime.now()
+                )
+                await self.send_mod_log(embed, member.guild)
+        
         # Anti-raid check
         if self.config.get("anti_raid", {}).get("enabled", False):
             current_time = datetime.now().timestamp()
@@ -173,12 +200,30 @@ class Moderation(commands.Cog):
     
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        """Filtrar palavras proibidas, spam e NSFW"""
+        """Filtrar palavras proibidas, spam, NSFW, links maliciosos e mention spam"""
         if message.author.bot:
             return
         
         if not isinstance(message.channel, discord.TextChannel):
             return
+        
+        # Auto-slowmode tracking (antes de outras verificações)
+        if self.config.get("auto_slowmode", {}).get("enabled", False):
+            await self.track_channel_activity(message)
+        
+        # Link filter check
+        if self.config.get("link_filter", {}).get("enabled", False):
+            whitelisted_link = self.config.get("link_filter", {}).get("whitelisted_channels", [])
+            if message.channel.id not in whitelisted_link:
+                if not message.author.guild_permissions.manage_messages:
+                    if await self.check_links(message):
+                        return  # Mensagem tratada como link malicioso
+        
+        # Mention spam check
+        if self.config.get("mention_spam", {}).get("enabled", False):
+            if not message.author.guild_permissions.manage_messages:
+                if await self.check_mention_spam(message):
+                    return  # Mensagem tratada como mention spam
         
         # Anti-spam check
         if self.config.get("anti_spam", {}).get("enabled", False):
@@ -506,6 +551,425 @@ class Moderation(commands.Cog):
         
         bot_logger.warning(f"NSFW detectado: {member} em {message.channel} - Score: {score:.2%}")
     
+    async def check_links(self, message: discord.Message) -> bool:
+        """Verificar se mensagem contém links maliciosos ou proibidos"""
+        import re
+        
+        # Regex para detectar URLs
+        url_pattern = r'https?://[^\s]+'
+        urls = re.findall(url_pattern, message.content.lower())
+        
+        if not urls:
+            return False
+        
+        config = self.config.get("link_filter", {})
+        block_invites = config.get("block_invites", True)
+        block_phishing = config.get("block_phishing", True)
+        whitelist = config.get("whitelist", [])
+        blacklist = config.get("blacklist", [])
+        
+        for url in urls:
+            # Verificar whitelist primeiro
+            if any(domain in url for domain in whitelist):
+                continue
+            
+            # Verificar blacklist
+            if any(domain in url for domain in blacklist):
+                await self.handle_malicious_link(message, url, "Domínio na lista negra")
+                return True
+            
+            # Verificar convites do Discord
+            if block_invites and ('discord.gg/' in url or 'discord.com/invite/' in url):
+                await self.handle_malicious_link(message, url, "Convite do Discord não autorizado")
+                return True
+            
+            # Verificar domínios de phishing conhecidos
+            if block_phishing:
+                if any(phishing_domain in url for phishing_domain in self.phishing_domains):
+                    await self.handle_malicious_link(message, url, "Domínio de phishing detectado")
+                    return True
+        
+        return False
+    
+    async def handle_malicious_link(self, message: discord.Message, url: str, reason: str):
+        """Lidar com links maliciosos"""
+        action = self.config.get("link_filter", {}).get("action", "delete")
+        
+        # Deletar mensagem
+        try:
+            await message.delete()
+        except:
+            pass
+        
+        member = message.author
+        
+        # Log
+        embed = discord.Embed(
+            title="🔗 Link Malicioso Detectado",
+            description=f"**Usuário:** {member.mention}\n**Razão:** {reason}",
+            color=discord.Color.red(),
+            timestamp=datetime.now()
+        )
+        embed.add_field(name="URL", value=f"||{url}||", inline=False)
+        embed.add_field(name="Canal", value=message.channel.mention, inline=True)
+        embed.add_field(name="Ação", value=action.upper(), inline=True)
+        embed.set_thumbnail(url=member.display_avatar.url)
+        
+        await self.send_mod_log(embed, message.guild)
+        
+        # Aplicar ação
+        if action == "warn":
+            try:
+                await message.channel.send(
+                    f"⚠️ {member.mention} Links desse tipo não são permitidos!",
+                    delete_after=10
+                )
+            except:
+                pass
+        
+        elif action == "timeout":
+            try:
+                await member.timeout(
+                    timedelta(minutes=10),
+                    reason=f"Link malicioso: {reason}"
+                )
+            except:
+                pass
+        
+        elif action == "kick":
+            try:
+                await member.kick(reason=f"Link malicioso: {reason}")
+            except:
+                pass
+        
+        # Adicionar strike se sistema estiver ativo
+        if self.config.get("strikes_system", {}).get("enabled", False):
+            await self.add_strike(member.id, member.guild.id, self.bot.user.id, f"Link malicioso: {reason}")
+        
+        bot_logger.warning(f"Link malicioso detectado: {member} em {message.channel} - {reason}")
+    
+    async def check_mention_spam(self, message: discord.Message) -> bool:
+        """Verificar se mensagem contém spam de menções"""
+        config = self.config.get("mention_spam", {})
+        max_mentions = config.get("max_mentions", 5)
+        max_role_mentions = config.get("max_role_mentions", 2)
+        
+        # Contar menções de usuários
+        user_mentions = len(message.mentions)
+        
+        # Contar menções de roles
+        role_mentions = len(message.role_mentions)
+        
+        # Verificar @everyone ou @here
+        has_everyone = message.mention_everyone
+        
+        # Verificar limites
+        if user_mentions > max_mentions or role_mentions > max_role_mentions or has_everyone:
+            await self.handle_mention_spam(message, user_mentions, role_mentions, has_everyone)
+            return True
+        
+        return False
+    
+    async def handle_mention_spam(self, message: discord.Message, user_mentions: int, role_mentions: int, has_everyone: bool):
+        """Lidar com spam de menções"""
+        action = self.config.get("mention_spam", {}).get("action", "timeout")
+        timeout_duration = self.config.get("mention_spam", {}).get("timeout_duration", 600)
+        
+        # Deletar mensagem
+        try:
+            await message.delete()
+        except:
+            pass
+        
+        member = message.author
+        
+        # Construir descrição da violação
+        violations = []
+        if user_mentions > self.config.get("mention_spam", {}).get("max_mentions", 5):
+            violations.append(f"Menções de usuários: {user_mentions}")
+        if role_mentions > self.config.get("mention_spam", {}).get("max_role_mentions", 2):
+            violations.append(f"Menções de roles: {role_mentions}")
+        if has_everyone:
+            violations.append("Uso de @everyone/@here")
+        
+        # Log
+        embed = discord.Embed(
+            title="📢 Spam de Menções Detectado",
+            description=f"**Usuário:** {member.mention}\n**Violações:** {', '.join(violations)}",
+            color=discord.Color.orange(),
+            timestamp=datetime.now()
+        )
+        embed.add_field(name="Canal", value=message.channel.mention, inline=True)
+        embed.add_field(name="Ação", value=action.upper(), inline=True)
+        embed.set_thumbnail(url=member.display_avatar.url)
+        
+        await self.send_mod_log(embed, message.guild)
+        
+        # Aplicar ação
+        if action == "warn":
+            try:
+                await message.channel.send(
+                    f"⚠️ {member.mention} Não faças spam de menções!",
+                    delete_after=10
+                )
+            except:
+                pass
+        
+        elif action == "timeout":
+            try:
+                await member.timeout(
+                    timedelta(seconds=timeout_duration),
+                    reason="Spam de menções"
+                )
+                await message.channel.send(
+                    f"🔇 {member.mention} recebeu timeout por spam de menções!",
+                    delete_after=10
+                )
+            except:
+                pass
+        
+        elif action == "kick":
+            try:
+                await member.kick(reason="Spam de menções")
+            except:
+                pass
+        
+        # Adicionar strike se sistema estiver ativo
+        if self.config.get("strikes_system", {}).get("enabled", False):
+            await self.add_strike(member.id, member.guild.id, self.bot.user.id, "Spam de menções")
+        
+        bot_logger.warning(f"Spam de menções: {member} em {message.channel}")
+    
+    async def track_channel_activity(self, message: discord.Message):
+        """Rastrear atividade do canal para auto-slowmode"""
+        channel_id = message.channel.id
+        current_time = datetime.now().timestamp()
+        
+        # Verificar se slowmode já está ativo
+        if channel_id in self.slowmode_active:
+            if current_time < self.slowmode_active[channel_id]:
+                return  # Slowmode ainda ativo
+            else:
+                # Remover slowmode expirado
+                del self.slowmode_active[channel_id]
+                try:
+                    await message.channel.edit(slowmode_delay=0, reason="Auto-slowmode expirado")
+                    bot_logger.info(f"Auto-slowmode removido de #{message.channel.name}")
+                except:
+                    pass
+        
+        # Inicializar tracking
+        if channel_id not in self.channel_messages:
+            self.channel_messages[channel_id] = []
+        
+        # Adicionar mensagem atual
+        self.channel_messages[channel_id].append(current_time)
+        
+        # Remover mensagens antigas
+        trigger_window = self.config.get("auto_slowmode", {}).get("trigger_window", 10)
+        self.channel_messages[channel_id] = [
+            t for t in self.channel_messages[channel_id]
+            if current_time - t <= trigger_window
+        ]
+        
+        # Verificar se deve ativar slowmode
+        trigger_threshold = self.config.get("auto_slowmode", {}).get("trigger_threshold", 20)
+        
+        if len(self.channel_messages[channel_id]) >= trigger_threshold:
+            await self.activate_slowmode(message.channel)
+    
+    async def activate_slowmode(self, channel: discord.TextChannel):
+        """Ativar slowmode automático em um canal"""
+        slowmode_duration = self.config.get("auto_slowmode", {}).get("slowmode_duration", 10)
+        slowmode_time = self.config.get("auto_slowmode", {}).get("slowmode_time", 300)
+        
+        try:
+            await channel.edit(slowmode_delay=slowmode_duration, reason="Auto-slowmode ativado devido a atividade alta")
+            
+            # Marcar como ativo
+            self.slowmode_active[channel.id] = datetime.now().timestamp() + slowmode_time
+            
+            # Limpar tracking
+            self.channel_messages[channel.id] = []
+            
+            # Notificar no canal
+            embed = discord.Embed(
+                title="⏱️ Slowmode Automático Ativado",
+                description=f"Devido à alta atividade, slowmode de **{slowmode_duration}s** foi ativado por **{slowmode_time // 60} minutos**.",
+                color=discord.Color.blue()
+            )
+            await channel.send(embed=embed, delete_after=30)
+            
+            bot_logger.info(f"Auto-slowmode ativado em #{channel.name} ({slowmode_duration}s por {slowmode_time}s)")
+        except Exception as e:
+            bot_logger.error(f"Erro ao ativar auto-slowmode: {e}")
+    
+    async def add_strike(self, user_id: int, guild_id: int, moderator_id: int, reason: str):
+        """Adicionar strike a um usuário"""
+        async with aiosqlite.connect(self.bot.db_path) as db:
+            # Verificar strikes ativos
+            async with db.execute(
+                "SELECT strike_count FROM moderation_strikes WHERE user_id = ? AND guild_id = ? AND is_active = 1",
+                (user_id, guild_id)
+            ) as cursor:
+                row = await cursor.fetchone()
+                current_strikes = row[0] if row else 0
+            
+            new_strike_count = current_strikes + 1
+            
+            # Calcular data de expiração
+            expiry_days = self.config.get("strikes_system", {}).get("strike_expiry_days", 30)
+            expires_at = datetime.now() + timedelta(days=expiry_days)
+            
+            # Adicionar strike
+            await db.execute(
+                """INSERT INTO moderation_strikes 
+                   (user_id, guild_id, moderator_id, reason, strike_count, expires_at, is_active)
+                   VALUES (?, ?, ?, ?, ?, ?, 1)""",
+                (user_id, guild_id, moderator_id, reason, new_strike_count, expires_at)
+            )
+            await db.commit()
+            
+            bot_logger.info(f"Strike adicionado: User {user_id} em Guild {guild_id} - Strike {new_strike_count}/3 - Razão: {reason}")
+            
+            # Verificar se precisa aplicar ação automática
+            await self.check_strike_action(user_id, guild_id, new_strike_count)
+    
+    async def check_strike_action(self, user_id: int, guild_id: int, strike_count: int):
+        """Verificar e aplicar ação baseada no número de strikes"""
+        strikes_to_ban = self.config.get("strikes_system", {}).get("strikes_to_ban", 3)
+        progressive_actions = self.config.get("strikes_system", {}).get("progressive_actions", {})
+        
+        guild = self.bot.get_guild(guild_id)
+        if not guild:
+            return
+        
+        member = guild.get_member(user_id)
+        if not member:
+            return
+        
+        # Ação baseada em strikes
+        if strike_count >= strikes_to_ban:
+            # Ban automático
+            try:
+                await member.ban(reason=f"Atingiu {strikes_to_ban} strikes")
+                
+                embed = discord.Embed(
+                    title="🔨 Ban Automático por Strikes",
+                    description=f"**Usuário:** {member.mention}\n**Strikes:** {strike_count}/{strikes_to_ban}",
+                    color=discord.Color.dark_red(),
+                    timestamp=datetime.now()
+                )
+                await self.send_mod_log(embed, guild)
+                
+                bot_logger.warning(f"Ban automático: {member} ({strike_count} strikes)")
+            except Exception as e:
+                bot_logger.error(f"Erro ao banir usuário por strikes: {e}")
+        
+        elif strike_count == 2 and progressive_actions.get("strike_2") == "timeout":
+            # Timeout no segundo strike
+            try:
+                await member.timeout(timedelta(hours=24), reason="2º strike - timeout de 24h")
+                
+                embed = discord.Embed(
+                    title="⏱️ Timeout Automático (Strike 2)",
+                    description=f"**Usuário:** {member.mention}\n**Duração:** 24 horas",
+                    color=discord.Color.orange(),
+                    timestamp=datetime.now()
+                )
+                await self.send_mod_log(embed, guild)
+                
+                bot_logger.info(f"Timeout automático (2º strike): {member}")
+            except Exception as e:
+                bot_logger.error(f"Erro ao aplicar timeout: {e}")
+        
+        elif strike_count == 1 and progressive_actions.get("strike_1") == "warn":
+            # Aviso no primeiro strike
+            try:
+                dm_embed = discord.Embed(
+                    title="⚠️ Primeiro Strike Recebido",
+                    description=f"Recebeste o teu primeiro strike em **{guild.name}**.",
+                    color=discord.Color.gold()
+                )
+                dm_embed.add_field(
+                    name="⚠️ Atenção",
+                    value=f"Com {strikes_to_ban} strikes serás automaticamente banido!",
+                    inline=False
+                )
+                await member.send(embed=dm_embed)
+            except:
+                pass
+    
+    async def get_active_strikes(self, user_id: int, guild_id: int) -> int:
+        """Obter número de strikes ativos de um usuário"""
+        async with aiosqlite.connect(self.bot.db_path) as db:
+            # Expirar strikes antigos primeiro
+            await db.execute(
+                "UPDATE moderation_strikes SET is_active = 0 WHERE expires_at < ? AND is_active = 1",
+                (datetime.now(),)
+            )
+            await db.commit()
+            
+            # Contar strikes ativos
+            async with db.execute(
+                "SELECT strike_count FROM moderation_strikes WHERE user_id = ? AND guild_id = ? AND is_active = 1 ORDER BY created_at DESC LIMIT 1",
+                (user_id, guild_id)
+            ) as cursor:
+                row = await cursor.fetchone()
+                return row[0] if row else 0
+    
+    async def backup_user_roles(self, user_id: int, guild_id: int, role_ids: list, reason: str = "Ban"):
+        """Fazer backup dos roles de um usuário antes do ban"""
+        async with aiosqlite.connect(self.bot.db_path) as db:
+            import json
+            
+            await db.execute(
+                """INSERT INTO role_backups (user_id, guild_id, role_ids, reason)
+                   VALUES (?, ?, ?, ?)""",
+                (user_id, guild_id, json.dumps(role_ids), reason)
+            )
+            await db.commit()
+            
+            bot_logger.info(f"Backup de roles criado para User {user_id} em Guild {guild_id} - {len(role_ids)} roles")
+    
+    async def restore_user_roles(self, user_id: int, guild_id: int) -> bool:
+        """Restaurar roles de um usuário após unban"""
+        async with aiosqlite.connect(self.bot.db_path) as db:
+            import json
+            
+            async with db.execute(
+                "SELECT role_ids FROM role_backups WHERE user_id = ? AND guild_id = ? ORDER BY backed_up_at DESC LIMIT 1",
+                (user_id, guild_id)
+            ) as cursor:
+                row = await cursor.fetchone()
+                
+                if not row:
+                    return False
+                
+                role_ids = json.loads(row[0])
+                
+                guild = self.bot.get_guild(guild_id)
+                if not guild:
+                    return False
+                
+                member = guild.get_member(user_id)
+                if not member:
+                    return False
+                
+                # Restaurar roles
+                restored = 0
+                for role_id in role_ids:
+                    role = guild.get_role(role_id)
+                    if role and role < guild.me.top_role:  # Verificar hierarquia
+                        try:
+                            await member.add_roles(role, reason="Restauração após unban")
+                            restored += 1
+                        except:
+                            pass
+                
+                bot_logger.info(f"Roles restaurados: {restored}/{len(role_ids)} para User {user_id} em Guild {guild_id}")
+                return True
+    
     def has_mod_permissions():
         """Decorador para verificar permissões de moderador"""
         async def predicate(interaction: discord.Interaction) -> bool:
@@ -648,6 +1112,12 @@ class Moderation(commands.Cog):
             return
         
         try:
+            # Backup de roles se o sistema estiver ativo
+            if self.config.get("role_backup", {}).get("enabled", False):
+                role_ids = [role.id for role in membro.roles if role != interaction.guild.default_role]
+                if role_ids:
+                    await self.backup_user_roles(membro.id, interaction.guild.id, role_ids, f"Ban por: {motivo}")
+            
             # Tentar enviar DM ao utilizador
             try:
                 dm_embed = EmbedBuilder.moderation(
@@ -739,6 +1209,18 @@ class Moderation(commands.Cog):
             
             # Remover ban
             await interaction.guild.unban(user, reason=f"{interaction.user}: {motivo}")
+            
+            # Restaurar roles se o sistema estiver ativo e o unban permitir
+            roles_restored = False
+            if self.config.get("role_backup", {}).get("enabled", False) and \
+               self.config.get("role_backup", {}).get("restore_on_unban", True):
+                # Esperar um pouco para o usuário re-entrar
+                await interaction.response.send_message(
+                    f"✅ **{user}** foi desbanido! Se o utilizador voltar ao servidor, os roles serão restaurados automaticamente.",
+                    ephemeral=True
+                )
+                # A restauração será feita no on_member_join
+                return
             
             # Registar no banco de dados
             await self.db.log_moderation(
@@ -1761,6 +2243,445 @@ class Moderation(commands.Cog):
             
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
+    
+    @app_commands.command(name="setup_linkfilter", description="Configurar filtro de links")
+    @app_commands.describe(
+        ativar="Ativar ou desativar filtro de links",
+        bloquear_convites="Bloquear convites do Discord",
+        bloquear_phishing="Bloquear domínios de phishing",
+        canal="Canal para adicionar/remover da whitelist",
+        acao_canal="Adicionar ou remover canal"
+    )
+    @app_commands.choices(acao_canal=[
+        app_commands.Choice(name="Adicionar", value="add"),
+        app_commands.Choice(name="Remover", value="remove")
+    ])
+    @app_commands.checks.has_permissions(administrator=True)
+    async def setup_linkfilter(
+        self,
+        interaction: discord.Interaction,
+        ativar: Optional[bool] = None,
+        bloquear_convites: Optional[bool] = None,
+        bloquear_phishing: Optional[bool] = None,
+        canal: Optional[discord.TextChannel] = None,
+        acao_canal: Optional[str] = None
+    ):
+        """Configurar filtro de links maliciosos"""
+        try:
+            if ativar is not None:
+                self.config["link_filter"]["enabled"] = ativar
+            
+            if bloquear_convites is not None:
+                self.config["link_filter"]["block_invites"] = bloquear_convites
+            
+            if bloquear_phishing is not None:
+                self.config["link_filter"]["block_phishing"] = bloquear_phishing
+            
+            if canal and acao_canal:
+                whitelisted = self.config["link_filter"].get("whitelisted_channels", [])
+                if acao_canal == "add" and canal.id not in whitelisted:
+                    whitelisted.append(canal.id)
+                elif acao_canal == "remove" and canal.id in whitelisted:
+                    whitelisted.remove(canal.id)
+                self.config["link_filter"]["whitelisted_channels"] = whitelisted
+            
+            # Salvar config
+            with open(self.config_file, 'w', encoding='utf-8') as f:
+                json.dump(self.config, f, indent=2, ensure_ascii=False)
+            
+            status = "✅ Ativado" if self.config["link_filter"]["enabled"] else "❌ Desativado"
+            
+            embed = discord.Embed(
+                title="🔗 Filtro de Links Configurado",
+                description=f"**Status:** {status}",
+                color=discord.Color.green() if self.config["link_filter"]["enabled"] else discord.Color.gray()
+            )
+            
+            config = self.config["link_filter"]
+            embed.add_field(name="Bloquear Convites", value="✅" if config["block_invites"] else "❌", inline=True)
+            embed.add_field(name="Bloquear Phishing", value="✅" if config["block_phishing"] else "❌", inline=True)
+            embed.add_field(name="Ação", value=config["action"].upper(), inline=True)
+            
+            whitelisted_count = len(config.get("whitelisted_channels", []))
+            embed.add_field(name="Canais Whitelisted", value=str(whitelisted_count), inline=True)
+            
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            bot_logger.info(f"{interaction.user} configurou filtro de links")
+            
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
+    
+    @app_commands.command(name="setup_strikes", description="Configurar sistema de strikes")
+    @app_commands.describe(
+        ativar="Ativar ou desativar sistema de strikes",
+        strikes_ban="Número de strikes para ban automático",
+        dias_expiracao="Dias até strikes expirarem"
+    )
+    @app_commands.checks.has_permissions(administrator=True)
+    async def setup_strikes(
+        self,
+        interaction: discord.Interaction,
+        ativar: Optional[bool] = None,
+        strikes_ban: Optional[int] = None,
+        dias_expiracao: Optional[int] = None
+    ):
+        """Configurar sistema de strikes"""
+        try:
+            if ativar is not None:
+                self.config["strikes_system"]["enabled"] = ativar
+            
+            if strikes_ban is not None:
+                self.config["strikes_system"]["strikes_to_ban"] = strikes_ban
+            
+            if dias_expiracao is not None:
+                self.config["strikes_system"]["strike_expiry_days"] = dias_expiracao
+            
+            # Salvar config
+            with open(self.config_file, 'w', encoding='utf-8') as f:
+                json.dump(self.config, f, indent=2, ensure_ascii=False)
+            
+            status = "✅ Ativado" if self.config["strikes_system"]["enabled"] else "❌ Desativado"
+            
+            embed = discord.Embed(
+                title="⚠️ Sistema de Strikes Configurado",
+                description=f"**Status:** {status}",
+                color=discord.Color.green() if self.config["strikes_system"]["enabled"] else discord.Color.gray()
+            )
+            
+            config = self.config["strikes_system"]
+            embed.add_field(name="Strikes para Ban", value=str(config["strikes_to_ban"]), inline=True)
+            embed.add_field(name="Expiração", value=f"{config['strike_expiry_days']} dias", inline=True)
+            
+            embed.add_field(
+                name="ℹ️ Ações Progressivas",
+                value=f"**Strike 1:** {config['progressive_actions']['strike_1']}\n"
+                      f"**Strike 2:** {config['progressive_actions']['strike_2']}\n"
+                      f"**Strike 3:** Ban automático",
+                inline=False
+            )
+            
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            bot_logger.info(f"{interaction.user} configurou sistema de strikes")
+            
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
+    
+    @app_commands.command(name="setup_mentionspam", description="Configurar proteção contra spam de menções")
+    @app_commands.describe(
+        ativar="Ativar ou desativar proteção",
+        max_mencoes="Máximo de menções de usuários",
+        max_mencoes_roles="Máximo de menções de roles"
+    )
+    @app_commands.checks.has_permissions(administrator=True)
+    async def setup_mentionspam(
+        self,
+        interaction: discord.Interaction,
+        ativar: Optional[bool] = None,
+        max_mencoes: Optional[int] = None,
+        max_mencoes_roles: Optional[int] = None
+    ):
+        """Configurar proteção contra spam de menções"""
+        try:
+            if ativar is not None:
+                self.config["mention_spam"]["enabled"] = ativar
+            
+            if max_mencoes is not None:
+                self.config["mention_spam"]["max_mentions"] = max_mencoes
+            
+            if max_mencoes_roles is not None:
+                self.config["mention_spam"]["max_role_mentions"] = max_mencoes_roles
+            
+            # Salvar config
+            with open(self.config_file, 'w', encoding='utf-8') as f:
+                json.dump(self.config, f, indent=2, ensure_ascii=False)
+            
+            status = "✅ Ativado" if self.config["mention_spam"]["enabled"] else "❌ Desativado"
+            
+            embed = discord.Embed(
+                title="📢 Proteção Mention Spam Configurada",
+                description=f"**Status:** {status}",
+                color=discord.Color.green() if self.config["mention_spam"]["enabled"] else discord.Color.gray()
+            )
+            
+            config = self.config["mention_spam"]
+            embed.add_field(name="Máx. Menções Usuários", value=str(config["max_mentions"]), inline=True)
+            embed.add_field(name="Máx. Menções Roles", value=str(config["max_role_mentions"]), inline=True)
+            embed.add_field(name="Ação", value=config["action"].upper(), inline=True)
+            embed.add_field(name="Timeout", value=f"{config['timeout_duration']}s", inline=True)
+            
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            bot_logger.info(f"{interaction.user} configurou proteção mention spam")
+            
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
+    
+    @app_commands.command(name="setup_slowmode", description="Configurar auto-slowmode")
+    @app_commands.describe(
+        ativar="Ativar ou desativar auto-slowmode",
+        threshold="Número de mensagens para ativar",
+        janela="Janela de tempo em segundos",
+        duracao="Duração do slowmode em segundos"
+    )
+    @app_commands.checks.has_permissions(administrator=True)
+    async def setup_slowmode(
+        self,
+        interaction: discord.Interaction,
+        ativar: Optional[bool] = None,
+        threshold: Optional[int] = None,
+        janela: Optional[int] = None,
+        duracao: Optional[int] = None
+    ):
+        """Configurar auto-slowmode durante alta atividade"""
+        try:
+            if ativar is not None:
+                self.config["auto_slowmode"]["enabled"] = ativar
+            
+            if threshold is not None:
+                self.config["auto_slowmode"]["trigger_threshold"] = threshold
+            
+            if janela is not None:
+                self.config["auto_slowmode"]["trigger_window"] = janela
+            
+            if duracao is not None:
+                self.config["auto_slowmode"]["slowmode_duration"] = duracao
+            
+            # Salvar config
+            with open(self.config_file, 'w', encoding='utf-8') as f:
+                json.dump(self.config, f, indent=2, ensure_ascii=False)
+            
+            status = "✅ Ativado" if self.config["auto_slowmode"]["enabled"] else "❌ Desativado"
+            
+            embed = discord.Embed(
+                title="⏱️ Auto-Slowmode Configurado",
+                description=f"**Status:** {status}",
+                color=discord.Color.green() if self.config["auto_slowmode"]["enabled"] else discord.Color.gray()
+            )
+            
+            config = self.config["auto_slowmode"]
+            embed.add_field(name="Threshold", value=f"{config['trigger_threshold']} mensagens", inline=True)
+            embed.add_field(name="Janela", value=f"{config['trigger_window']}s", inline=True)
+            embed.add_field(name="Slowmode", value=f"{config['slowmode_duration']}s", inline=True)
+            embed.add_field(name="Duração Total", value=f"{config['slowmode_time']}s", inline=True)
+            
+            embed.add_field(
+                name="ℹ️ Como Funciona",
+                value=f"Se {config['trigger_threshold']} mensagens forem enviadas em {config['trigger_window']}s, "
+                      f"slowmode de {config['slowmode_duration']}s será ativado por {config['slowmode_time']}s",
+                inline=False
+            )
+            
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            bot_logger.info(f"{interaction.user} configurou auto-slowmode")
+            
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
+    
+    @app_commands.command(name="setup_rolebackup", description="Configurar backup de roles")
+    @app_commands.describe(
+        ativar="Ativar ou desativar backup de roles",
+        restaurar_unban="Restaurar roles automaticamente após unban"
+    )
+    @app_commands.checks.has_permissions(administrator=True)
+    async def setup_rolebackup(
+        self,
+        interaction: discord.Interaction,
+        ativar: Optional[bool] = None,
+        restaurar_unban: Optional[bool] = None
+    ):
+        """Configurar sistema de backup de roles"""
+        try:
+            if ativar is not None:
+                self.config["role_backup"]["enabled"] = ativar
+            
+            if restaurar_unban is not None:
+                self.config["role_backup"]["restore_on_unban"] = restaurar_unban
+            
+            # Salvar config
+            with open(self.config_file, 'w', encoding='utf-8') as f:
+                json.dump(self.config, f, indent=2, ensure_ascii=False)
+            
+            status = "✅ Ativado" if self.config["role_backup"]["enabled"] else "❌ Desativado"
+            
+            embed = discord.Embed(
+                title="♻️ Backup de Roles Configurado",
+                description=f"**Status:** {status}",
+                color=discord.Color.green() if self.config["role_backup"]["enabled"] else discord.Color.gray()
+            )
+            
+            config = self.config["role_backup"]
+            embed.add_field(name="Restaurar no Unban", value="✅" if config["restore_on_unban"] else "❌", inline=True)
+            
+            embed.add_field(
+                name="ℹ️ Como Funciona",
+                value="Quando um membro é banido, seus roles são salvos. "
+                      "Se restaurar no unban estiver ativo, os roles serão restaurados quando o membro voltar.",
+                inline=False
+            )
+            
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            bot_logger.info(f"{interaction.user} configurou backup de roles")
+            
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Erro: {e}", ephemeral=True)
+    
+    @app_commands.command(name="strike", description="Adicionar strike manualmente a um usuário")
+    @app_commands.describe(
+        membro="Membro para adicionar strike",
+        motivo="Motivo do strike"
+    )
+    @app_commands.checks.has_permissions(moderate_members=True)
+    async def strike_add(
+        self,
+        interaction: discord.Interaction,
+        membro: discord.Member,
+        motivo: str
+    ):
+        """Adicionar strike a um usuário"""
+        if not self.config.get("strikes_system", {}).get("enabled", False):
+            await interaction.response.send_message("❌ Sistema de strikes não está ativo!", ephemeral=True)
+            return
+        
+        if membro.bot:
+            await interaction.response.send_message("❌ Não podes adicionar strikes a bots!", ephemeral=True)
+            return
+        
+        if membro.id == interaction.user.id:
+            await interaction.response.send_message("❌ Não podes adicionar strikes a ti mesmo!", ephemeral=True)
+            return
+        
+        try:
+            await self.add_strike(membro.id, interaction.guild.id, interaction.user.id, motivo)
+            
+            strikes = await self.get_active_strikes(membro.id, interaction.guild.id)
+            strikes_to_ban = self.config.get("strikes_system", {}).get("strikes_to_ban", 3)
+            
+            embed = discord.Embed(
+                title="⚠️ Strike Adicionado",
+                description=f"**Usuário:** {membro.mention}\n**Strikes:** {strikes}/{strikes_to_ban}",
+                color=discord.Color.orange(),
+                timestamp=datetime.now()
+            )
+            embed.add_field(name="Motivo", value=motivo, inline=False)
+            embed.add_field(name="Moderador", value=interaction.user.mention, inline=True)
+            
+            if strikes >= strikes_to_ban:
+                embed.color = discord.Color.red()
+                embed.add_field(name="⚠️ Atenção", value="Usuário atingiu limite de strikes!", inline=False)
+            
+            await interaction.response.send_message(embed=embed)
+            
+            # Enviar DM ao usuário
+            try:
+                dm_embed = discord.Embed(
+                    title="⚠️ Strike Recebido",
+                    description=f"Recebeste um strike em **{interaction.guild.name}**",
+                    color=discord.Color.orange()
+                )
+                dm_embed.add_field(name="Motivo", value=motivo, inline=False)
+                dm_embed.add_field(name="Strikes Atuais", value=f"{strikes}/{strikes_to_ban}", inline=True)
+                dm_embed.add_field(
+                    name="⚠️ Atenção",
+                    value=f"Com {strikes_to_ban} strikes serás automaticamente banido!",
+                    inline=False
+                )
+                await membro.send(embed=dm_embed)
+            except:
+                pass
+            
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Erro ao adicionar strike: {e}", ephemeral=True)
+    
+    @app_commands.command(name="strikes", description="Ver strikes de um usuário")
+    @app_commands.describe(
+        membro="Membro para ver strikes (deixar vazio para ver próprios strikes)"
+    )
+    async def strikes_view(
+        self,
+        interaction: discord.Interaction,
+        membro: Optional[discord.Member] = None
+    ):
+        """Ver strikes de um usuário"""
+        if not self.config.get("strikes_system", {}).get("enabled", False):
+            await interaction.response.send_message("❌ Sistema de strikes não está ativo!", ephemeral=True)
+            return
+        
+        target = membro or interaction.user
+        
+        try:
+            strikes = await self.get_active_strikes(target.id, interaction.guild.id)
+            strikes_to_ban = self.config.get("strikes_system", {}).get("strikes_to_ban", 3)
+            
+            # Buscar histórico de strikes
+            async with aiosqlite.connect(self.bot.db_path) as db:
+                async with db.execute(
+                    """SELECT reason, created_at, moderator_id 
+                       FROM moderation_strikes 
+                       WHERE user_id = ? AND guild_id = ? AND is_active = 1 
+                       ORDER BY created_at DESC""",
+                    (target.id, interaction.guild.id)
+                ) as cursor:
+                    rows = await cursor.fetchall()
+            
+            embed = discord.Embed(
+                title=f"⚠️ Strikes de {target.display_name}",
+                description=f"**Strikes Ativos:** {strikes}/{strikes_to_ban}",
+                color=discord.Color.orange() if strikes > 0 else discord.Color.green()
+            )
+            
+            if rows:
+                for idx, (reason, created_at, mod_id) in enumerate(rows, 1):
+                    moderator = interaction.guild.get_member(mod_id)
+                    mod_name = moderator.mention if moderator else f"ID: {mod_id}"
+                    
+                    timestamp = datetime.fromisoformat(created_at)
+                    embed.add_field(
+                        name=f"Strike #{idx}",
+                        value=f"**Motivo:** {reason}\n**Moderador:** {mod_name}\n**Data:** {timestamp.strftime('%d/%m/%Y %H:%M')}",
+                        inline=False
+                    )
+            else:
+                embed.add_field(name="✅ Sem Strikes", value="Este usuário não tem strikes ativos.", inline=False)
+            
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Erro ao buscar strikes: {e}", ephemeral=True)
+    
+    @app_commands.command(name="clearstrikes", description="Limpar strikes de um usuário")
+    @app_commands.describe(
+        membro="Membro para limpar strikes"
+    )
+    @app_commands.checks.has_permissions(administrator=True)
+    async def strikes_clear(
+        self,
+        interaction: discord.Interaction,
+        membro: discord.Member
+    ):
+        """Limpar todos os strikes de um usuário"""
+        if not self.config.get("strikes_system", {}).get("enabled", False):
+            await interaction.response.send_message("❌ Sistema de strikes não está ativo!", ephemeral=True)
+            return
+        
+        try:
+            async with aiosqlite.connect(self.bot.db_path) as db:
+                await db.execute(
+                    "UPDATE moderation_strikes SET is_active = 0 WHERE user_id = ? AND guild_id = ?",
+                    (membro.id, interaction.guild.id)
+                )
+                await db.commit()
+            
+            embed = discord.Embed(
+                title="✅ Strikes Limpos",
+                description=f"Todos os strikes de {membro.mention} foram removidos.",
+                color=discord.Color.green()
+            )
+            embed.add_field(name="Moderador", value=interaction.user.mention, inline=True)
+            
+            await interaction.response.send_message(embed=embed)
+            bot_logger.info(f"{interaction.user} limpou strikes de {membro}")
+            
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Erro ao limpar strikes: {e}", ephemeral=True)
 
 
 async def setup(bot):

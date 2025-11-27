@@ -36,7 +36,7 @@ Bot Discord completo com sistema de economia, jogos, música, moderação, ticke
 - **🎵 Música** - Player de música com fila e controles
 - **⭐ Social Avançado** - XP, níveis, perfis customizáveis, badges, casamentos, streaks e histórico
 - **🎫 Tickets** - Sistema profissional de suporte com categorias e gestão
-- **🛡️ Moderação** - Sistema avançado com logs, filtro de palavras, quarentena, appeals, anti-spam, anti-raid e NSFW detection
+- **🛡️ Moderação** - Sistema avançado com logs, filtro de palavras, quarentena, appeals, anti-spam, anti-raid, NSFW detection, filtro de links, strikes, mention spam protection, auto-slowmode e role backup
 - **📊 Monitoramento** - Status do bot, servidor e utilizadores
 - **🔧 Utilidades Avançadas** - Lembretes, Polls, Anúncios, Auto-roles (3 painéis), Verificação 2FA
 
@@ -660,26 +660,75 @@ O bot possui um sistema social completo com XP, níveis, perfis customizáveis, 
 **Auto-Moderação:**
 
 ```
-/setup_antispam [ativar] [canal] [ação]    - Anti-spam com whitelist de canais
+/setup_antispam [ativar] [canal] [ação]          - Anti-spam com whitelist de canais
 /setup_antiraid [ativar] [threshold] [intervalo] - Proteção anti-raid
 /setup_nsfw [ativar] [canal] [ação] [api_key]   - Detecção de NSFW (DeepAI)
+/setup_linkfilter [ativar] [bloquear_convites] [bloquear_phishing] [canal] [acao_canal] - Filtro de links maliciosos
+/setup_strikes [ativar] [strikes_ban] [dias_expiracao] - Sistema de strikes
+/setup_mentionspam [ativar] [max_mencoes] [max_mencoes_roles] - Proteção mention spam
+/setup_slowmode [ativar] [threshold] [janela] [duracao] - Auto-slowmode
+/setup_rolebackup [ativar] [restaurar_unban] - Backup de roles
 ```
 
 - **Anti-Spam**: Deteção de spam por mensagens rápidas e duplicadas
+
   - Whitelist de canais (add/remove/list)
   - Threshold configurável de mensagens
   - Ações automáticas: warn, timeout, kick
-  
+
 - **Anti-Raid**: Monitoramento de joins suspeitos
+
   - Threshold configurável (X membros em Y segundos)
   - Ação automática ao detetar raid
   - Logs detalhados com timestamps
 
 - **NSFW Detection**: Análise de imagens com IA
+
   - Integração com DeepAI API
   - Whitelist de canais NSFW permitidos
   - Confidence threshold ajustável
   - Ações: delete, warn, timeout, kick
+
+- **Link Filter**: Proteção contra links maliciosos
+
+  - Bloqueio de convites do Discord (discord.gg, discord.com/invite)
+  - Deteção de domínios de phishing conhecidos
+  - Whitelist/blacklist de domínios
+  - Whitelist de canais
+  - Integração com sistema de strikes
+
+- **Sistema de Strikes**: Infrações progressivas (3 strikes = ban)
+
+  - Strikes automáticos em violações
+  - Strikes manuais: `/strike <user> <reason>`
+  - Ver strikes: `/strikes [user]`
+  - Limpar strikes: `/clearstrikes <user>` (admin)
+  - Expiração automática (padrão: 30 dias)
+  - Ações progressivas:
+    - Strike 1: Aviso em DM
+    - Strike 2: Timeout de 24 horas
+    - Strike 3: Ban automático
+
+- **Mention Spam Protection**: Limites de menções
+
+  - Máximo de menções de usuários (padrão: 5)
+  - Máximo de menções de roles (padrão: 2)
+  - Bloqueio de @everyone/@here não autorizado
+  - Timeout automático (padrão: 10 minutos)
+  - Integração com strikes
+
+- **Auto-Slowmode**: Slowmode durante alta atividade
+
+  - Threshold configurável (padrão: 20 msgs em 10s)
+  - Duração ajustável (padrão: 10s por 5 minutos)
+  - Remoção automática após expiração
+  - Notificação no canal
+
+- **Role Backup**: Preservação de roles em bans
+  - Backup automático ao banir
+  - Restauração automática ao desbanir (configurável)
+  - Verificação de hierarquia de roles
+
 ### 📊 Monitoramento
 
 ```

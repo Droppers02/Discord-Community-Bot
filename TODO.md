@@ -98,6 +98,11 @@ Lista de tarefas, melhorias e correções planeadas para versões futuras.
 - [x] Anti-spam com whitelist de canais
 - [x] Anti-raid com monitoramento de joins
 - [x] Moderação de imagens (NSFW detection via DeepAI)
+- [x] Filtro de links maliciosos (convites Discord, phishing)
+- [x] Sistema de strikes (3 strikes = auto-ban)
+- [x] Proteção contra mention spam (@everyone, @here)
+- [x] Auto-slowmode durante alta atividade
+- [x] Backup/restore de roles em bans/unbans
 - [x] Configuração por canal (whitelists)
 - [ ] Detecção de links maliciosos/phishing
 - [ ] Sistema de strikes (3 strikes = ban automático)

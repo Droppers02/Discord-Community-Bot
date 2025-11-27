@@ -55,6 +55,60 @@
     "_comment_action": "Ação: delete, warn, timeout, kick"
   },
   
+  "link_filter": {
+    "enabled": false,
+    "whitelisted_channels": [],
+    "block_invites": true,
+    "block_phishing": true,
+    "whitelist_domains": [],
+    "blacklist_domains": [],
+    "action": "delete",
+    "_comment_invites": "Bloquear links de convites do Discord",
+    "_comment_phishing": "Detetar links de phishing conhecidos",
+    "_comment_action": "Ação: delete, warn, timeout, kick"
+  },
+  
+  "strikes_system": {
+    "enabled": false,
+    "strikes_to_ban": 3,
+    "strike_expiry_days": 30,
+    "actions": {
+      "1": "warn",
+      "2": "timeout",
+      "3": "ban"
+    },
+    "_comment_expiry": "Dias até strikes expirarem (0 = nunca)",
+    "_comment_actions": "Ação automática por número de strikes"
+  },
+  
+  "mention_spam": {
+    "enabled": false,
+    "max_mentions": 5,
+    "max_role_mentions": 2,
+    "action": "timeout",
+    "timeout_duration": 600,
+    "_comment_max": "Máximo de @menções individuais por mensagem",
+    "_comment_role": "Máximo de @role menções (inclui @everyone/@here)"
+  },
+  
+  "auto_slowmode": {
+    "enabled": false,
+    "trigger_threshold": 20,
+    "trigger_window": 10,
+    "slowmode_duration": 10,
+    "slowmode_time": 300,
+    "_comment_threshold": "Mensagens por janela de tempo para ativar slowmode",
+    "_comment_window": "Janela de tempo em segundos",
+    "_comment_duration": "Segundos de slowmode aplicado",
+    "_comment_time": "Duração total do slowmode ativo (segundos)"
+  },
+  
+  "role_backup": {
+    "enabled": false,
+    "restore_on_unban": true,
+    "_comment_backup": "Guardar roles ao banir para restaurar ao desbanir"
+  },
+  
   "timeout_presets": {
     "1m": 60,
     "5m": 300,

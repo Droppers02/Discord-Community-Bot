@@ -4,6 +4,110 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [2.7.2] - 2025-11-27
+
+### 🛡️ Sistema de Moderação - Extensões Avançadas
+
+**Filtro de Links Maliciosos**
+
+- ✅ **Deteção de Links Perigosos**
+
+  - Bloqueio de convites do Discord (discord.gg, discord.com/invite)
+  - Deteção de domínios de phishing conhecidos
+  - Whitelist/blacklist de domínios personalizável
+  - Whitelist de canais onde links são permitidos
+  - Ações configuráveis: delete, warn, timeout, kick
+  - Integração com sistema de strikes
+
+- ✅ **Configuração de Links**
+  - Comando `/setup_linkfilter` para gestão
+  - Adicionar/remover canais da whitelist
+  - Ativar/desativar bloqueio de convites
+  - Ativar/desativar bloqueio de phishing
+
+**Sistema de Strikes (3 Strikes = Ban)**
+
+- ✅ **Gestão de Infrações Progressivas**
+
+  - Strike automático em violações (links maliciosos, mention spam)
+  - Strike manual com comando `/strike <user> <reason>`
+  - 3 strikes = ban automático
+  - Expiração automática de strikes (padrão: 30 dias)
+  - Histórico completo de strikes por usuário
+
+- ✅ **Ações Progressivas**
+
+  - Strike 1: Aviso em DM
+  - Strike 2: Timeout de 24 horas
+  - Strike 3: Ban automático permanente
+
+- ✅ **Comandos de Gestão**
+  - `/strike <membro> <motivo>` - Adicionar strike manualmente
+  - `/strikes [membro]` - Ver strikes (próprios ou de outro usuário)
+  - `/clearstrikes <membro>` - Limpar todos os strikes (admin)
+  - `/setup_strikes` - Configurar sistema (threshold, expiração)
+
+**Proteção Contra Mention Spam**
+
+- ✅ **Limites de Menções**
+
+  - Máximo de menções de usuários (padrão: 5)
+  - Máximo de menções de roles (padrão: 2)
+  - Bloqueio de @everyone/@here não autorizados
+  - Auto-delete de mensagens violadoras
+  - Bypass para moderadores
+
+- ✅ **Ações Automáticas**
+  - Timeout automático (padrão: 10 minutos)
+  - Integração com sistema de strikes
+  - Logs detalhados de violações
+  - Comando `/setup_mentionspam` para configuração
+
+**Auto-Slowmode durante Raids**
+
+- ✅ **Ativação Inteligente**
+
+  - Threshold de mensagens configurável (padrão: 20 mensagens em 10s)
+  - Duração de slowmode ajustável (padrão: 10s)
+  - Tempo de slowmode configurável (padrão: 5 minutos)
+  - Remoção automática após expiração
+  - Tracking por canal individual
+
+- ✅ **Configuração**
+  - Comando `/setup_slowmode` para ajustes
+  - Notificação automática no canal
+  - Logs de ativação/desativação
+
+**Backup de Roles em Bans**
+
+- ✅ **Preservação de Roles**
+
+  - Backup automático de roles ao banir usuário
+  - Restauração automática ao desbanir (configurável)
+  - Restauração manual disponível
+  - Verificação de hierarquia de roles
+  - Suporte para múltiplos bans/unbans
+
+- ✅ **Comandos Atualizados**
+  - `/ban` agora faz backup de roles automaticamente
+  - `/unban` restaura roles se configurado
+  - `/setup_rolebackup` para ativar/desativar sistema
+
+### 🗄️ Base de Dados
+
+**Novas Tabelas**
+
+- `moderation_strikes` - Armazenamento de strikes com expiração
+- `role_backups` - Backup de roles JSON para restauração
+
+**Índices para Performance**
+
+- `idx_strikes_user` - Busca rápida de strikes por usuário
+- `idx_strikes_active` - Filtragem eficiente de strikes ativos
+- `idx_role_backups_user` - Busca rápida de backups de roles
+
+---
+
 ## [2.7.1] - 2025-11-26
 
 ### 🛡️ Sistema de Moderação Avançado
@@ -11,6 +115,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 **Anti-Spam com Whitelist de Canais**
 
 - ✅ **Deteção Inteligente de Spam**
+
   - Limite de mensagens por intervalo de tempo (configurável)
   - Deteção de mensagens duplicadas/idênticas
   - Sistema de warnings acumulativos
@@ -25,6 +130,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 **Anti-Raid Protection**
 
 - ✅ **Monitoramento de Joins Suspeitos**
+
   - Threshold configurável (X membros em Y segundos)
   - Ação automática quando raid é detetado (kick por padrão)
   - Logs detalhados com timestamps dos joins
@@ -38,6 +144,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 **NSFW Detection**
 
 - ✅ **Análise de Imagens com IA**
+
   - Integração com DeepAI API
   - Confidence threshold ajustável (0.0-1.0)
   - Suporte para: PNG, JPG, JPEG, GIF, WEBP
@@ -57,6 +164,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 **Melhorias na Configuração**
 
 - ✅ Config JSON expandido com novas opções:
+
   - `anti_spam`: message_threshold, time_window, duplicate_threshold, whitelisted_channels
   - `anti_raid`: join_threshold, time_window, action, lockdown_duration
   - `nsfw_detection`: api_key, confidence_threshold, whitelisted_channels, action
@@ -80,6 +188,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 **Nova Branch: `en` (English)**
 
 - ✅ Sistema completo de tradução implementado
+
   - Branch `main` = Português de Portugal (padrão)
   - Branch `en` = English
   - Infraestrutura i18n completa em `config/i18n.py`
@@ -90,6 +199,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
   - Sistema de configuração de idioma
 
 **Como usar:**
+
 - Para Português: `git checkout main`
 - Para English: `git checkout en`
 

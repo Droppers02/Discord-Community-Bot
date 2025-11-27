@@ -450,6 +450,40 @@ class Database:
             await db.execute("CREATE INDEX IF NOT EXISTS idx_inventory_user ON inventory_items(user_id, guild_id)")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_events_active ON active_events(guild_id, ends_at)")
             
+            # ===== SISTEMA DE MODERAÇÃO AVANÇADO =====
+            
+            # Tabela de strikes de moderação
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS moderation_strikes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    guild_id TEXT NOT NULL,
+                    moderator_id TEXT NOT NULL,
+                    reason TEXT NOT NULL,
+                    strike_count INTEGER DEFAULT 1,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TEXT,
+                    is_active INTEGER DEFAULT 1
+                )
+            """)
+            
+            # Tabela de backup de roles (para restauração após ban)
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS role_backups (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    guild_id TEXT NOT NULL,
+                    role_ids TEXT NOT NULL,
+                    backed_up_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    reason TEXT DEFAULT 'ban'
+                )
+            """)
+            
+            # Índices para moderação
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_strikes_user ON moderation_strikes(user_id, guild_id)")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_strikes_active ON moderation_strikes(is_active, expires_at)")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_role_backups_user ON role_backups(user_id, guild_id)")
+            
             await db.commit()
             self.logger.info("✅ Base de dados inicializada com sucesso")
     
