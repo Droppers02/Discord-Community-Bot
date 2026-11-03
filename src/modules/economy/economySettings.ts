@@ -33,6 +33,11 @@ export interface EconomySettings {
     /** Canal onde ficam registadas compras e ajustes da administração (opcional). */
     log_channel: string | null;
     shop: ShopItem[];
+    /** Cargo pessoal (nome e cor à escolha), comprado com moedas. */
+    custom_role_enabled: boolean;
+    custom_role_price: number;
+    /** Os cargos pessoais ficam logo acima deste cargo (vazio = logo abaixo do cargo do bot). */
+    custom_role_anchor: string | null;
 }
 
 export const MAX_SHOP_ITEMS = 20;
@@ -52,6 +57,9 @@ export function buildEconomyDefaults(): EconomySettings {
         transfer_fee_pct: 0,
         log_channel: null,
         shop: [],
+        custom_role_enabled: true,
+        custom_role_price: 50_000,
+        custom_role_anchor: null,
     };
 }
 
@@ -99,6 +107,9 @@ export function normalizeEconomy(value: EconomySettings): EconomySettings {
             .map((item) => normalizeItem(item))
             .filter((item): item is ShopItem => item !== null)
             .slice(0, MAX_SHOP_ITEMS),
+        custom_role_enabled: value.custom_role_enabled !== false,
+        custom_role_price: clamp(value.custom_role_price, 50_000, 0, 1_000_000_000),
+        custom_role_anchor: idOrNull(value.custom_role_anchor),
     };
 }
 

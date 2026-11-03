@@ -10,6 +10,7 @@ import { ensureGuildConfig } from "../../repositories/guildConfigRepository.js";
 import { countActiveWarns, createCase, type ModAction, type ModCase } from "../../repositories/modCaseRepository.js";
 import { appendAuditLog } from "../../services/auditService.js";
 import { getModerationSettings, type ModerationSettings, type WarnThreshold } from "./moderationSettings.js";
+import { appealButtonRow, appealsOpen } from "../appeals/appealService.js";
 
 export const ACTION_LABELS: Record<ModAction, string> = {
     warn: tk("Aviso"),
@@ -73,14 +74,18 @@ export function caseLine(entry: ModCase): string {
 }
 
 async function notify(user: User, guild: Guild, action: ModAction, reason: string | null, durationMs: number | null, settings: ModerationSettings): Promise<boolean> {
-    if (!settings.dm_on_action || user.bot) return false;
+    if (user.bot) return false;
+    // Banimento com os pedidos de revisão abertos: a DM vai sempre, com o botão para pedir.
+    const appeal = action === "ban" && await appealsOpen(guild.id);
+    if (!settings.dm_on_action && !appeal) return false;
     const lines = [
         t("**Servidor:** {server}", { server: guild.name }),
         reason ? t("**Motivo:** {reason}", { reason }) : null,
         durationMs ? t("**Duração:** {duration} (até {until})", { duration: humanizeDuration(durationMs), until: timestamp(Date.now() + durationMs, "f") }) : null,
+        appeal ? `\n${t("Achas que foi injusto? Pede a revisão do ban no botão abaixo (ou mais tarde com `/apelo` aqui na DM).")}` : null,
     ].filter(Boolean);
     return user.send({
-        components: [buildContainer({ color: ACTION_COLORS[action], title: `${e(ACTION_ICONS[action])} ${t(ACTION_LABELS[action])}`, description: lines.join("\n") })],
+        components: [buildContainer({ color: ACTION_COLORS[action], title: `${e(ACTION_ICONS[action])} ${t(ACTION_LABELS[action])}`, description: lines.join("\n"), rows: appeal ? [appealButtonRow(guild.id)] : [] })],
         flags: CV2_FLAG,
     }).then(() => true).catch(() => false);
 }
@@ -216,4 +221,42 @@ export async function purgeMessages(channel: GuildTextBasedChannel, moderator: G
     const target = filterUserId ? await channel.client.users.fetch(filterUserId).catch(() => null) : null;
     await record(channel.guild, target ?? moderator.user, moderator.id, "purge", t("{count} mensagens em {channel}", { count: deleted.size, channel: `<#${channel.id}>` }), null);
     return deleted.size;
+}
+
+/** ID de mensagem a partir de um ID ou de um link de mensagem. */
+export function messageIdFrom(input: string): string | null {
+    const match = input.trim().match(/(\d{15,25})\s*$/);
+    return match ? match[1]! : null;
+}
+
+/**
+ * Apaga as mensagens entre `fromId` e `toId` (inclusive; sem `toId`, até à mais recente) — o
+ * "apartir" e o "intervalo" do bot antigo. No máximo 500, e só as com menos de 14 dias.
+ */
+export async function purgeRange(channel: GuildTextBasedChannel, moderator: GuildMember, fromId: string, toId: string | null): Promise<number> {
+    const from = BigInt(fromId);
+    const to = toId ? BigInt(toId) : null;
+    const [low, high] = to !== null && to < from ? [to, from] : [from, to];
+    const cutoff = Date.now() - 14 * 86_400_000 + 60_000;
+    const collected: string[] = [];
+    let after = (low - 1n).toString();
+    for (let page = 0; page < 5; page++) {
+        const batch = await channel.messages.fetch({ limit: 100, after });
+        if (!batch.size) break;
+        const sorted = [...batch.values()].sort((a, b) => (BigInt(a.id) < BigInt(b.id) ? -1 : 1));
+        for (const message of sorted) {
+            if (high !== null && BigInt(message.id) > high) break;
+            if (message.createdTimestamp > cutoff && !message.pinned) collected.push(message.id);
+        }
+        const last = sorted.at(-1)!;
+        if ((high !== null && BigInt(last.id) >= high) || batch.size < 100) break;
+        after = last.id;
+    }
+    let deleted = 0;
+    for (let i = 0; i < collected.length; i += 100) {
+        const result = await channel.bulkDelete(collected.slice(i, i + 100), true);
+        deleted += result.size;
+    }
+    if (deleted) await record(channel.guild, moderator.user, moderator.id, "purge", t("{count} mensagens em {channel} (por intervalo)", { count: deleted, channel: `<#${channel.id}>` }), null);
+    return deleted;
 }

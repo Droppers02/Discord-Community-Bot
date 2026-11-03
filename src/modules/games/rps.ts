@@ -72,7 +72,7 @@ async function finish(session: RpsSession, result: 1 | 2 | 4): Promise<void> {
     const [p1, p2] = session.players;
     if (session.vsBot) {
         if (result === 1) {
-            await payOut(guildId, p1, session.bet * 2, "ppt");
+            await payOut(guildId, p1, session.bet * 2, "ppt", session.bet);
             track(guildId, p1, "ppt", "win", { coinsWon: session.bet });
             session.note = session.bet ? t("Ganhaste {coins}!", { coins: formatCoins(session.bet * 2) }) : null;
         } else if (result === 2) {
@@ -97,7 +97,7 @@ async function finish(session: RpsSession, result: 1 | 2 | 4): Promise<void> {
     const winnerIdx = session.result === 1 ? 0 : 1;
     const winner = session.players[winnerIdx];
     const loser = session.players[1 - winnerIdx]!;
-    await payOut(guildId, winner, session.bet * 2, "ppt");
+    await payOut(guildId, winner, session.bet * 2, "ppt", session.bet);
     const reward = session.bet ? 0 : await rewardWin(guildId, winner, (await getGamesSettings(guildId)).win_reward, "ppt");
     track(guildId, winner, "ppt", "win", { coinsWon: session.bet + reward });
     track(guildId, loser, "ppt", "loss", { coinsLost: session.bet });

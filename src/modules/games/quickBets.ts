@@ -23,7 +23,7 @@ async function play(interaction: ChatInputCommandInteraction<"cached">, game: Ga
     if (!(await escrowBet(interaction.guildId, interaction.user.id, bet, game))) return void replyError(interaction, t("Não tens moedas suficientes."));
     const outcome = roll();
     const prize = Math.floor(bet * outcome.multiplier);
-    await payOut(interaction.guildId, interaction.user.id, prize, game);
+    const paid = prize > 0 ? await payOut(interaction.guildId, interaction.user.id, prize, game, bet) : 0;
     track(interaction.guildId, interaction.user.id, game, prize > bet ? "win" : prize === bet ? "draw" : "loss", { coinsWon: Math.max(0, prize - bet), coinsLost: prize < bet ? bet - prize : 0 });
     const won = prize > bet;
     await interaction.reply({
@@ -34,7 +34,7 @@ async function play(interaction: ChatInputCommandInteraction<"cached">, game: Ga
                 ...outcome.lines,
                 "",
                 won
-                    ? `🎉 ${t("Ganhaste {coins} (×{mult})!", { coins: formatCoins(prize), mult: outcome.multiplier })}`
+                    ? `🎉 ${t("Ganhaste {coins} (×{mult})!", { coins: formatCoins(paid), mult: outcome.multiplier })}${paid > prize ? ` 🍀 ${t("bónus do evento")}` : ""}`
                     : prize === bet ? `🤝 ${t("Recuperaste a aposta.")}` : `😔 ${t("Perdeste {coins}.", { coins: formatCoins(bet) })}`,
             ].join("\n"),
             footer: t("Aposta de {user}: {bet}", { user: interaction.member.displayName, bet: bet.toLocaleString("pt-PT") }),

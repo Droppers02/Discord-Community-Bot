@@ -37,6 +37,7 @@ export function buildDailyResult(result: DailyResult, balance: number, settings:
     const lines = [
         `## ${formatCoins(result.reward, settings)}`,
         t("Base: {base} · Bónus de sequência: {bonus}", { base: formatNumber(result.base), bonus: formatNumber(result.bonus) }),
+        result.eventMultiplier > 1 ? `🎉 ${t("Evento ativo: ×{mult}!", { mult: result.eventMultiplier })}` : null,
         result.milestone ? `${e("trophy")} ${t("**Marco de {days} dias!** +{amount} extra.", { days: result.streak, amount: formatNumber(result.milestone) })}` : null,
         result.lostStreak ? `${e("warn")} ${t("Falhaste um dia e a sequência recomeçou.")}` : null,
         "",

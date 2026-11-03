@@ -11,38 +11,32 @@ PixelTickets, sem licenças, sem painel web e sem nada de venda.
 - **Tickets** — painéis, categorias, formulários (texto, escolhas, ficheiros), painel da equipa,
   prioridades, respostas rápidas, pedidos de fecho, fecho por inatividade, avaliação, horário de
   atendimento, avisos de tickets parados, blacklist e voz privada por ticket.
-- **Transcripts em ficheiro** — ao fechar, a conversa vira um `.html` anexado ao log do fecho
-  (abre em qualquer browser, sem site).
-- **Verificação à entrada** — captcha de figuras (tocar nas formas pela ordem da imagem), cargo de
-  verificado/não verificado, expulsão de quem não se verifica, regra de contas recentes.
-- **Moderação** — `/mod` com casos numerados (avisar, castigo, expulsar, banir, limpar), castigos
-  automáticos por avisos acumulados e registo próprio.
-- **Anti-spam**, **logs do servidor** por categoria, **entradas e saídas**, **rastreio de convites**.
-- **Modmail**, **sugestões** com votos e threads, **sorteios**, **auto-cargos**, **cargos
-  temporários** e cargos que voltam ao regressar, **salas de voz temporárias**, **canais de
-  estatísticas**, **alertas sociais** (YouTube, TikTok, Twitch, Kick) e **publicação automática**.
+- **Transcripts em ficheiro** — ao fechar, a conversa vira um `.html` anexado ao log do fecho.
+- **Verificação à entrada** — captcha de figuras, cargo de verificado/não verificado, expulsão de
+  quem não se verifica, regra de contas recentes.
+- **Moderação** — `/mod` com casos numerados (avisar, castigo, expulsar, banir, limpar por
+  quantidade ou intervalo), castigos automáticos por avisos acumulados e registo próprio.
+- **Revisão de bans (ban appeal)** — quem é banido recebe por DM um botão para pedir revisão (ou usa
+  `/apelo` na DM). A equipa recebe o pedido com as respostas, o motivo do ban e o histórico, discute
+  numa thread, vota 👍/👎, pode fazer perguntas ao membro (que responde por DM) e aprova (desbane e
+  envia convite de uso único) ou recusa (com motivo e espera até ao próximo pedido).
+- **Proteção** — filtro de palavras (acentos, maiúsculas e "l33t" não escapam), links de conteúdo
+  adulto, anti-raid (pausa os convites ou expulsa a vaga) e slowmode automático.
+- **Anti-spam**, **logs do servidor**, **log de entradas/saídas** com convites, **boas-vindas e
+  despedidas** com texto próprio, DM e cargos automáticos.
+- **Anúncios agendados** (`/anuncio`) — a uma hora certa ou daqui a X minutos, com repetição.
+- **Modmail**, **sugestões**, **sorteios**, **starboard**, **auto-cargos**, **cargos temporários**,
+  **salas de voz temporárias**, **canais de estatísticas**, **alertas sociais** e **publicação automática**.
 
 **Comunidade**
-- **Níveis e XP** por mensagens **e por tempo em voz**, cargos de recompensa e multiplicadores.
-- **Economia (EPA Coins)** — diário com sequência e marcos, trabalho, transferências, loja de
-  cargos (permanentes ou por dias), extrato.
-- **Perfil**, **reputação**, **rankings** (XP, moedas, jogos, reputação, voz, mensagens).
-
-**Mini-jogos** (`/jogos`)
-| Jogo | Comando | Notas |
-| --- | --- | --- |
-| Jogo do Galo | `/galo` | contra um amigo (desafio) ou o bot (fácil/normal/impossível), apostas, desforra |
-| 4 em Linha | `/4emlinha` | contra um amigo ou o bot (IA com 3 dificuldades), apostas, desforra |
-| Pedra, Papel, Tesoura | `/ppt` | à melhor de 1/3/5, escolhas escondidas |
-| Forca | `/forca` | sozinho ou aberta ao canal, 10 categorias |
-| Quiz | `/quiz` | para o canal inteiro, ~100 perguntas em 7 categorias, pontos por rapidez |
-| Termo | `/termo` | palavra do dia (em privado, resultado partilhado sem spoilers) ou livre |
-| Blackjack | `/blackjack` | pedir, ficar, dobrar; blackjack paga 3:2 |
-| Minas | `/minas` | 20 casas, levanta quando quiseres |
-| Apostas rápidas | `/apostar` | moeda, dados, slots, roleta |
-| Ship | `/ship` | compatibilidade (a administração pode "forçar" 😈) |
-
-As apostas ficam em caução enquanto o jogo decorre: um jogo abandonado devolve-as.
+- **Níveis e XP** por mensagens e por tempo em voz, cargos de recompensa e multiplicadores.
+- **Economia (EPA Coins)** — diário com sequência, trabalho, transferências, trocas, loja de cargos,
+  cargo pessoal (nome e cor), eventos (happy hour, super sorte, chuva de ouro, diário especial) e extrato.
+- **Social** — perfil com bio/cor/aniversário, conquistas, amigos, casamentos com anéis e
+  "mesversários", reputação, atividade diária em gráfico, sequências e rankings.
+- **Utilidades** — lembretes, notas pessoais, AFK, timestamps, emojis em grande, sondagens.
+- **Música** — YouTube, SoundCloud e links do Spotify; fila, pausa, repetir, baralhar, votar para
+  pular, letras e playlists pessoais.
 
 ## Requisitos
 
@@ -82,6 +76,11 @@ reiniciar o bot. O [railway.json](railway.json) manda usar o [Dockerfile](Docker
 TypeScript lá dentro) e arrancar com `node build/index.js`. As variáveis vêm do painel da Railway;
 os nomes do bot antigo (`DISCORD_TOKEN`, `SQL_DATABASE_URL`, `SERVER_ID`, `SERVER_TESTES`) continuam a
 ser aceites, por isso não é preciso mudar nada lá.
+
+**Música**: a imagem Docker instala o `ffmpeg` e o `yt-dlp` (sempre o mais recente a cada build).
+Fora do Docker, aponta `YTDLP_PATH` e `FFMPEG_PATH` para eles. Se o YouTube recusar o servidor
+("Sign in to confirm you're not a bot"), a pesquisa passa para o SoundCloud; para o YouTube voltar a
+funcionar, põe cookies de uma conta em `YTDLP_COOKIES_B64` (ficheiro cookies.txt em base64).
 
 **Docker** local (bot + PostgreSQL): `npm run docker:up` · logs: `npm run docker:logs`.
 

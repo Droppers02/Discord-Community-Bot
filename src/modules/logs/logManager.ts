@@ -59,7 +59,8 @@ export async function sendLog(client: Client, guildId: string, type: LogType, da
         });
         if (file) container.addFileComponents(new FileBuilder().setURL(`attachment://${file.name}`));
 
-        await (channel as TextChannel).send({ components: [container], files: file ? [file] : [], flags: CV2_FLAG });
+        // Logs só registam: as menções aparecem, mas nunca fazem ping a ninguém.
+        await (channel as TextChannel).send({ components: [container], files: file ? [file] : [], flags: CV2_FLAG, allowedMentions: { parse: [] } });
     } catch (error) {
         logger.error(`Falha ao enviar log ${type}:`, error);
     }

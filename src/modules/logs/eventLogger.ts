@@ -82,7 +82,8 @@ export async function sendServerLog(
     try {
         const channel = await client.channels.fetch(conf.channel_id);
         if (!channel?.isTextBased() || channel.isDMBased()) return;
-        await (channel as TextChannel).send({ components: [container], flags: CV2_FLAG });
+        // Logs só registam: as menções aparecem, mas nunca fazem ping a ninguém.
+        await (channel as TextChannel).send({ components: [container], flags: CV2_FLAG, allowedMentions: { parse: [] } });
     } catch (error) {
         logger.error(`Falha ao enviar log de servidor (${category}):`, error);
     }

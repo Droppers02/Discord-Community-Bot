@@ -7,6 +7,7 @@ import { t } from "../../lib/i18n.js";
 import { logger } from "../../lib/logger.js";
 import { addMemberXp, addVoiceTime, getMemberLevel, setMemberLevelValue, setMemberXp } from "../../repositories/levelRepository.js";
 import { isAllowedGuild } from "../../config.js";
+import { recordVoiceActivity, recordXpActivity } from "../../repositories/activityRepository.js";
 import { levelFromXp, rewardChanges, rollXp, totalXpFor } from "./levelMath.js";
 import { getLevelsSettings, type LevelsSettings } from "./levelSettings.js";
 
@@ -80,6 +81,7 @@ export async function handleLevelMessage(message: Message<true>): Promise<void> 
     lastXpAt.set(key, now);
 
     const gained = rollXp(settings, member.roles.cache.keys());
+    recordXpActivity(message.guildId, member.id, gained);
     const { xp, storedLevel } = await addMemberXp(message.guildId, member.id, gained, true, now);
     const level = levelFromXp(xp);
     if (level === storedLevel) return;
@@ -92,6 +94,8 @@ export async function handleLevelMessage(message: Message<true>): Promise<void> 
 
 /** XP de voz (ver voiceXp.ts): trata da subida de nível como as mensagens. */
 export async function handleVoiceMinute(member: GuildMember, channel: { isTextBased(): boolean }, settings: LevelsSettings, seconds: number, xp: number): Promise<void> {
+    recordVoiceActivity(member.guild.id, member.id, seconds);
+    if (xp > 0) recordXpActivity(member.guild.id, member.id, xp);
     const { xp: total, storedLevel } = await addVoiceTime(member.guild.id, member.id, seconds, xp);
     const level = levelFromXp(total);
     if (level === storedLevel) return;

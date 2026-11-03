@@ -102,6 +102,8 @@ const UNICODE_FALLBACK = {
     bot: "🤖",
     newspaper: "📰",
     sleeping: "😴",
+    wrench: "🔧",
+    notes: "📝",
 } as const;
 
 export type EmojiName = keyof typeof UNICODE_FALLBACK;

@@ -98,8 +98,7 @@ async function settle(session: BlackjackSession, result: Exclude<BlackjackSessio
     sessions.end(session.id);
     const stake = session.bet * (session.doubled ? 2 : 1);
     const payout = result === "blackjack" ? Math.floor(stake * 2.5) : result === "win" || result === "dealer_bust" ? stake * 2 : result === "push" ? stake : 0;
-    session.payout = payout;
-    await payOut(session.guildId, session.userId, payout, "blackjack");
+    session.payout = await payOut(session.guildId, session.userId, payout, "blackjack", stake);
     const outcome = payout > stake ? "win" : payout === stake ? "draw" : "loss";
     track(session.guildId, session.userId, "blackjack", outcome, { coinsWon: Math.max(0, payout - stake), coinsLost: payout < stake ? stake : 0 });
 }

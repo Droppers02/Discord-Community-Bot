@@ -20,6 +20,10 @@ export const SETTINGS_TABLES = [
     "economy_settings",
     "games_settings",
     "moderation_settings",
+    "appeal_settings",
+    "protection_settings",
+    "welcome_settings",
+    "starboard_settings",
 ] as const;
 export type SettingsTable = (typeof SETTINGS_TABLES)[number];
 

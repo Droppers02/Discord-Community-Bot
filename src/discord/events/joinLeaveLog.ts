@@ -14,7 +14,8 @@ import { t } from "../../lib/i18n.js";
 async function sendTo(client: Client, channelId: string, container: ContainerPlusBuilder): Promise<void> {
     const channel = await client.channels.fetch(channelId).catch(() => null);
     if (channel?.isTextBased() && !channel.isDMBased()) {
-        safeFireAndForget(channel.send({ components: [container], flags: CV2_FLAG }));
+        // Log: as menções aparecem sem fazer ping.
+        safeFireAndForget(channel.send({ components: [container], flags: CV2_FLAG, allowedMentions: { parse: [] } }));
     }
 }
 

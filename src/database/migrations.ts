@@ -17,7 +17,8 @@ const SETTINGS_TABLES = [
     "log_settings", "suggestion_settings", "antispam_settings", "giveaway_settings", "role_settings",
     "voice_settings", "reactionrole_settings", "social_settings", "statschannels_settings",
     "broadcast_settings", "sla_settings", "modmail_settings", "verify_settings", "levels_settings",
-    "economy_settings", "games_settings", "moderation_settings",
+    "economy_settings", "games_settings", "moderation_settings", "appeal_settings", "protection_settings",
+    "welcome_settings", "starboard_settings",
 ];
 
 /** Tabelas do bot Python (v2.x). */
@@ -419,6 +420,175 @@ async function ensureSchema(db: Executor): Promise<void> {
         CREATE TABLE IF NOT EXISTS mod_case_counters (
             guild_id TEXT PRIMARY KEY,
             last_number INTEGER NOT NULL
+        )
+    `);
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS ban_appeals (
+            id TEXT PRIMARY KEY,
+            guild_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            user_tag TEXT NOT NULL DEFAULT '',
+            ban_reason TEXT,
+            answers JSONB NOT NULL DEFAULT '[]'::jsonb,
+            status TEXT NOT NULL DEFAULT 'pending',
+            votes JSONB NOT NULL DEFAULT '{}'::jsonb,
+            reviewer_id TEXT,
+            reviewer_note TEXT,
+            channel_id TEXT,
+            message_id TEXT,
+            created_at BIGINT NOT NULL,
+            decided_at BIGINT
+        )
+    `);
+    await db.query("CREATE INDEX IF NOT EXISTS idx_ban_appeals_user ON ban_appeals (guild_id, user_id, created_at DESC)");
+
+    // ─── Utilidades ──────────────────────────────────────────────────────────
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS scheduled_announcements (
+            id TEXT PRIMARY KEY,
+            guild_id TEXT NOT NULL,
+            channel_id TEXT NOT NULL,
+            author_id TEXT NOT NULL,
+            title TEXT,
+            content TEXT NOT NULL,
+            mention_role TEXT,
+            image_url TEXT,
+            send_at BIGINT NOT NULL,
+            repeat TEXT NOT NULL DEFAULT 'none',
+            created_at BIGINT NOT NULL
+        )
+    `);
+    await db.query("CREATE INDEX IF NOT EXISTS idx_announcements_due ON scheduled_announcements (send_at)");
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS reminders (
+            id TEXT PRIMARY KEY,
+            guild_id TEXT NOT NULL,
+            channel_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            content TEXT NOT NULL,
+            remind_at BIGINT NOT NULL,
+            repeat_ms BIGINT NOT NULL DEFAULT 0,
+            dm BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at BIGINT NOT NULL
+        )
+    `);
+    await db.query("CREATE INDEX IF NOT EXISTS idx_reminders_due ON reminders (remind_at)");
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS personal_notes (
+            id BIGSERIAL PRIMARY KEY,
+            guild_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at BIGINT NOT NULL
+        )
+    `);
+    await db.query("CREATE INDEX IF NOT EXISTS idx_personal_notes_user ON personal_notes (guild_id, user_id, created_at DESC)");
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS afk_status (
+            guild_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            since BIGINT NOT NULL,
+            mentions INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (guild_id, user_id)
+        )
+    `);
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS starboard_posts (
+            guild_id TEXT NOT NULL,
+            message_id TEXT NOT NULL,
+            channel_id TEXT NOT NULL,
+            author_id TEXT NOT NULL,
+            starboard_message_id TEXT,
+            stars INTEGER NOT NULL DEFAULT 0,
+            created_at BIGINT NOT NULL,
+            PRIMARY KEY (guild_id, message_id)
+        )
+    `);
+
+    // ─── Social ──────────────────────────────────────────────────────────────
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS member_profiles (
+            guild_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            bio TEXT,
+            color TEXT,
+            birthday TEXT,
+            favorite_game TEXT,
+            updated_at BIGINT NOT NULL,
+            PRIMARY KEY (guild_id, user_id)
+        )
+    `);
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS friendships (
+            guild_id TEXT NOT NULL,
+            user_a TEXT NOT NULL,
+            user_b TEXT NOT NULL,
+            requester_id TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            created_at BIGINT NOT NULL,
+            PRIMARY KEY (guild_id, user_a, user_b)
+        )
+    `);
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS marriages (
+            guild_id TEXT NOT NULL,
+            user_a TEXT NOT NULL,
+            user_b TEXT NOT NULL,
+            ring_tier INTEGER NOT NULL DEFAULT 1,
+            married_at BIGINT NOT NULL,
+            last_anniversary_at BIGINT NOT NULL DEFAULT 0,
+            PRIMARY KEY (guild_id, user_a, user_b)
+        )
+    `);
+    await db.query("CREATE INDEX IF NOT EXISTS idx_marriages_b ON marriages (guild_id, user_b)");
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS member_activity (
+            guild_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            day TEXT NOT NULL,
+            messages INTEGER NOT NULL DEFAULT 0,
+            xp INTEGER NOT NULL DEFAULT 0,
+            voice_seconds INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (guild_id, user_id, day)
+        )
+    `);
+
+    // ─── Economia: cargos pessoais e eventos ─────────────────────────────────
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS custom_roles (
+            guild_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            role_id TEXT NOT NULL,
+            created_at BIGINT NOT NULL,
+            PRIMARY KEY (guild_id, user_id)
+        )
+    `);
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS economy_events (
+            id TEXT PRIMARY KEY,
+            guild_id TEXT NOT NULL,
+            type TEXT NOT NULL,
+            multiplier REAL NOT NULL DEFAULT 2,
+            channel_id TEXT,
+            created_by TEXT NOT NULL,
+            starts_at BIGINT NOT NULL,
+            ends_at BIGINT NOT NULL
+        )
+    `);
+    await db.query("CREATE INDEX IF NOT EXISTS idx_economy_events_active ON economy_events (guild_id, ends_at)");
+
+    // ─── Música ──────────────────────────────────────────────────────────────
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS music_playlists (
+            id BIGSERIAL PRIMARY KEY,
+            guild_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            tracks JSONB NOT NULL DEFAULT '[]'::jsonb,
+            created_at BIGINT NOT NULL,
+            UNIQUE (guild_id, user_id, name)
         )
     `);
 }

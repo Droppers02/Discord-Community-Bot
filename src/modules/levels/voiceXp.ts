@@ -2,6 +2,7 @@ import { ChannelType, type Client, type VoiceBasedChannel } from "discord.js";
 import { isAllowedGuild } from "../../config.js";
 import { logger } from "../../lib/logger.js";
 import { addVoiceTime } from "../../repositories/levelRepository.js";
+import { recordVoiceActivity } from "../../repositories/activityRepository.js";
 import { handleVoiceMinute, isIgnored } from "./levelService.js";
 import { rollXp } from "./levelMath.js";
 import { getLevelsSettings } from "./levelSettings.js";
@@ -30,6 +31,7 @@ async function tick(client: Client<true>): Promise<void> {
             for (const member of eligibleMembers(channel)) {
                 const ignored = isIgnored(settings, channel.id, channel.parentId, member.roles.cache.keys());
                 if (!giveXp || ignored) {
+                    recordVoiceActivity(guild.id, member.id, 60);
                     await addVoiceTime(guild.id, member.id, 60, 0);
                     continue;
                 }

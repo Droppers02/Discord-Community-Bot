@@ -9,6 +9,7 @@ import { logger } from "../../lib/logger.js";
 import { applyDelta, claimWithLock, ensureAccount, pruneLedger, type EconomyAccount } from "../../repositories/economyRepository.js";
 import { applyTempRole } from "../roles/tempRoleManager.js";
 import { getEconomySettings, type EconomySettings, type ShopItem } from "./economySettings.js";
+import { eventMultiplier } from "./economyEvents.js";
 
 const TZ = "Europe/Lisbon";
 const dayFormatter = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
@@ -66,6 +67,8 @@ export async function spendCoins(guildId: string, userId: string, amount: number
 
 export interface DailyResult {
     reward: number;
+    /** Multiplicador de um evento ativo (1 = nenhum). */
+    eventMultiplier: number;
     base: number;
     bonus: number;
     streak: number;
@@ -83,10 +86,11 @@ export async function claimDaily(guildId: string, userId: string): Promise<{ ok:
     if (!settings.enabled) throw new EconomyDisabledError();
     const now = Date.now();
     const nextAt = nextLisbonMidnight(now);
+    const multiplier = await eventMultiplier(guildId, "daily");
     return claimWithLock<DailyResult>(guildId, userId, settings.start_balance, (account) => {
         const sinceLast = account.last_daily_at ? dayDiff(account.last_daily_at, now) : Number.POSITIVE_INFINITY;
         if (sinceLast === 0) {
-            return { refuse: { reward: 0, base: 0, bonus: 0, streak: account.daily_streak, best: account.best_daily_streak, milestone: 0, lostStreak: false, nextAt } };
+            return { refuse: { reward: 0, eventMultiplier: 1, base: 0, bonus: 0, streak: account.daily_streak, best: account.best_daily_streak, milestone: 0, lostStreak: false, nextAt } };
         }
         const lostStreak = account.daily_streak > 0 && sinceLast > 1;
         const streak = sinceLast === 1 ? account.daily_streak + 1 : 1;
@@ -94,13 +98,13 @@ export async function claimDaily(guildId: string, userId: string): Promise<{ ok:
         const base = randomInt(settings.daily_min, settings.daily_max + 1);
         const bonus = Math.round(base * (settings.daily_streak_bonus_pct / 100) * Math.min(streak - 1, settings.daily_streak_cap));
         const milestone = MILESTONES.find(([days]) => days === streak)?.[1] ?? 0;
-        const reward = base + bonus + milestone;
+        const reward = Math.round((base + bonus + milestone) * multiplier);
         return {
             amount: reward,
             kind: "daily",
             note: t("Diário (dia {streak})", { streak }),
             patch: { daily_streak: streak, best_daily_streak: best, last_daily_at: now },
-            result: { reward, base, bonus, streak, best, milestone, lostStreak, nextAt },
+            result: { reward, eventMultiplier: multiplier, base, bonus, streak, best, milestone, lostStreak, nextAt },
         };
     });
 }
@@ -137,10 +141,11 @@ export async function claimWork(guildId: string, userId: string): Promise<{ ok: 
     if (!settings.enabled) throw new EconomyDisabledError();
     const now = Date.now();
     const cooldown = settings.work_cooldown_minutes * 60_000;
+    const multiplier = await eventMultiplier(guildId, "work");
     return claimWithLock<WorkResult>(guildId, userId, settings.start_balance, (account) => {
         const readyAt = account.last_work_at + cooldown;
         if (account.last_work_at && readyAt > now) return { refuse: { reward: 0, job: "", nextAt: readyAt } };
-        const reward = randomInt(settings.work_min, settings.work_max + 1);
+        const reward = Math.round(randomInt(settings.work_min, settings.work_max + 1) * multiplier);
         const job = JOBS[randomInt(0, JOBS.length)]!;
         return {
             amount: reward,

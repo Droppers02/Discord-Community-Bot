@@ -9,6 +9,7 @@ import { logger } from "../../lib/logger.js";
 import { recordGame, type GameOutcome } from "../../repositories/gameStatsRepository.js";
 import { accountOf, formatCoins, grantCoins, spendCoins } from "../economy/economyService.js";
 import { getEconomySettings } from "../economy/economySettings.js";
+import { eventMultiplier } from "../economy/economyEvents.js";
 import { getGamesSettings, type GamesSettings } from "./gamesSettings.js";
 
 // ─── Catálogo ────────────────────────────────────────────────────────────────
@@ -144,9 +145,16 @@ export async function escrowBet(guildId: string, userId: string, bet: number, ga
     return (await spendCoins(guildId, userId, bet, "bet", game)) !== null;
 }
 
-export async function payOut(guildId: string, userId: string, amount: number, game: GameKey): Promise<void> {
-    if (amount <= 0) return;
-    await grantCoins(guildId, userId, amount, "bet_win", game);
+/**
+ * Paga o que um jogo devolve (aposta incluída). Com o evento "Super Sorte" ativo, só o LUCRO
+ * (o que passa da aposta) é multiplicado. Devolve o que foi realmente pago.
+ */
+export async function payOut(guildId: string, userId: string, amount: number, game: GameKey, stake: number): Promise<number> {
+    if (amount <= 0) return 0;
+    const multiplier = amount > stake ? await eventMultiplier(guildId, "bet_win") : 1;
+    const total = Math.floor(stake + (amount - stake) * multiplier);
+    await grantCoins(guildId, userId, Math.max(amount, total), "bet_win", game);
+    return Math.max(amount, total);
 }
 
 export async function refundBet(guildId: string, userId: string, bet: number, game: GameKey): Promise<void> {
@@ -159,8 +167,9 @@ export async function rewardWin(guildId: string, userId: string, amount: number,
     if (amount <= 0) return 0;
     const economy = await getEconomySettings(guildId);
     if (!economy.enabled) return 0;
-    await grantCoins(guildId, userId, amount, "game_reward", game);
-    return amount;
+    const total = Math.round(amount * await eventMultiplier(guildId, "game_reward"));
+    await grantCoins(guildId, userId, total, "game_reward", game);
+    return total;
 }
 
 /** Regista o resultado nas estatísticas sem nunca rebentar o jogo. */

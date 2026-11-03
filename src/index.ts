@@ -14,7 +14,8 @@ await bootstrap({
     allowedMentions: { parse: ["users", "roles"], repliedUser: true },
     // Intents explícitos. GuildMembers + MessageContent são privilegiados e têm de estar
     // ligados no Discord Developer Portal; GuildVoiceStates serve as salas de voz temporárias
-    // e o XP de voz; GuildInvites o rastreio de convites; GuildModeration os logs de banimentos.
+    // e o XP de voz; GuildInvites o rastreio de convites; GuildModeration os logs de banimentos;
+    // GuildMessageReactions o starboard.
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
@@ -23,9 +24,10 @@ await bootstrap({
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.GuildInvites,
         GatewayIntentBits.GuildModeration,
+        GatewayIntentBits.GuildMessageReactions,
         GatewayIntentBits.DirectMessages,
     ],
-    partials: [Partials.Channel, Partials.Message],
+    partials: [Partials.Channel, Partials.Message, Partials.Reaction, Partials.User],
     // Memória estável em uptimes longos: 100 mensagens por canal, varridas ao fim de 24h
     // (o log de mensagens apagadas/editadas só vê mensagens em cache).
     makeCache: Options.cacheWithLimits({

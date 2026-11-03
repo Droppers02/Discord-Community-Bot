@@ -5,7 +5,7 @@ import { buildContainer, row, type Row } from "../../lib/containers.js";
 import { emoji } from "../../lib/emojis.js";
 import { buildCustomId } from "../../lib/ids.js";
 import { formatNumber, t } from "../../lib/i18n.js";
-import { backToHubRow, channelSelect, onOff, showChannel, textField, toggleButton } from "../config/panelKit.js";
+import { backToHubRow, channelSelect, onOff, roleSelect, showChannel, textField, toggleButton } from "../config/panelKit.js";
 import { getEconomySettings, MAX_SHOP_ITEMS, type EconomySettings } from "./economySettings.js";
 
 export const ECONOMY_NS = "ecocfg";
@@ -18,6 +18,7 @@ export async function buildEconomyContainer(guildId: string, notice: string | nu
             toggleButton(cid("toggle"), s.enabled),
             new ButtonBuilder().setCustomId(cid("amounts")).setLabel(t("Valores")).setEmoji(emoji.edit).setStyle(ButtonStyle.Primary),
             new ButtonBuilder().setCustomId(cid("additem")).setLabel(t("Pôr cargo à venda")).setEmoji(emoji.add).setStyle(ButtonStyle.Success).setDisabled(s.shop.length >= MAX_SHOP_ITEMS),
+            new ButtonBuilder().setCustomId(cid("customrole")).setLabel(t("Cargo pessoal")).setEmoji(emoji.role).setStyle(ButtonStyle.Secondary),
         ),
     ];
     if (s.shop.length) {
@@ -26,7 +27,11 @@ export async function buildEconomyContainer(guildId: string, notice: string | nu
             .setPlaceholder(t("Tirar um artigo da loja…"))
             .addOptions(s.shop.map((item) => ({ label: item.name.slice(0, 100), value: item.id, description: t("{price} moedas", { price: formatNumber(item.price) }).slice(0, 100), emoji: emoji.trash })))));
     }
-    rows.push(channelSelect(cid("log"), t("Canal de registo da economia (opcional)"), s.log_channel), backToHubRow());
+    rows.push(
+        channelSelect(cid("log"), t("Canal de registo da economia (opcional)"), s.log_channel),
+        roleSelect(cid("anchor"), t("Cargos pessoais ficam acima de… (opcional)"), s.custom_role_anchor ? [s.custom_role_anchor] : []),
+        backToHubRow(),
+    );
 
     return buildContainer({
         color: s.enabled ? COLORS.gold : COLORS.neutral,
@@ -52,6 +57,7 @@ export async function buildEconomyContainer(guildId: string, notice: string | nu
                     ? s.shop.map((item) => `**${item.name}** — ${formatNumber(item.price)} · <@&${item.role_id}>${item.duration_days ? ` · ${t("{days} dias", { days: item.duration_days })}` : ""}`).join("\n").slice(0, 1024)
                     : t("*Vazia — usa \"Pôr cargo à venda\".*"),
             },
+            { name: t("Cargo pessoal (/cargopessoal)"), value: s.custom_role_enabled ? t("{price} moedas · ficam acima de {role}", { price: formatNumber(s.custom_role_price), role: s.custom_role_anchor ? `<@&${s.custom_role_anchor}>` : t("(logo abaixo do cargo do bot)") }) : onOff(false) },
             { name: t("Registo"), value: showChannel(s.log_channel) },
         ],
         rows,
@@ -75,6 +81,12 @@ export function buildShopItemModal(): ModalBuilder {
         textField("price", t("Preço"), "", { required: true, max: 9, placeholder: "50000" }),
         textField("days", t("Duração em dias (0 = para sempre)"), "0", { required: true, max: 3 }),
         textField("description", t("Descrição (opcional)"), "", { paragraph: true, max: 200 }),
+    );
+}
+
+export function buildCustomRoleModal(s: EconomySettings): ModalBuilder {
+    return new ModalBuilder().setCustomId(cid("customrole")).setTitle(t("Cargo pessoal")).addLabelComponents(
+        textField("price", t("Preço (0 = desligar a compra)"), String(s.custom_role_enabled ? s.custom_role_price : 0), { required: true, max: 10 }),
     );
 }
 

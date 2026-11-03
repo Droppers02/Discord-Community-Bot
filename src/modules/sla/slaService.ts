@@ -94,7 +94,7 @@ function alertContainer(ticket: TicketRecord, config: GuildConfig, settings: Sla
 async function sendTo(client: Client<true>, channelId: string, payload: ReturnType<typeof alertContainer>, mention: string | null): Promise<void> {
     const channel = client.channels.cache.get(channelId) ?? await client.channels.fetch(channelId).catch(() => null);
     if (!channel?.isTextBased() || channel.isDMBased()) return;
-    await (channel as TextChannel).send({ components: [payload], flags: CV2_FLAG }).catch(() => null);
+    await (channel as TextChannel).send({ components: [payload], flags: CV2_FLAG, allowedMentions: { parse: [] } }).catch(() => null);
     // As mensagens CV2 não levam `content`: a menção vai numa mensagem curta à parte.
     if (mention) await (channel as TextChannel).send({ content: mention, allowedMentions: { parse: ["roles"] } }).catch(() => null);
 }

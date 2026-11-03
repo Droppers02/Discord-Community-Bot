@@ -60,7 +60,7 @@ export async function upsertFeedbackMessage(client: Client, ticket: TicketRecord
     const channel = await client.channels.fetch(config.feedback_channel).catch(() => null);
     if (!channel?.isTextBased() || channel.isDMBased()) return;
 
-    const payload = { components: [buildFeedbackContainer(ticket, config, score, comment)], flags: CV2_FLAG };
+    const payload = { components: [buildFeedbackContainer(ticket, config, score, comment)], flags: CV2_FLAG, allowedMentions: { parse: [] } };
 
     if (ticket.feedback_message_id) {
         const edited = await (channel as TextChannel).messages.edit(ticket.feedback_message_id, payload).catch(() => null);

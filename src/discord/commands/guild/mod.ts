@@ -8,7 +8,7 @@ import { t } from "../../../lib/i18n.js";
 import { humanizeDuration } from "../../../lib/time.js";
 import { casesOf, clearWarns, getCase, setCaseActive } from "../../../repositories/modCaseRepository.js";
 import { parseDuration } from "../../../modules/giveaways/giveawayCreator.js";
-import { banUser, caseLine, hasModAccess, hierarchyProblem, kickMember, MAX_TIMEOUT_MS, modLog, purgeMessages, removeTimeout, timeoutMember, unbanUser, warnMember, type ModResult } from "../../../modules/moderation/moderationService.js";
+import { banUser, caseLine, hasModAccess, hierarchyProblem, kickMember, MAX_TIMEOUT_MS, messageIdFrom, modLog, purgeMessages, purgeRange, removeTimeout, timeoutMember, unbanUser, warnMember, type ModResult } from "../../../modules/moderation/moderationService.js";
 
 const userOpt = (description: string) => ({ name: "membro", description, type: ApplicationCommandOptionType.User as const, required: true });
 const reasonOpt = { name: "motivo", description: t("Motivo (fica no registo e na mensagem ao membro)"), type: ApplicationCommandOptionType.String as const, required: false, maxLength: 400 };
@@ -88,8 +88,10 @@ createCommand({
             description: t("Apaga mensagens recentes deste canal."),
             type: ApplicationCommandOptionType.Subcommand,
             options: [
-                { name: "quantidade", description: t("Quantas (1 a 100)"), type: ApplicationCommandOptionType.Integer, required: true, minValue: 1, maxValue: 100 },
-                { name: "membro", description: t("Só as mensagens deste membro"), type: ApplicationCommandOptionType.User, required: false },
+                { name: "quantidade", description: t("Quantas das mais recentes (1 a 100)"), type: ApplicationCommandOptionType.Integer, required: false, minValue: 1, maxValue: 100 },
+                { name: "membro", description: t("Só as mensagens deste membro (com quantidade)"), type: ApplicationCommandOptionType.User, required: false },
+                { name: "desde", description: t("A partir desta mensagem (ID ou link) até à mais recente"), type: ApplicationCommandOptionType.String, required: false, maxLength: 200 },
+                { name: "ate", description: t("Com \"desde\": até esta mensagem (ID ou link) — intervalo"), type: ApplicationCommandOptionType.String, required: false, maxLength: 200 },
             ],
         },
     ],
@@ -144,8 +146,17 @@ createCommand({
             case "limpar": {
                 const channel = interaction.channel;
                 if (!channel || !("bulkDelete" in channel)) return void fail(interaction, t("Aqui não dá para apagar mensagens em massa."));
+                const since = interaction.options.getString("desde");
+                const until = interaction.options.getString("ate");
+                const amount = interaction.options.getInteger("quantidade");
+                if (!since && !amount) return void fail(interaction, t("Diz **quantidade**, ou **desde** (e opcionalmente **ate**) com o ID/link das mensagens."));
+                const fromId = since ? messageIdFrom(since) : null;
+                const toId = until ? messageIdFrom(until) : null;
+                if ((since && !fromId) || (until && !toId)) return void fail(interaction, t("Não percebi o ID/link da mensagem."));
                 await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-                const deleted = await purgeMessages(channel, moderator, interaction.options.getInteger("quantidade", true), interaction.options.getUser("membro")?.id ?? null);
+                const deleted = fromId
+                    ? await purgeRange(channel, moderator, fromId, toId)
+                    : await purgeMessages(channel, moderator, amount!, interaction.options.getUser("membro")?.id ?? null);
                 return void interaction.editReply({ content: t("🧹 {count, plural, =0 {Não havia mensagens para apagar (só dá até 14 dias).} one {# mensagem apagada.} other {# mensagens apagadas.}}", { count: deleted }) });
             }
             case "banir": {

@@ -25,6 +25,8 @@ async function replyPrivateNotice(interaction: RepliableInteraction): Promise<vo
     if (msg) scheduleNoticeAutoClose(interaction, msg.id);
 }
 
+const DM_COMMANDS = new Set(["apelo"]);
+
 const creators = setupCreators({
     commands: {
         // O @constatic/base regista os comandos no GUILD_ID. Os servidores extra são registados
@@ -33,6 +35,8 @@ const creators = setupCreators({
         middleware: async (interaction, block) => {
             enterInteractionContext(interaction);
             if (interaction.guildId && isAllowedGuild(interaction.guildId)) return;
+            // Em mensagem privada só o /apelo (pedido de revisão de ban) funciona.
+            if (!interaction.guildId && interaction.isCommand() && DM_COMMANDS.has(interaction.commandName)) return;
             block();
             await replyPrivateNotice(interaction as RepliableInteraction);
         },
@@ -68,7 +72,9 @@ export const createCommand: typeof creators.createCommand = (data) => {
 
 /** Os comandos no formato da API (sem os handlers). Nenhum comando usa .subcommand()/.group(). */
 export function commandPayload(): ApplicationCommandDataResolvable[] {
-    return commandData.map(({ run: _run, autocomplete: _autocomplete, ...rest }) => rest as unknown as ApplicationCommandDataResolvable);
+    return commandData
+        .filter((data) => !data.global)
+        .map(({ run: _run, autocomplete: _autocomplete, global: _global, ...rest }) => rest as unknown as ApplicationCommandDataResolvable);
 }
 
 /** Evento sem o filtro de servidores (só para casos como o guildCreate de servidores alheios). */

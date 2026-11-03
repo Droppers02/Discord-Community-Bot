@@ -41,8 +41,12 @@ import { buildLevelsContainer } from "../levels/levelsConfigView.js";
 import { buildEconomyContainer } from "../economy/economyConfigView.js";
 import { buildGamesContainer } from "../games/gamesConfigView.js";
 import { buildModerationContainer } from "../moderation/moderationConfigView.js";
+import { buildWelcomeMessagesContainer } from "../community/welcomeMessages.js";
+import { buildStarboardContainer } from "../community/starboard.js";
+import { buildAppealContainer } from "../appeals/appealConfigView.js";
+import { buildProtectionContainer } from "../protection/protectionConfigView.js";
 
-export type ConfigSection = "hub" | "giveaways" | "logs" | "suggestions" | "antispam" | "support" | "welcome" | "voice" | "roles" | "reactionroles" | "social" | "stats" | "broadcast" | "sla" | "modmail" | "verify" | "levels" | "economy" | "games" | "moderation";
+export type ConfigSection = "hub" | "giveaways" | "logs" | "suggestions" | "antispam" | "support" | "welcome" | "voice" | "roles" | "reactionroles" | "social" | "stats" | "broadcast" | "sla" | "modmail" | "verify" | "levels" | "economy" | "games" | "moderation" | "welcomemsg" | "starboard" | "appeals" | "protection";
 
 interface ConfigState {
     section: ConfigSection;
@@ -136,15 +140,19 @@ const SECTION_OPTIONS: Array<{ value: Exclude<ConfigSection, "hub"> | "tickets";
     { value: "sla", label: tk("Avisos de tickets parados"), description: tk("Avisar a equipa quando um ticket fica sem resposta."), icon: "hourglass" },
     { value: "modmail", label: tk("Modmail"), description: tk("Membros falam com a equipa por mensagem privada ao bot."), icon: "message" },
     { value: "verify", label: tk("Verificação à entrada"), description: tk("Captcha de figuras para quem entra no servidor."), icon: "shield" },
-    { value: "welcome", label: tk("Entradas e saídas"), description: tk("Cartões de boas-vindas e despedida."), icon: "join" },
+    { value: "welcomemsg", label: tk("Boas-vindas"), description: tk("Mensagens de boas-vindas/despedida, DM e cargos automáticos."), icon: "heart" },
+    { value: "welcome", label: tk("Log de entradas e saídas"), description: tk("Cartões de registo com o convite usado."), icon: "join" },
     { value: "moderation", label: tk("Moderação"), description: tk("Avisos, castigos automáticos e registo de moderação."), icon: "hammer" },
-    { value: "antispam", label: tk("Anti-spam"), description: tk("Proteção automática contra flood, links e raids."), icon: "shield" },
+    { value: "appeals", label: tk("Revisão de bans"), description: tk("Pedidos de unban por DM, votação e decisão da equipa."), icon: "receipt" },
+    { value: "protection", label: tk("Proteção"), description: tk("Filtro de palavras, conteúdo adulto, anti-raid e slowmode automático."), icon: "shield" },
+    { value: "antispam", label: tk("Anti-spam"), description: tk("Proteção automática contra flood, links e menções."), icon: "shield" },
     { value: "logs", label: tk("Logs do servidor"), description: tk("Registo de eventos do servidor por categoria."), icon: "newspaper" },
     { value: "levels", label: tk("Níveis e XP"), description: tk("XP por mensagem e voz, cargos de recompensa e ranking."), icon: "trophy" },
     { value: "economy", label: tk("Economia"), description: tk("EPA Coins: diário, trabalho, apostas máximas e lojas."), icon: "coin" },
     { value: "games", label: tk("Mini-jogos"), description: tk("Canal dos jogos, prémios e limites de apostas."), icon: "jigsaw" },
     { value: "giveaways", label: tk("Sorteios"), description: tk("Canal e cargo de organizador dos sorteios."), icon: "gift" },
     { value: "suggestions", label: tk("Sugestões"), description: tk("Canal, votação e moderação das sugestões."), icon: "megaphone" },
+    { value: "starboard", label: tk("Starboard"), description: tk("Mensagens com mais ⭐ vão para um canal de destaque."), icon: "star" },
     { value: "reactionroles", label: tk("Auto-cargos"), description: tk("Painéis de cargos por botões ou menu."), icon: "role" },
     { value: "social", label: tk("Alertas sociais"), description: tk("YouTube, TikTok, Twitch e Kick anunciados automaticamente."), icon: "megaphone" },
     { value: "stats", label: tk("Estatísticas"), description: tk("Contadores de membros, canais e boosts em nomes de canais."), icon: "chart" },
@@ -759,6 +767,10 @@ export async function buildConfigComponents(section: ConfigSection, guildId: str
         case "economy": return [await buildEconomyContainer(guildId)];
         case "games": return [await buildGamesContainer(guildId)];
         case "moderation": return [await buildModerationContainer(guildId)];
+        case "welcomemsg": return [await buildWelcomeMessagesContainer(guildId)];
+        case "starboard": return [await buildStarboardContainer(guildId)];
+        case "appeals": return [await buildAppealContainer(guildId)];
+        case "protection": return [await buildProtectionContainer(guildId)];
         case "hub":
         default: return [buildHubContainer()];
     }

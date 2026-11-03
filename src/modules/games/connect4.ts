@@ -191,7 +191,7 @@ async function finish(session: C4Session, result: 1 | 2 | 3 | 4): Promise<void> 
     if (session.vsBot) {
         if (result === 1) {
             const prize = Math.floor(session.bet * BOT_PAYOUT[session.difficulty]);
-            await payOut(guildId, p1, prize, "4emlinha");
+            await payOut(guildId, p1, prize, "4emlinha", session.bet);
             track(guildId, p1, "4emlinha", "win", { coinsWon: prize - session.bet });
             session.note = session.bet ? t("Ganhaste {coins}!", { coins: formatCoins(prize) }) : null;
         } else if (result === 2) {
@@ -216,7 +216,7 @@ async function finish(session: C4Session, result: 1 | 2 | 3 | 4): Promise<void> 
     if (result === 4) session.result = winnerIdx as 1 | 2;
     const winner = session.players[winnerIdx - 1]!;
     const loser = session.players[winnerIdx === 1 ? 1 : 0]!;
-    await payOut(guildId, winner, session.bet * 2, "4emlinha");
+    await payOut(guildId, winner, session.bet * 2, "4emlinha", session.bet);
     const reward = session.bet ? 0 : await rewardWin(guildId, winner, (await getGamesSettings(guildId)).win_reward, "4emlinha");
     track(guildId, winner, "4emlinha", "win", { coinsWon: session.bet + reward });
     track(guildId, loser, "4emlinha", "loss", { coinsLost: session.bet });

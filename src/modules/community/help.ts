@@ -8,7 +8,7 @@ import { t, tk } from "../../lib/i18n.js";
 
 // /ajuda — os comandos por secção, num menu.
 
-export const HELP_SECTIONS = ["geral", "jogos", "economia", "tickets", "staff", "admin"] as const;
+export const HELP_SECTIONS = ["geral", "social", "utilidades", "musica", "jogos", "economia", "tickets", "staff", "admin"] as const;
 export type HelpSection = (typeof HELP_SECTIONS)[number];
 
 const SECTIONS: Record<HelpSection, { label: string; icon: string; description: string; commands: Array<[string, string]> }> = {
@@ -25,6 +25,43 @@ const SECTIONS: Record<HelpSection, { label: string; icon: string; description: 
             ["/sondagem", tk("Cria uma sondagem no canal")],
             ["/convites", tk("Quem trouxe mais gente para o servidor")],
             ["/info", tk("Servidor, membro, avatar ou estado do bot")],
+        ],
+    },
+    social: {
+        label: tk("Social"),
+        icon: "heart",
+        description: tk("Perfil, amigos, casamentos e conquistas."),
+        commands: [
+            ["/editarperfil", tk("Bio, cor, aniversário e jogo favorito")],
+            ["/conquistas", tk("As tuas conquistas (badges)")],
+            ["/amigos", tk("Lista de amigos e pedidos de amizade")],
+            ["/casamento", tk("Pedir em casamento, anel e divórcio 💍")],
+            ["/atividade", tk("Gráfico de mensagens, XP e voz por dia")],
+            ["/sequencias", tk("Dias seguidos ativo, diário e vitórias")],
+        ],
+    },
+    utilidades: {
+        label: tk("Utilidades"),
+        icon: "wrench",
+        description: tk("Lembretes, notas e ferramentas."),
+        commands: [
+            ["/lembrete", tk("O bot lembra-te a uma hora ou daqui a algum tempo")],
+            ["/nota", tk("Notas pessoais e privadas")],
+            ["/afk", tk("Fica ausente — quem te menciona é avisado")],
+            ["/timestamp", tk("Datas que cada um vê na sua hora")],
+            ["/emoji", tk("Um emoji em grande, com as informações")],
+        ],
+    },
+    musica: {
+        label: tk("Música"),
+        icon: "voice",
+        description: tk("Música no canal de voz."),
+        commands: [
+            ["/musica tocar", tk("YouTube, SoundCloud ou link do Spotify")],
+            ["/musica fila · agora · pular · pausar · parar", tk("Controlar a música")],
+            ["/musica repetir · baralhar · remover", tk("Arrumar a fila")],
+            ["/musica letra", tk("A letra da música")],
+            ["/playlist", tk("As tuas playlists pessoais")],
         ],
     },
     jogos: {
@@ -56,6 +93,9 @@ const SECTIONS: Record<HelpSection, { label: string; icon: string; description: 
             ["/transferir", tk("Envia moedas a alguém")],
             ["/loja", tk("Compra cargos")],
             ["/extrato", tk("Os teus últimos movimentos")],
+            ["/cargopessoal", tk("O teu cargo com nome e cor à escolha")],
+            ["/troca", tk("Troca moedas com alguém (ele aceita)")],
+            ["/evento ativos", tk("Eventos especiais a decorrer")],
         ],
     },
     tickets: {
@@ -78,6 +118,7 @@ const SECTIONS: Record<HelpSection, { label: string; icon: string; description: 
             ["/blacklist", tk("Impedir alguém de abrir tickets")],
             ["/dashboard-staff", tk("Métricas dos tickets")],
             ["/sorteio", tk("Criar e gerir sorteios")],
+            ["/anuncio", tk("Agendar anúncios (hora certa ou daqui a X)")],
         ],
     },
     admin: {
@@ -89,6 +130,8 @@ const SECTIONS: Record<HelpSection, { label: string; icon: string; description: 
             ["/painel", tk("Publica um painel de tickets")],
             ["/xp", tk("Ajustar o XP dos membros")],
             ["/moedas", tk("Ajustar as moedas dos membros")],
+            ["/evento criar", tk("Lançar happy hour, super sorte, chuva de ouro…")],
+            ["/apelo", tk("(Em DM) quem foi banido pede a revisão do ban")],
         ],
     },
 };

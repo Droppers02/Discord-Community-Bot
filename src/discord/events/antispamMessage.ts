@@ -176,6 +176,7 @@ createEvent({
                         footerText: `<t:${Math.floor(Date.now() / 1000)}:f>`,
                     })],
                     flags: CV2_FLAG,
+                    allowedMentions: { parse: [] },
                 }).catch(() => null);
             }
         }

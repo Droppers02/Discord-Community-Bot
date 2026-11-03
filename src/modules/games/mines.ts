@@ -75,7 +75,7 @@ async function end(session: MinesSession, result: "cashout" | "boom"): Promise<v
     sessions.end(session.id);
     if (result === "cashout") {
         const prize = Math.floor(session.bet * minesMultiplier(session.mines, session.revealed.size));
-        await payOut(session.guildId, session.userId, prize, "minas");
+        await payOut(session.guildId, session.userId, prize, "minas", session.bet);
         track(session.guildId, session.userId, "minas", prize > session.bet ? "win" : "draw", { coinsWon: Math.max(0, prize - session.bet), score: session.revealed.size });
     } else {
         track(session.guildId, session.userId, "minas", "loss", { coinsLost: session.bet });

@@ -1,6 +1,7 @@
 import type { Client } from "discord.js";
 import { closeDatabase, releaseLock } from "#database";
 import { logger } from "./logger.js";
+import { flushActivity } from "../repositories/activityRepository.js";
 
 let registered = false;
 let shuttingDown = false;
@@ -10,6 +11,7 @@ async function shutdown(client: Client, signal: string, exitCode: number): Promi
     shuttingDown = true;
     logger.info(`Sinal ${signal} recebido — a encerrar o EPA BOTCHI…`);
     try {
+        await flushActivity().catch(() => null);
         releaseLock();
         await closeDatabase();
         client.destroy();

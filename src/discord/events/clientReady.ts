@@ -16,6 +16,9 @@ import { startVerifyMonitor } from "../../modules/verification/verifyService.js"
 import { startTempVoiceSweep, sweepOrphanTempChannels } from "../../modules/voice/tempVoiceManager.js";
 import { startVoiceXpTracker } from "../../modules/levels/voiceXp.js";
 import { syncApplicationEmojis } from "../../services/emojiService.js";
+import { startScheduler } from "../../modules/utility/scheduler.js";
+import { startSocialJobs } from "../../modules/community/socialJobs.js";
+import { musicAvailable } from "../../modules/music/ytdlp.js";
 
 createEvent({
     name: "Arranque: emojis, caches e tarefas de fundo",
@@ -63,6 +66,9 @@ createEvent({
         startStatsChannelsUpdater(client);
         startVoiceXpTracker(client);
         startEconomyJobs(client);
+        startScheduler(client);
+        startSocialJobs(client);
+        musicAvailable();
 
         logger.info(`EPA BOTCHI pronto como ${client.user.tag} — ${openTickets} ticket(s) aberto(s) em cache.`);
     },

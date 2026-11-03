@@ -7,14 +7,14 @@ import { emoji } from "../../lib/emojis.js";
 import { t } from "../../lib/i18n.js";
 import { parseCustomId } from "../../lib/ids.js";
 import { clampInt, gateConfig } from "../../modules/config/panelKit.js";
-import { buildEconomyAmountsModal, buildEconomyContainer, buildShopItemModal, parseRange } from "../../modules/economy/economyConfigView.js";
+import { buildCustomRoleModal, buildEconomyAmountsModal, buildEconomyContainer, buildShopItemModal, parseRange } from "../../modules/economy/economyConfigView.js";
 import { getEconomySettings, MAX_SHOP_ITEMS, saveEconomySettings } from "../../modules/economy/economySettings.js";
 
 // /config → Economia.
 
 createResponder({
     customId: "ecocfg/**",
-    types: [ResponderType.Button, ResponderType.StringSelect, ResponderType.ChannelSelect],
+    types: [ResponderType.Button, ResponderType.StringSelect, ResponderType.ChannelSelect, ResponderType.RoleSelect],
     async run(interaction) {
         if (!interaction.inCachedGuild() || !(await gateConfig(interaction))) return;
         const guildId = interaction.guildId;
@@ -24,12 +24,15 @@ createResponder({
         if (interaction.isButton()) {
             if (action === "amounts") return void interaction.showModal(buildEconomyAmountsModal(s));
             if (action === "additem") return void interaction.showModal(buildShopItemModal());
+            if (action === "customrole") return void interaction.showModal(buildCustomRoleModal(s));
             if (action === "toggle") await saveEconomySettings(guildId, { enabled: !s.enabled });
         } else if (interaction.isStringSelectMenu() && action === "delitem") {
             const id = interaction.values[0];
             await saveEconomySettings(guildId, { shop: s.shop.filter((item) => item.id !== id) });
         } else if (interaction.isChannelSelectMenu() && action === "log") {
             await saveEconomySettings(guildId, { log_channel: interaction.values[0] ?? null });
+        } else if (interaction.isRoleSelectMenu() && action === "anchor") {
+            await saveEconomySettings(guildId, { custom_role_anchor: interaction.values[0] ?? null });
         }
         await interaction.update({ components: [await buildEconomyContainer(guildId)] });
     },
@@ -62,6 +65,10 @@ createResponder({
                 work_cooldown_minutes: clampInt(workMinutes ?? "", s.work_cooldown_minutes, 1, 1440),
             });
             notice = `${emoji.success} ${t("Valores guardados.")}`;
+        } else if (action === "customrole") {
+            const price = clampInt(interaction.fields.getTextInputValue("price").replace(/[\s.]/g, ""), s.custom_role_price, 0, 1_000_000_000);
+            await saveEconomySettings(guildId, price > 0 ? { custom_role_enabled: true, custom_role_price: price } : { custom_role_enabled: false });
+            notice = `${emoji.success} ${t("Cargo pessoal guardado.")}`;
         } else if (action === "additem") {
             if (s.shop.length >= MAX_SHOP_ITEMS) return void replyContainer(interaction, errorContainer(t("A loja já tem {max} artigos.", { max: MAX_SHOP_ITEMS })));
             const roleId = interaction.fields.getSelectedRoles("role")?.first()?.id;

@@ -4,6 +4,33 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [3.1.0] - 2026-11-03
+
+### ♻️ Tudo o que o bot antigo tinha, de volta
+
+Revisão comando a comando do bot em Python: o que tinha ficado de fora na v3.0 voltou.
+
+- **Revisão de bans (novo, completo)**: botão na DM do ban e `/apelo` em mensagem privada,
+  pedido com perguntas configuráveis, cartão para a equipa com motivo do ban e histórico,
+  thread de discussão, votos, perguntas ao membro por DM, aprovar (desbane + convite) ou recusar
+  (motivo + espera), limites de pedidos e de tempo.
+- **Anúncios agendados**: `/anuncio agendar` a uma hora certa ou daqui a X minutos, com título,
+  imagem, menção e repetição diária/semanal; `/anuncio lista` e `cancelar`.
+- **Proteção**: filtro de palavras, links de conteúdo adulto, anti-raid e slowmode automático.
+- **Moderação**: `/mod limpar` também por intervalo (a partir de uma mensagem, ou entre duas).
+- **Utilidades**: `/lembrete`, `/nota`, `/afk`, `/timestamp`, `/emoji`, starboard.
+- **Boas-vindas e despedidas** com texto próprio, DM e cargos automáticos.
+- **Economia**: `/cargopessoal`, `/troca`, `/evento` (happy hour, super sorte, chuva de ouro,
+  diário especial).
+- **Social**: `/editarperfil`, `/conquistas`, `/amigos`, `/casamento` (anéis e mesversários),
+  `/atividade`, `/sequencias`, aniversários anunciados.
+- **Música**: `/musica` (tocar, fila, pular/votar, pausar, parar, repetir, baralhar, remover, letra)
+  e `/playlist`; a imagem Docker traz o ffmpeg e o yt-dlp.
+- **Logs sem pings**: as menções nos logs (servidor, tickets, entradas/saídas, anti-spam, avisos de
+  tickets parados, avaliações e modmail) aparecem como texto, sem notificar ninguém.
+
+---
+
 ## [3.0.0] - 2026-11-03
 
 ### 🚀 Reescrita completa (Python → TypeScript)
@@ -26,8 +53,7 @@ versão privada (sem licenças, sem painel web, sem venda).
   termo do dia, blackjack com dobrar, minas, moeda/dados/slots/roleta e ship.
 - **Configuração do zero** em `/config`. As tabelas do bot antigo passam para o esquema
   `epa_legacy` e o progresso (XP, voz, moedas, reputação, jogos) é importado.
-- **Removido**: música, casamentos, leilões, trocas, starboard e as restantes funções do bot antigo
-  que não passaram para a versão nova.
+- **Ficaram para a 3.1.0**: música, casamentos, trocas, starboard e outras funções do bot antigo.
 
 ---
 

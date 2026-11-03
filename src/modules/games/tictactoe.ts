@@ -137,7 +137,7 @@ async function finish(session: TttSession, result: 1 | 2 | 3 | 4): Promise<void>
         }
         if (result === 1) {
             const prize = Math.floor(session.bet * BOT_PAYOUT[session.difficulty]);
-            await payOut(guildId, p1, prize, "galo");
+            await payOut(guildId, p1, prize, "galo", session.bet);
             session.note = session.bet ? t("Ganhaste {coins}!", { coins: formatCoins(prize) }) : null;
             track(guildId, p1, "galo", "win", { coinsWon: prize - session.bet });
         } else if (result === 3) {
@@ -165,7 +165,7 @@ async function finish(session: TttSession, result: 1 | 2 | 3 | 4): Promise<void>
     const winner = session.players[winnerIdx - 1]!;
     const loser = session.players[winnerIdx === 1 ? 1 : 0]!;
     const pot = session.bet * 2;
-    await payOut(guildId, winner, pot, "galo");
+    await payOut(guildId, winner, pot, "galo", session.bet);
     const reward = session.bet ? 0 : await rewardWin(guildId, winner, (await getGamesSettings(guildId)).win_reward, "galo");
     track(guildId, winner, "galo", "win", { coinsWon: session.bet + reward });
     track(guildId, loser, "galo", "loss", { coinsLost: session.bet });
