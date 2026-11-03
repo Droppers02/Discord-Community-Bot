@@ -105,44 +105,6 @@ class FunCog(commands.Cog):
         
         await interaction.response.send_message(embed=embed)
 
-    @discord.app_commands.command(name="dado", description="Lança um dado")
-    @discord.app_commands.describe(
-        lados="Número de lados do dado (padrão: 6)",
-        quantidade="Quantidade de dados para lançar (padrão: 1)"
-    )
-    async def dado(self, interaction: discord.Interaction, lados: int = 6, quantidade: int = 1):
-        """
-        Lança um ou vários dados
-        
-        Args:
-            interaction: Interacção do Discord
-            lados: Número de lados do dado (padrão: 6)
-            quantidade: Quantidade de dados (padrão: 1)
-        """
-        if lados < 2:
-            await interaction.response.send_message("❌ O dado deve ter pelo menos 2 lados!", ephemeral=True)
-            return
-        
-        if quantidade < 1 or quantidade > 10:
-            await interaction.response.send_message("❌ Podes lançar entre 1 e 10 dados!", ephemeral=True)
-            return
-        
-        resultados = [random.randint(1, lados) for _ in range(quantidade)]
-        total = sum(resultados)
-        
-        embed = discord.Embed(title="🎲 A lançar dados!", color=discord.Color.blue())
-        
-        if quantidade == 1:
-            embed.add_field(name="Resultado", value=f"**{resultados[0]}**", inline=False)
-        else:
-            embed.add_field(name="Resultados", value=" + ".join(map(str, resultados)), inline=False)
-            embed.add_field(name="Total", value=f"**{total}**", inline=False)
-        
-        embed.add_field(name="Configuração", value=f"{quantidade}d{lados}", inline=True)
-        embed.set_footer(text=f"Pedido por {interaction.user.name}")
-        
-        await interaction.response.send_message(embed=embed)
-
     @discord.app_commands.command(name="ship", description="Calcula a compatibilidade entre dois utilizadores")
     @discord.app_commands.describe(
         utilizador1="Primeiro utilizador",

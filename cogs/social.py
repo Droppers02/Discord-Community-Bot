@@ -388,7 +388,7 @@ class SocialCog(commands.Cog):
                 """INSERT INTO user_levels (user_id, guild_id, reputation, xp, level)
                    VALUES (?, ?, 1, 0, 1)
                    ON CONFLICT(user_id, guild_id) 
-                   DO UPDATE SET reputation = user_levels.reputation + 1""",
+                   DO UPDATE SET reputation = reputation + 1""",
                 (str(utilizador.id), str(interaction.guild.id))
             )
             await self.db.commit()
@@ -422,7 +422,8 @@ class SocialCog(commands.Cog):
         app_commands.Choice(name="💰 Economia (Dinheiro)", value="money"),
         app_commands.Choice(name="🎮 Jogos (Vitórias)", value="games"),
         app_commands.Choice(name="📨 Mensagens Enviadas", value="messages"),
-        app_commands.Choice(name="🔥 Streaks Ativos", value="streaks")
+        app_commands.Choice(name="🔥 Streaks Ativos", value="streaks"),
+        app_commands.Choice(name="🎤 Tempo em Voz", value="voice")
     ])
     async def leaderboard(self, interaction: discord.Interaction, categoria: str = "xp"):
         """Mostra o ranking do servidor - agora com múltiplas categorias"""
@@ -503,6 +504,25 @@ class SocialCog(commands.Cog):
                           LIMIT 10"""
                 title = "🔥 Ranking por Streak Diário"
                 format_func = lambda row: f"{row[1]} dias"
+                async with aiosqlite.connect(self.db.db_path) as db:
+                    async with db.execute(query, (guild_id,)) as cursor:
+                        rows = await cursor.fetchall()
+
+            elif categoria == "voice":
+                query = """SELECT user_id, total_time, sessions_count
+                          FROM voice_totals
+                          WHERE guild_id = ? AND total_time > 0
+                          ORDER BY total_time DESC
+                          LIMIT 10"""
+                title = "🎤 Ranking por Tempo em Voz"
+
+                def format_func(row):
+                    total_time = int(row[1] or 0)
+                    sessions_count = int(row[2] or 0)
+                    hours = total_time // 3600
+                    minutes = (total_time % 3600) // 60
+                    return f"{hours}h {minutes}m em {sessions_count} sessões"
+
                 async with aiosqlite.connect(self.db.db_path) as db:
                     async with db.execute(query, (guild_id,)) as cursor:
                         rows = await cursor.fetchall()
@@ -660,15 +680,23 @@ class SocialCog(commands.Cog):
         
         # Dados de XP/Level da base de dados
         level_data = await self.db.get_user_level(user_id, guild_id)
+
+        # Dados de economia e voz
+        economy_data = await self.db.get_economy_user(user_id)
+        async with aiosqlite.connect(self.db.db_path) as db:
+            async with db.execute(
+                """SELECT total_time, sessions_count
+                   FROM voice_totals
+                   WHERE user_id = ? AND guild_id = ?""",
+                (user_id, guild_id)
+            ) as cursor:
+                voice_data = await cursor.fetchone()
         
         # Dados do perfil customizado
         profile = await self.db.get_profile(user_id, guild_id)
         
         # Badges
         badges = await self.db.get_user_badges(user_id, guild_id)
-        
-        # Marriage
-        marriage = await self.db.get_marriage(guild_id, user_id)
         
         # Criar embed
         color = int(profile["color"].replace("#", ""), 16) if profile and profile.get("color") else 0x5865F2
@@ -686,16 +714,45 @@ class SocialCog(commands.Cog):
         # Bio
         if profile and profile.get("bio"):
             embed.description = f"*{profile['bio']}*"
+
+        messages_sent = level_data.get("messages", level_data.get("messages_sent", 0))
         
         # Stats básicos (usando base de dados)
         embed.add_field(
-            name="📊 Estatísticas",
+            name="📊 Progressão",
             value=f"**Level:** {level_data['level']}\n"
                   f"**XP:** {level_data['xp']}\n"
                   f"**Reputação:** {level_data.get('reputation', 0)}\n"
-                  f"**Mensagens:** {level_data.get('messages', 0)}",
+                  f"**Mensagens:** {messages_sent}",
             inline=True
         )
+
+        embed.add_field(
+            name="💰 Economia",
+            value=f"**Saldo:** {economy_data.get('balance', 0):,} EPA Coins\n"
+                  f"**Total ganho:** {economy_data.get('total_earned', 0):,}\n"
+                  f"**Doado:** {economy_data.get('total_donated', 0):,}\n"
+                  f"**Streak diário:** {economy_data.get('daily_streak', 0)} dias\n"
+                  f"**Itens:** {len(economy_data.get('items', []))}",
+            inline=True
+        )
+
+        if voice_data:
+            total_time, sessions_count = voice_data
+            total_time = int(total_time or 0)
+            sessions_count = int(sessions_count or 0)
+            hours = total_time // 3600
+            minutes = (total_time % 3600) // 60
+            avg_minutes = (total_time // sessions_count) // 60 if sessions_count else 0
+            voice_text = (
+                f"**Tempo:** {hours}h {minutes}m\n"
+                f"**Sessões:** {sessions_count}\n"
+                f"**Média:** {avg_minutes}m"
+            )
+        else:
+            voice_text = "Sem atividade registada"
+
+        embed.add_field(name="🎤 Voz", value=voice_text, inline=True)
         
         # Info adicional
         info_text = ""
@@ -706,12 +763,6 @@ class SocialCog(commands.Cog):
                 info_text += f"**Aniversário:** {profile['birthday']}\n"
             if profile.get("favorite_game"):
                 info_text += f"**Jogo Favorito:** {profile['favorite_game']}\n"
-        
-        if marriage:
-            partner = interaction.guild.get_member(int(marriage["partner_id"]))
-            if partner:
-                ring_emoji = "💎" if marriage.get("ring_tier") == 3 else "💍"
-                info_text += f"{ring_emoji} **Casado(a) com:** {partner.mention}\n"
         
         if info_text:
             embed.add_field(name="ℹ️ Informações", value=info_text, inline=True)
@@ -884,277 +935,6 @@ class SocialCog(commands.Cog):
         except Exception as e:
             self.bot.logger.error(f"Erro ao dar recompensa de streak: {e}")
     
-    @app_commands.command(name="amigos", description="Gerenciar a tua lista de amigos")
-    @app_commands.describe(acao="Ação a realizar", utilizador="Utilizador alvo")
-    @app_commands.choices(acao=[
-        app_commands.Choice(name="📋 Ver lista de amigos", value="list"),
-        app_commands.Choice(name="➕ Adicionar amigo", value="add"),
-        app_commands.Choice(name="➖ Remover amigo", value="remove"),
-        app_commands.Choice(name="📬 Pedidos pendentes", value="pending")
-    ])
-    async def friends(
-        self, 
-        interaction: discord.Interaction, 
-        acao: str,
-        utilizador: Optional[discord.Member] = None
-    ):
-        """Sistema de amizades/friend list"""
-        if not self.db:
-            await interaction.response.send_message("❌ Database não disponível!", ephemeral=True)
-            return
-        
-        user_id = str(interaction.user.id)
-        guild_id = str(interaction.guild.id)
-        
-        try:
-            if acao == "list":
-                # Ver lista de amigos
-                async with self.db.execute(
-                    """SELECT friend_id, created_at FROM friendships 
-                       WHERE user_id = ? AND guild_id = ? AND status = 'accepted'""",
-                    (user_id, guild_id)
-                ) as cursor:
-                    friends = await cursor.fetchall()
-                
-                if not friends:
-                    await interaction.response.send_message(
-                        "😢 Ainda não tens amigos adicionados! Usa `/amigos add @utilizador` para adicionar.",
-                        ephemeral=True
-                    )
-                    return
-                
-                embed = discord.Embed(
-                    title=f"👥 Amigos de {interaction.user.display_name}",
-                    description=f"Total: {len(friends)} amigo(s)",
-                    color=discord.Color.blue()
-                )
-                
-                for friend_id, created_at in friends:
-                    member = interaction.guild.get_member(int(friend_id))
-                    if member:
-                        date = datetime.fromisoformat(created_at).strftime("%d/%m/%Y")
-                        embed.add_field(
-                            name=member.display_name,
-                            value=f"Amigos desde: {date}",
-                            inline=False
-                        )
-                
-                await interaction.response.send_message(embed=embed)
-            
-            elif acao == "add":
-                if not utilizador:
-                    await interaction.response.send_message(
-                        "❌ Precisas especificar um utilizador!",
-                        ephemeral=True
-                    )
-                    return
-                
-                if utilizador == interaction.user:
-                    await interaction.response.send_message(
-                        "❌ Não podes adicionar-te a ti mesmo!",
-                        ephemeral=True
-                    )
-                    return
-                
-                friend_id = str(utilizador.id)
-                
-                # Verificar se já são amigos ou se já existe pedido
-                async with self.db.execute(
-                    """SELECT status FROM friendships 
-                       WHERE user_id = ? AND friend_id = ? AND guild_id = ?""",
-                    (user_id, friend_id, guild_id)
-                ) as cursor:
-                    existing = await cursor.fetchone()
-                
-                if existing:
-                    if existing[0] == "accepted":
-                        await interaction.response.send_message(
-                            f"❌ Já és amigo de {utilizador.display_name}!",
-                            ephemeral=True
-                        )
-                    else:
-                        await interaction.response.send_message(
-                            f"⏳ Já enviaste um pedido de amizade para {utilizador.display_name}!",
-                            ephemeral=True
-                        )
-                    return
-                
-                # Criar pedido de amizade
-                await self.db.execute(
-                    """INSERT OR IGNORE INTO friendships (user_id, friend_id, guild_id, status, created_at)
-                       VALUES (?, ?, ?, 'pending', ?)""",
-                    (user_id, friend_id, guild_id, datetime.utcnow().isoformat())
-                )
-                await self.db.commit()
-                
-                # Tentar notificar o utilizador
-                try:
-                    await utilizador.send(
-                        f"👋 **{interaction.user.display_name}** enviou-te um pedido de amizade em **{interaction.guild.name}**!\n"
-                        f"Usa `/amigos pending` para aceitar ou rejeitar."
-                    )
-                except discord.HTTPException as error:
-                    self.bot.logger.debug(f"Falha ao enviar DM de amizade para {friend_id}: {error}")
-                
-                await interaction.response.send_message(
-                    f"✅ Pedido de amizade enviado para {utilizador.display_name}!",
-                    ephemeral=True
-                )
-            
-            elif acao == "remove":
-                if not utilizador:
-                    await interaction.response.send_message(
-                        "❌ Precisas especificar um utilizador!",
-                        ephemeral=True
-                    )
-                    return
-                
-                friend_id = str(utilizador.id)
-                
-                # Remover amizade (ambas as direções)
-                await self.db.execute(
-                    """DELETE FROM friendships 
-                       WHERE ((user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?))
-                       AND guild_id = ?""",
-                    (user_id, friend_id, friend_id, user_id, guild_id)
-                )
-                await self.db.commit()
-                
-                await interaction.response.send_message(
-                    f"✅ {utilizador.display_name} foi removido da tua lista de amigos.",
-                    ephemeral=True
-                )
-            
-            elif acao == "pending":
-                # Ver pedidos pendentes
-                async with self.db.execute(
-                    """SELECT user_id, created_at FROM friendships 
-                       WHERE friend_id = ? AND guild_id = ? AND status = 'pending'""",
-                    (user_id, guild_id)
-                ) as cursor:
-                    requests = await cursor.fetchall()
-                
-                if not requests:
-                    await interaction.response.send_message(
-                        "📭 Não tens pedidos de amizade pendentes!",
-                        ephemeral=True
-                    )
-                    return
-                
-                embed = discord.Embed(
-                    title="📬 Pedidos de Amizade Pendentes",
-                    description=f"Tens {len(requests)} pedido(s) pendente(s)",
-                    color=discord.Color.orange()
-                )
-                
-                for requester_id, created_at in requests:
-                    member = interaction.guild.get_member(int(requester_id))
-                    if member:
-                        date = datetime.fromisoformat(created_at).strftime("%d/%m/%Y %H:%M")
-                        embed.add_field(
-                            name=member.display_name,
-                            value=f"Recebido em: {date}\nID: {requester_id}",
-                            inline=False
-                        )
-                
-                embed.set_footer(text="Usa /amigos_aceitar ou /amigos_rejeitar para responder")
-                await interaction.response.send_message(embed=embed)
-                
-        except Exception as e:
-            self.bot.logger.error(f"Erro no sistema de amigos: {e}")
-            await interaction.response.send_message("❌ Erro ao processar pedido!", ephemeral=True)
-    
-    @app_commands.command(name="amigos_aceitar", description="Aceitar um pedido de amizade")
-    @app_commands.describe(utilizador="Utilizador que enviou o pedido")
-    async def accept_friend(self, interaction: discord.Interaction, utilizador: discord.Member):
-        """Aceitar pedido de amizade"""
-        if not self.db:
-            await interaction.response.send_message("❌ Database não disponível!", ephemeral=True)
-            return
-        
-        user_id = str(interaction.user.id)
-        friend_id = str(utilizador.id)
-        guild_id = str(interaction.guild.id)
-        
-        try:
-            # Verificar se existe pedido pendente
-            async with self.db.execute(
-                """SELECT 1 FROM friendships 
-                   WHERE user_id = ? AND friend_id = ? AND guild_id = ? AND status = 'pending'""",
-                (friend_id, user_id, guild_id)
-            ) as cursor:
-                exists = await cursor.fetchone()
-            
-            if not exists:
-                await interaction.response.send_message(
-                    "❌ Não tens nenhum pedido pendente deste utilizador!",
-                    ephemeral=True
-                )
-                return
-            
-            # Atualizar status para accepted
-            await self.db.execute(
-                """UPDATE friendships SET status = 'accepted' 
-                   WHERE user_id = ? AND friend_id = ? AND guild_id = ?""",
-                (friend_id, user_id, guild_id)
-            )
-            
-            # Criar relação reversa (ambos são amigos)
-            await self.db.execute(
-                """INSERT OR IGNORE INTO friendships (user_id, friend_id, guild_id, status, created_at)
-                   VALUES (?, ?, ?, 'accepted', ?)""",
-                (user_id, friend_id, guild_id, datetime.utcnow().isoformat())
-            )
-            
-            await self.db.commit()
-            
-            # Notificar o outro utilizador
-            try:
-                await utilizador.send(
-                    f"🎉 **{interaction.user.display_name}** aceitou o teu pedido de amizade em **{interaction.guild.name}**!"
-                )
-            except discord.HTTPException as error:
-                self.bot.logger.debug(f"Falha ao notificar aceitação de amizade para {friend_id}: {error}")
-            
-            await interaction.response.send_message(
-                f"✅ Agora és amigo de {utilizador.display_name}! 🎉",
-                ephemeral=True
-            )
-            
-        except Exception as e:
-            self.bot.logger.error(f"Erro ao aceitar amizade: {e}")
-            await interaction.response.send_message("❌ Erro ao aceitar pedido!", ephemeral=True)
-    
-    @app_commands.command(name="amigos_rejeitar", description="Rejeitar um pedido de amizade")
-    @app_commands.describe(utilizador="Utilizador que enviou o pedido")
-    async def reject_friend(self, interaction: discord.Interaction, utilizador: discord.Member):
-        """Rejeitar pedido de amizade"""
-        if not self.db:
-            await interaction.response.send_message("❌ Database não disponível!", ephemeral=True)
-            return
-        
-        user_id = str(interaction.user.id)
-        friend_id = str(utilizador.id)
-        guild_id = str(interaction.guild.id)
-        
-        try:
-            # Deletar pedido
-            await self.db.execute(
-                """DELETE FROM friendships 
-                   WHERE user_id = ? AND friend_id = ? AND guild_id = ? AND status = 'pending'""",
-                (friend_id, user_id, guild_id)
-            )
-            await self.db.commit()
-            
-            await interaction.response.send_message(
-                f"✅ Pedido de {utilizador.display_name} foi rejeitado.",
-                ephemeral=True
-            )
-            
-        except Exception as e:
-            self.bot.logger.error(f"Erro ao rejeitar amizade: {e}")
-            await interaction.response.send_message("❌ Erro ao rejeitar pedido!", ephemeral=True)
-    
     async def check_and_award_achievements(self, user_id: str, guild_id: str):
         """Sistema automático de badges por achievements"""
         if not self.db:
@@ -1223,213 +1003,6 @@ class SocialCog(commands.Cog):
         except Exception as e:
             self.bot.logger.error(f"Erro ao verificar achievements: {e}")
     
-    @app_commands.command(name="casamento_upgrade", description="Fazer upgrade do anel de casamento")
-    @app_commands.describe(tier="Nível do anel desejado (1-5)")
-    @app_commands.choices(tier=[
-        app_commands.Choice(name="🥉 Bronze (Tier 1) - Grátis", value=1),
-        app_commands.Choice(name="🥈 Prata (Tier 2) - $50,000", value=2),
-        app_commands.Choice(name="🥇 Ouro (Tier 3) - $150,000", value=3),
-        app_commands.Choice(name="💎 Diamante (Tier 4) - $500,000", value=4),
-        app_commands.Choice(name="👑 Platina (Tier 5) - $1,000,000", value=5),
-    ])
-    async def marriage_upgrade(self, interaction: discord.Interaction, tier: int):
-        """Sistema de ring tier upgrades"""
-        if not self.db:
-            await interaction.response.send_message("❌ Database não disponível!", ephemeral=True)
-            return
-        
-        user_id = str(interaction.user.id)
-        guild_id = str(interaction.guild.id)
-        
-        # Preços dos tiers
-        tier_prices = {
-            1: 0,
-            2: 50000,
-            3: 150000,
-            4: 500000,
-            5: 1000000
-        }
-        
-        tier_names = {
-            1: "🥉 Bronze",
-            2: "🥈 Prata",
-            3: "🥇 Ouro",
-            4: "💎 Diamante",
-            5: "👑 Platina"
-        }
-        
-        try:
-            # Verificar se está casado
-            async with self.db.execute(
-                """SELECT id, ring_tier, user1_id, user2_id 
-                   FROM marriages 
-                   WHERE guild_id = ? AND (user1_id = ? OR user2_id = ?) AND status = 'active'""",
-                (guild_id, user_id, user_id)
-            ) as cursor:
-                marriage = await cursor.fetchone()
-            
-            if not marriage:
-                await interaction.response.send_message(
-                    "❌ Precisas estar casado para fazer upgrade do anel!",
-                    ephemeral=True
-                )
-                return
-            
-            marriage_id, current_tier, user1_id, user2_id = marriage
-            partner_id = user2_id if user1_id == user_id else user1_id
-            
-            if tier <= current_tier:
-                await interaction.response.send_message(
-                    f"❌ O teu anel já é {tier_names[current_tier]} ou superior!",
-                    ephemeral=True
-                )
-                return
-            
-            price = tier_prices[tier]
-            
-            # Verificar se tem dinheiro
-            balance = await self.db.get_user_balance(user_id)
-
-            if balance < price:
-                await interaction.response.send_message(
-                    f"❌ Precisas de **${price:,}** para fazer upgrade para {tier_names[tier]}!\n"
-                    f"Tens apenas **${balance:,}** disponíveis.",
-                    ephemeral=True
-                )
-                return
-            
-            # Fazer upgrade
-            await self.db.execute(
-                "UPDATE marriages SET ring_tier = ? WHERE id = ?",
-                (tier, marriage_id)
-            )
-            
-            # Deduzir dinheiro
-            removed = await self.db.remove_money(
-                user_id,
-                price,
-                transaction_type="marriage_upgrade",
-                description=f"Upgrade de anel para {tier_names[tier]}"
-            )
-
-            if not removed:
-                await interaction.response.send_message(
-                    "❌ Não foi possível debitar o valor do upgrade. Tenta novamente.",
-                    ephemeral=True
-                )
-                return
-            
-            await self.db.commit()
-            
-            partner = interaction.guild.get_member(int(partner_id))
-            partner_mention = partner.mention if partner else "o teu parceiro"
-            
-            embed = discord.Embed(
-                title="💍 Upgrade de Anel Realizado!",
-                description=f"{interaction.user.mention} fez upgrade do anel de casamento com {partner_mention}!",
-                color=discord.Color.gold()
-            )
-            
-            embed.add_field(name="Tier Anterior", value=tier_names[current_tier], inline=True)
-            embed.add_field(name="Novo Tier", value=tier_names[tier], inline=True)
-            embed.add_field(name="Custo", value=f"${price:,}", inline=True)
-            
-            await interaction.response.send_message(embed=embed)
-            
-            # Notificar parceiro
-            if partner:
-                try:
-                    await partner.send(
-                        f"💍 {interaction.user.display_name} fez upgrade do vosso anel de casamento para {tier_names[tier]}!"
-                    )
-                except discord.HTTPException as error:
-                    self.bot.logger.debug(f"Falha ao notificar parceiro {partner_id} sobre upgrade de casamento: {error}")
-        
-        except Exception as e:
-            self.bot.logger.error(f"Erro no upgrade de casamento: {e}")
-            await interaction.response.send_message("❌ Erro ao fazer upgrade!", ephemeral=True)
-    
-    @commands.Cog.listener()
-    async def on_marriage_anniversary(self):
-        """Verificar aniversários de casamento diariamente"""
-        if not self.db:
-            return
-        
-        try:
-            # Buscar todos os casamentos ativos
-            async with self.db.execute(
-                """SELECT id, guild_id, user1_id, user2_id, married_at, anniversary_count 
-                   FROM marriages WHERE status = 'active'"""
-            ) as cursor:
-                marriages = await cursor.fetchall()
-            
-            today = datetime.utcnow().date()
-            
-            for marriage_id, guild_id, user1_id, user2_id, married_at, anniversary_count in marriages:
-                married_date = datetime.fromisoformat(married_at).date()
-                
-                # Verificar se é aniversário (mesmo dia e mês)
-                if married_date.day == today.day and married_date.month == today.month:
-                    years = today.year - married_date.year
-                    
-                    if years > anniversary_count:
-                        # É um novo aniversário!
-                        await self.db.execute(
-                            "UPDATE marriages SET anniversary_count = ? WHERE id = ?",
-                            (years, marriage_id)
-                        )
-                        
-                        # Dar recompensas
-                        reward_money = years * 10000  # $10k por ano
-                        reward_xp = years * 1000
-                        
-                        for user_id in [user1_id, user2_id]:
-                            await self.db.add_money(
-                                user_id,
-                                reward_money,
-                                transaction_type="anniversary_reward",
-                                description=f"Recompensa de {years}º aniversário"
-                            )
-                            await self.db.update_user_xp(user_id, guild_id, reward_xp)
-                            
-                            # Adicionar badge de aniversário
-                            badge_name = f"💕 {years}º Aniversário"
-                            await self.db.execute(
-                                """INSERT OR IGNORE INTO user_badges 
-                                   (user_id, guild_id, badge_id, badge_name, badge_description, badge_emoji)
-                                   VALUES (?, ?, ?, ?, ?, ?)""",
-                                (user_id, guild_id, f"anniversary_{years}", badge_name, 
-                                 f"Celebrou {years} ano(s) de casamento!", "💕")
-                            )
-                        
-                        await self.db.commit()
-                        
-                        # Notificar o casal
-                        guild = self.bot.get_guild(int(guild_id))
-                        if guild:
-                            user1 = guild.get_member(int(user1_id))
-                            user2 = guild.get_member(int(user2_id))
-                            
-                            message = (
-                                f"🎉 **Feliz {years}º Aniversário de Casamento!** 🎉\n\n"
-                                f"{user1.mention if user1 else 'Utilizador 1'} ❤️ {user2.mention if user2 else 'Utilizador 2'}\n\n"
-                                f"**Recompensas:**\n"
-                                f"💰 ${reward_money:,} cada\n"
-                                f"⭐ {reward_xp:,} XP cada\n"
-                                f"🏅 Badge '{badge_name}'"
-                            )
-                            
-                            # Tentar enviar DMs
-                            for user in [user1, user2]:
-                                if user:
-                                    try:
-                                        await user.send(message)
-                                    except discord.HTTPException as error:
-                                        self.bot.logger.debug(f"Falha ao enviar DM de aniversário de casamento: {error}")
-        
-        except Exception as e:
-            self.bot.logger.error(f"Erro ao verificar aniversários: {e}")
-    
     @app_commands.command(name="atividade", description="Ver gráfico de atividade (mensagens/XP)")
     @app_commands.describe(
         utilizador="Utilizador para ver atividade (opcional)",
@@ -1462,9 +1035,9 @@ class SocialCog(commands.Cog):
             # Buscar dados de atividade
             async with aiosqlite.connect(self.db.db_path) as db:
                 async with db.execute(
-                          """SELECT date, message_count, xp_gained
-                              FROM message_stats
-                              WHERE user_id = ? AND guild_id = ?
+                    """SELECT date, message_count, xp_gained 
+                       FROM message_stats 
+                       WHERE user_id = ? AND guild_id = ? 
                        AND date >= CURRENT_DATE - CAST(? AS INTEGER)
                        ORDER BY date ASC""",
                     (user_id, guild_id, days)

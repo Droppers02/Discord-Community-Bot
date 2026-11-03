@@ -732,7 +732,6 @@ class UtilitiesAdvanced(commands.Cog):
     
     # Definir grupos de comandos
     nota_group = app_commands.Group(name="nota", description="📝 Sistema de notas pessoais")
-    voz_group = app_commands.Group(name="voz", description="🎤 Estatísticas de voz")
     sugestao_group = app_commands.Group(name="sugestao", description="💡 Sistema de sugestões")
     
     def __init__(self, bot):
@@ -1229,8 +1228,8 @@ class UtilitiesAdvanced(commands.Cog):
                             INSERT INTO voice_totals (user_id, guild_id, total_time, sessions_count, last_session)
                             VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
                             ON CONFLICT(user_id, guild_id) DO UPDATE SET
-                                total_time = voice_totals.total_time + EXCLUDED.total_time,
-                                sessions_count = voice_totals.sessions_count + EXCLUDED.sessions_count,
+                                total_time = total_time + ?,
+                                sessions_count = sessions_count + 1,
                                 last_session = CURRENT_TIMESTAMP
                         """, (
                             str(member.id),
@@ -1275,8 +1274,8 @@ class UtilitiesAdvanced(commands.Cog):
                             INSERT INTO voice_totals (user_id, guild_id, total_time, sessions_count, last_session)
                             VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
                             ON CONFLICT(user_id, guild_id) DO UPDATE SET
-                                total_time = voice_totals.total_time + EXCLUDED.total_time,
-                                sessions_count = voice_totals.sessions_count + EXCLUDED.sessions_count,
+                                total_time = total_time + ?,
+                                sessions_count = sessions_count + 1,
                                 last_session = CURRENT_TIMESTAMP
                         """, (
                             str(member.id),
@@ -2454,129 +2453,6 @@ class UtilitiesAdvanced(commands.Cog):
             ephemeral=True
         )
         bot_logger.info(f"{interaction.user} definiu AFK: {razao}")
-    
-    # ===== VOICE TRACKER (GRUPO) =====
-    
-    @voz_group.command(
-        name="stats",
-        description="🎤 Ver estatísticas de tempo em voz"
-    )
-    @app_commands.describe(
-        membro="Membro a ver estatísticas (opcional)"
-    )
-    async def voicestats(self, interaction: discord.Interaction, membro: discord.Member = None):
-        """Ver estatísticas de voz"""
-        
-        target = membro or interaction.user
-        
-        import aiosqlite
-        async with aiosqlite.connect(self.bot.db.db_path) as db:
-            cursor = await db.execute("""
-                SELECT total_time, sessions_count, last_session
-                FROM voice_totals
-                WHERE user_id = ? AND guild_id = ?
-            """, (str(target.id), str(interaction.guild.id)))
-            row = await cursor.fetchone()
-            
-            if not row:
-                await interaction.response.send_message(
-                    f"📊 {target.mention} ainda não tem tempo registado em canais de voz!",
-                    ephemeral=True
-                )
-                return
-            
-            total_time, sessions_count, last_session = row
-            
-            # Formatar tempo
-            hours = total_time // 3600
-            minutes = (total_time % 3600) // 60
-            
-            # Calcular média por sessão
-            avg_time = total_time // sessions_count if sessions_count > 0 else 0
-            avg_minutes = avg_time // 60
-            
-            embed = discord.Embed(
-                title=f"🎤 Estatísticas de Voz - {target.display_name}",
-                color=discord.Color.blue(),
-                timestamp=datetime.utcnow()
-            )
-            embed.set_thumbnail(url=target.display_avatar.url)
-            
-            embed.add_field(
-                name="⏱️ Tempo Total",
-                value=f"**{hours}h {minutes}m**",
-                inline=True
-            )
-            embed.add_field(
-                name="🔢 Sessões",
-                value=f"**{sessions_count}**",
-                inline=True
-            )
-            embed.add_field(
-                name="📊 Média/Sessão",
-                value=f"**{avg_minutes}m**",
-                inline=True
-            )
-            
-            if last_session:
-                embed.add_field(
-                    name="🕒 Última Sessão",
-                    value=f"<t:{int(datetime.fromisoformat(last_session).timestamp())}:R>",
-                    inline=False
-                )
-            
-            await interaction.response.send_message(embed=embed)
-    
-    @voz_group.command(
-        name="leaderboard",
-        description="🏆 Top utilizadores em tempo de voz"
-    )
-    async def voice_leaderboard(self, interaction: discord.Interaction):
-        """Leaderboard de voz"""
-        
-        import aiosqlite
-        async with aiosqlite.connect(self.bot.db.db_path) as db:
-            cursor = await db.execute("""
-                SELECT user_id, total_time, sessions_count
-                FROM voice_totals
-                WHERE guild_id = ?
-                ORDER BY total_time DESC
-                LIMIT 10
-            """, (str(interaction.guild.id),))
-            rows = await cursor.fetchall()
-        
-        if not rows:
-            await interaction.response.send_message(
-                "📊 Ainda não há dados de voz registados!",
-                ephemeral=True
-            )
-            return
-        
-        embed = discord.Embed(
-            title="🏆 Top 10 - Tempo em Voz",
-            color=discord.Color.gold(),
-            timestamp=datetime.utcnow()
-        )
-        
-        medals = ["🥇", "🥈", "🥉"]
-        
-        for i, (user_id, total_time, sessions_count) in enumerate(rows, 1):
-            user = interaction.guild.get_member(int(user_id))
-            if not user:
-                continue
-            
-            hours = total_time // 3600
-            minutes = (total_time % 3600) // 60
-            
-            medal = medals[i-1] if i <= 3 else f"`#{i}`"
-            
-            embed.add_field(
-                name=f"{medal} {user.display_name}",
-                value=f"⏱️ **{hours}h {minutes}m** | 🔢 {sessions_count} sessões",
-                inline=False
-            )
-        
-        await interaction.response.send_message(embed=embed)
     
     # ===== STARBOARD SETUP =====
     
