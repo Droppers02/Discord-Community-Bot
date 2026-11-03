@@ -1,0 +1,31 @@
+# Correr tudo localmente (bot + PostgreSQL): `npm run docker:up`.
+# O BOT_TOKEN, GUILD_ID, etc. vêm do .env; a base de dados é a do contentor.
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: epa
+      POSTGRES_PASSWORD: epa
+      POSTGRES_DB: epa
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U epa"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  bot:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://epa:epa@postgres:5432/epa?sslmode=disable
+
+volumes:
+  pgdata:

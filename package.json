@@ -1,0 +1,59 @@
+{
+    "name": "epa-botchi",
+    "version": "3.0.0",
+    "private": true,
+    "description": "Bot privado de gestão e mini-jogos do servidor EPA (discord.js + @constatic/base, Components V2).",
+    "type": "module",
+    "main": "build/index.js",
+    "scripts": {
+        "check": "tsc --noEmit && echo ✔ Ok",
+        "lint": "oxlint",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "build": "tsup",
+        "dev": "tsx --env-file=.env ./src/index.ts",
+        "watch": "tsx --watch --env-file=.env ./src/index.ts",
+        "start": "node --env-file-if-exists=.env .",
+        "docker:up": "docker compose up -d --build",
+        "docker:logs": "docker compose logs -f bot",
+        "docker:down": "docker compose down"
+    },
+    "dependencies": {
+        "@constatic/base": "0.1.1",
+        "@magicyan/discord": "1.7.4",
+        "chalk": "6.0.1",
+        "discord.js": "14.28.0",
+        "pg": "^8.23.1",
+        "zod": "4.6.7"
+    },
+    "devDependencies": {
+        "@types/node": "^26.6.6",
+        "@types/pg": "^8.23.1",
+        "oxlint": "^1.91.0",
+        "tsup": "^9.0.0",
+        "tsx": "^4.23.15",
+        "typescript": "7.0.2",
+        "vitest": "^5.1.0"
+    },
+    "overrides": {
+        "undici": "^6.29.1"
+    },
+    "imports": {
+        "#env": [
+            "./build/env.js"
+        ],
+        "#base": [
+            "./build/discord/index.js"
+        ],
+        "#database": [
+            "./build/database/index.js"
+        ],
+        "#lib/*": [
+            "./build/lib/*"
+        ]
+    },
+    "baseVersion": "1.5.9",
+    "engines": {
+        "node": ">=24.0.0"
+    }
+}

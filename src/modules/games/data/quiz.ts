@@ -1,0 +1,148 @@
+// Perguntas do quiz (português de Portugal). A resposta certa é SEMPRE a primeira opção da
+// lista — o jogo baralha as opções antes de as mostrar.
+
+export const QUIZ_CATEGORIES = ["geografia", "historia", "ciencia", "desporto", "cultura", "portugal", "tecnologia"] as const;
+export type QuizCategory = (typeof QUIZ_CATEGORIES)[number];
+
+export const QUIZ_CATEGORY_LABELS: Record<QuizCategory, string> = {
+    geografia: "Geografia",
+    historia: "História",
+    ciencia: "Ciência",
+    desporto: "Desporto",
+    cultura: "Cultura e entretenimento",
+    portugal: "Portugal",
+    tecnologia: "Tecnologia e jogos",
+};
+
+export interface QuizQuestion {
+    category: QuizCategory;
+    question: string;
+    /** [certa, errada, errada, errada] */
+    answers: [string, string, string, string];
+}
+
+const Q = (category: QuizCategory, list: Array<[string, string, string, string, string]>): QuizQuestion[] =>
+    list.map(([question, ...answers]) => ({ category, question, answers: answers as [string, string, string, string] }));
+
+export const QUIZ_QUESTIONS: QuizQuestion[] = [
+    ...Q("geografia", [
+        ["Qual é a capital da Austrália?", "Camberra", "Sydney", "Melbourne", "Perth"],
+        ["Qual é o maior oceano do mundo?", "Pacífico", "Atlântico", "Índico", "Ártico"],
+        ["Qual é a capital do Canadá?", "Otava", "Toronto", "Montreal", "Vancouver"],
+        ["Qual é o país mais populoso do mundo?", "Índia", "China", "Estados Unidos", "Indonésia"],
+        ["Qual é a montanha mais alta do mundo?", "Evereste", "K2", "Monte Branco", "Kilimanjaro"],
+        ["Qual é a capital da Suíça?", "Berna", "Zurique", "Genebra", "Basileia"],
+        ["Qual é o maior deserto quente do mundo?", "Sara", "Gobi", "Kalahari", "Atacama"],
+        ["Que país tem a forma de uma bota?", "Itália", "Grécia", "Croácia", "Chile"],
+        ["Qual é a capital do Brasil?", "Brasília", "Rio de Janeiro", "São Paulo", "Salvador"],
+        ["Qual é a moeda do Japão?", "Iene", "Yuan", "Won", "Rupia"],
+        ["Em que país fica Machu Picchu?", "Peru", "Bolívia", "México", "Equador"],
+        ["Qual é o maior país do mundo em área?", "Rússia", "Canadá", "China", "Estados Unidos"],
+        ["Qual é a capital de Marrocos?", "Rabat", "Casablanca", "Marraquexe", "Fez"],
+        ["Que rio passa no Cairo?", "Nilo", "Congo", "Níger", "Zambeze"],
+        ["Em que continente fica a Mongólia?", "Ásia", "Europa", "África", "Oceânia"],
+        ["Qual é a capital da Noruega?", "Oslo", "Estocolmo", "Copenhaga", "Helsínquia"],
+    ]),
+    ...Q("historia", [
+        ["Em que ano foi a Revolução dos Cravos?", "1974", "1975", "1969", "1980"],
+        ["Quem chegou à Índia por mar em 1498?", "Vasco da Gama", "Pedro Álvares Cabral", "Bartolomeu Dias", "Fernão de Magalhães"],
+        ["Em que ano Pedro Álvares Cabral chegou ao Brasil?", "1500", "1492", "1498", "1510"],
+        ["Quem foi o primeiro rei de Portugal?", "D. Afonso Henriques", "D. Dinis", "D. João I", "D. Sancho I"],
+        ["Em que ano foi implantada a República em Portugal?", "1910", "1908", "1926", "1891"],
+        ["Em que ano aconteceu o grande terramoto de Lisboa?", "1755", "1640", "1807", "1580"],
+        ["Quem foi o primeiro homem a pisar a Lua?", "Neil Armstrong", "Buzz Aldrin", "Yuri Gagarin", "Michael Collins"],
+        ["Em que ano caiu o Muro de Berlim?", "1989", "1991", "1985", "1961"],
+        ["Em que ano começou a Primeira Guerra Mundial?", "1914", "1918", "1939", "1905"],
+        ["Em que ano Portugal restaurou a independência?", "1640", "1580", "1385", "1668"],
+        ["Em que ano Portugal aderiu à CEE (atual União Europeia)?", "1986", "1974", "1992", "1999"],
+        ["Que império tinha capital em Constantinopla?", "Bizantino", "Romano do Ocidente", "Persa", "Carolíngio"],
+        ["Que navegador português comandou a primeira viagem de circum-navegação?", "Fernão de Magalhães", "Vasco da Gama", "Gil Eanes", "Diogo Cão"],
+        ["Em que ano terminou a Segunda Guerra Mundial?", "1945", "1944", "1939", "1950"],
+        ["De que faraó era o túmulo descoberto por Howard Carter em 1922?", "Tutankhamon", "Ramsés II", "Quéops", "Cleópatra"],
+        ["Que batalha de 1385 garantiu a independência de Portugal?", "Aljubarrota", "Ourique", "Alcácer Quibir", "Buçaco"],
+    ]),
+    ...Q("ciencia", [
+        ["Qual é a fórmula química da água?", "H₂O", "CO₂", "NaCl", "O₂"],
+        ["Qual é o planeta mais próximo do Sol?", "Mercúrio", "Vénus", "Marte", "Terra"],
+        ["Qual é o maior planeta do Sistema Solar?", "Júpiter", "Saturno", "Neptuno", "Terra"],
+        ["Qual é o gás mais abundante na atmosfera da Terra?", "Azoto", "Oxigénio", "Dióxido de carbono", "Árgon"],
+        ["Quantos ossos tem o corpo de um adulto?", "206", "186", "226", "300"],
+        ["A que velocidade aproximada viaja a luz?", "300 000 km/s", "30 000 km/s", "3 000 km/s", "1 000 000 km/s"],
+        ["Qual é o símbolo químico do ouro?", "Au", "Ag", "Go", "Or"],
+        ["Que planeta é conhecido como o planeta vermelho?", "Marte", "Vénus", "Júpiter", "Mercúrio"],
+        ["Qual é o símbolo químico do ferro?", "Fe", "Fr", "Ir", "F"],
+        ["Quantos cromossomas tem uma célula humana normal?", "46", "23", "48", "44"],
+        ["Quem formulou a teoria da relatividade?", "Albert Einstein", "Isaac Newton", "Nikola Tesla", "Stephen Hawking"],
+        ["Em que unidade se mede a resistência elétrica?", "Ohm", "Volt", "Ampere", "Watt"],
+        ["Qual é o maior órgão do corpo humano?", "Pele", "Fígado", "Pulmões", "Intestino"],
+        ["Quantos planetas tem o Sistema Solar?", "8", "9", "7", "10"],
+        ["Que metal é líquido à temperatura ambiente?", "Mercúrio", "Chumbo", "Alumínio", "Estanho"],
+        ["Que parte da célula guarda o ADN?", "Núcleo", "Membrana", "Ribossoma", "Vacúolo"],
+    ]),
+    ...Q("desporto", [
+        ["Quantos jogadores tem cada equipa de futebol em campo?", "11", "10", "9", "12"],
+        ["Que seleção ganhou o Euro 2016?", "Portugal", "França", "Alemanha", "Espanha"],
+        ["Quantos anéis tem a bandeira olímpica?", "5", "4", "6", "7"],
+        ["Em que clube se estreou Cristiano Ronaldo como profissional?", "Sporting", "Benfica", "FC Porto", "Nacional"],
+        ["Em que cidade foram os Jogos Olímpicos de 2016?", "Rio de Janeiro", "Londres", "Tóquio", "Pequim"],
+        ["Quantos minutos dura um jogo de futebol, sem descontos?", "90", "80", "100", "120"],
+        ["Que país ganhou o Mundial de futebol de 2022?", "Argentina", "França", "Brasil", "Croácia"],
+        ["Quantos quilómetros tem uma maratona?", "42,195", "40", "45,5", "21,1"],
+        ["Em que ano Portugal ganhou a primeira Liga das Nações?", "2019", "2016", "2021", "2018"],
+        ["Em que Jogos Olímpicos Rosa Mota ganhou o ouro na maratona?", "Seul 1988", "Los Angeles 1984", "Barcelona 1992", "Atlanta 1996"],
+        ["Quantos pontos vale um lançamento de fora da linha de 3 no basquetebol?", "3", "2", "4", "1"],
+        ["Em que desporto se usa um disco e um stick no gelo?", "Hóquei no gelo", "Curling", "Patinagem artística", "Bobsleigh"],
+        ["Qual destes pilotos tem 7 títulos mundiais de Fórmula 1?", "Lewis Hamilton", "Fernando Alonso", "Sebastian Vettel", "Ayrton Senna"],
+        ["Quantos sets precisa de ganhar um tenista num jogo masculino de Grand Slam?", "3", "2", "4", "5"],
+    ]),
+    ...Q("cultura", [
+        ["Quem escreveu \"Os Lusíadas\"?", "Luís de Camões", "Fernando Pessoa", "Eça de Queirós", "José Saramago"],
+        ["Quem pintou \"A Noite Estrelada\"?", "Vincent van Gogh", "Claude Monet", "Pablo Picasso", "Salvador Dalí"],
+        ["Que género musical português é património da UNESCO?", "Fado", "Pimba", "Vira", "Kizomba"],
+        ["Qual destes é um heterónimo de Fernando Pessoa?", "Alberto Caeiro", "Miguel Torga", "Almada Negreiros", "Sophia de Mello Breyner"],
+        ["Que escritor português ganhou o Prémio Nobel da Literatura?", "José Saramago", "Eça de Queirós", "António Lobo Antunes", "Miguel Torga"],
+        ["Quem compôs \"As Quatro Estações\"?", "Antonio Vivaldi", "Mozart", "Beethoven", "Bach"],
+        ["Quem pintou a Mona Lisa?", "Leonardo da Vinci", "Michelangelo", "Rafael", "Botticelli"],
+        ["Quem escreveu \"Os Maias\"?", "Eça de Queirós", "Camilo Castelo Branco", "Almeida Garrett", "Júlio Dinis"],
+        ["Em \"O Senhor dos Anéis\", quem leva o anel até Mordor?", "Frodo", "Gandalf", "Aragorn", "Legolas"],
+        ["Que filme ganhou o Óscar de Melhor Filme na cerimónia de 1998?", "Titanic", "Forrest Gump", "Gladiador", "O Padrinho"],
+        ["Que banda cantou \"Bohemian Rhapsody\"?", "Queen", "The Beatles", "Pink Floyd", "Led Zeppelin"],
+        ["Quem realizou \"Pulp Fiction\"?", "Quentin Tarantino", "Martin Scorsese", "Steven Spielberg", "Christopher Nolan"],
+        ["Qual é o Pokémon mascote da série?", "Pikachu", "Charmander", "Bulbasaur", "Eevee"],
+        ["Que autora escreveu a saga Harry Potter?", "J. K. Rowling", "Suzanne Collins", "Stephenie Meyer", "Agatha Christie"],
+        ["Quantas cordas tem uma guitarra portuguesa?", "12", "6", "8", "10"],
+    ]),
+    ...Q("portugal", [
+        ["Quantas regiões autónomas tem Portugal?", "2", "3", "1", "4"],
+        ["Qual é o ponto mais alto de Portugal?", "Montanha do Pico", "Torre (Serra da Estrela)", "Pico Ruivo", "Serra do Gerês"],
+        ["Qual é o rio mais longo inteiramente português?", "Mondego", "Tejo", "Douro", "Guadiana"],
+        ["Como se chamava a Ponte 25 de Abril antes de 1974?", "Ponte Salazar", "Ponte D. Luís", "Ponte da Arrábida", "Ponte Marechal Carmona"],
+        ["Qual é a universidade mais antiga de Portugal?", "Universidade de Coimbra", "Universidade de Lisboa", "Universidade do Porto", "Universidade de Évora"],
+        ["Como se chama o hino nacional português?", "A Portuguesa", "Grândola, Vila Morena", "Hino da Maria da Fonte", "Lusitânia"],
+        ["Quantos distritos tem Portugal continental?", "18", "20", "16", "22"],
+        ["Em que arquipélago fica a ilha de São Miguel?", "Açores", "Madeira", "Berlengas", "Cabo Verde"],
+        ["Que cidade é a casa da francesinha?", "Porto", "Braga", "Aveiro", "Lisboa"],
+        ["Qual é o maior lago artificial de Portugal?", "Alqueva", "Castelo de Bode", "Cabril", "Alto Rabagão"],
+        ["Que língua é co-oficial em Portugal desde 1999?", "Mirandês", "Galego", "Barranquenho", "Minderico"],
+        ["Em que cidade fica a Torre de Belém?", "Lisboa", "Porto", "Setúbal", "Sintra"],
+        ["Qual é o distrito mais a sul de Portugal continental?", "Faro", "Beja", "Setúbal", "Évora"],
+        ["De que cor é a parte maior da bandeira portuguesa?", "Vermelho", "Verde", "Amarelo", "Azul"],
+    ]),
+    ...Q("tecnologia", [
+        ["Que empresa criou o iPhone?", "Apple", "Samsung", "Google", "Nokia"],
+        ["O que significa \"WWW\"?", "World Wide Web", "Wide World Web", "Web World Wide", "World Web Window"],
+        ["Quem fundou a Microsoft com Paul Allen?", "Bill Gates", "Steve Jobs", "Mark Zuckerberg", "Jeff Bezos"],
+        ["Que empresa fabrica a PlayStation?", "Sony", "Microsoft", "Nintendo", "Sega"],
+        ["Em que linguagem se escreve o discord.js?", "JavaScript", "Python", "Java", "C#"],
+        ["Quantos bits tem um byte?", "8", "4", "16", "10"],
+        ["Como se chama o herói de \"The Legend of Zelda\"?", "Link", "Zelda", "Ganon", "Epona"],
+        ["Que empresa é dona do YouTube?", "Google", "Meta", "Microsoft", "Amazon"],
+        ["O que significa \"GTA\"?", "Grand Theft Auto", "Great Theft Action", "Grand Tactical Assault", "Global Theft Arena"],
+        ["Em que ano saiu o primeiro iPhone?", "2007", "2005", "2009", "2010"],
+        ["Que animal é a mascote do Linux?", "Pinguim", "Raposa", "Gato", "Coruja"],
+        ["Em \"Among Us\", como se chama quem sabota a nave?", "Impostor", "Traidor", "Espião", "Sabotador"],
+        ["Que jogo da Epic Games popularizou o battle royale com construções?", "Fortnite", "Apex Legends", "PUBG", "Warzone"],
+        ["O que quer dizer \"CPU\"?", "Unidade Central de Processamento", "Unidade de Controlo Pessoal", "Placa Central Universal", "Processador de Cálculo Único"],
+        ["Em que jogo se fugia dos Creepers a construir com blocos?", "Minecraft", "Terraria", "Roblox", "Fortnite"],
+    ]),
+];

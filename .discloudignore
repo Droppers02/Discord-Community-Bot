@@ -1,36 +1,28 @@
-# Ficheiros de desenvolvimento
-.git/
-.gitignore
-.env.example
-.vscode/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
+# Vai para a Discloud: build/ (o bot corre daqui), assets/ (emojis), .env,
+# package.json + package-lock.json e constants.json. A Discloud corre `npm install`.
+# O build/ NÃO está no git: corre `npm run build` antes de cada "Commit app".
 
-# Logs locais
-logs/
+/src
+/tests
+/node_modules
+/.vscode
+/.github
+/.claude
+/.git
+/logs
+
+/.env.example
+/.env.*
+/.gitignore
+/.dockerignore
+/.oxlintrc.json
+/tsconfig.json
+/tsup.config.ts
+/vitest.config.ts
+/Dockerfile
+/docker-compose.yml
+
+*.md
+*.ts
+*.zip
 *.log
-
-# Backups
-backups/
-backup_v1/
-*.backup
-
-# Base de dados local (será criada no servidor)
-data/*.db
-data/*.db-journal
-
-# Ficheiros de sistema
-.DS_Store
-Thumbs.db
-
-# Documentação
-README.md
-CHANGELOG.md
-TODO.md
-LICENSE
-
-# FFmpeg (instalar no servidor se necessário)
-bin/

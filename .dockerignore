@@ -1,0 +1,15 @@
+node_modules
+build
+dist
+.git
+.github
+.vscode
+.claude
+.env
+.env.*
+tests
+*.md
+*.log
+*.zip
+discloud.config
+.discloudignore

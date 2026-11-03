@@ -4,6 +4,33 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [3.0.0] - 2026-11-03
+
+### 🚀 Reescrita completa (Python → TypeScript)
+
+O EPA BOTCHI passou a ser um bot de gestão completo, com a base e o visual do PixelTickets, em
+versão privada (sem licenças, sem painel web, sem venda).
+
+- **Tecnologia**: TypeScript + discord.js 14.28 sobre `@constatic/base`, Node 24/26, PostgreSQL,
+  testes com vitest, build com tsup e Docker (Node 26 + PostgreSQL 18). Continua na Railway (agora pelo Dockerfile).
+- **Visual**: tudo em Components V2 (containers) e com os emojis próprios da aplicação, enviados
+  automaticamente no arranque.
+- **Gestão**: tickets (com transcript em ficheiro HTML em vez de página web), verificação por
+  captcha de figuras, moderação com casos numerados e castigos automáticos, anti-spam, logs,
+  entradas/saídas, convites, modmail, sugestões, sorteios, auto-cargos, cargos temporários, voz
+  temporária, canais de estatísticas, alertas sociais e publicação automática.
+- **Comunidade**: níveis por mensagens e por tempo em voz, economia (diário com sequência,
+  trabalho, transferências, loja de cargos, extrato), perfil, reputação e rankings.
+- **Mini-jogos melhorados**: galo e 4 em linha contra o bot com IA e 3 dificuldades, desafios com
+  apostas e desforra, PPT, forca (sozinho ou aberta), quiz multijogador com ~100 perguntas,
+  termo do dia, blackjack com dobrar, minas, moeda/dados/slots/roleta e ship.
+- **Configuração do zero** em `/config`. As tabelas do bot antigo passam para o esquema
+  `epa_legacy` e o progresso (XP, voz, moedas, reputação, jogos) é importado.
+- **Removido**: música, casamentos, leilões, trocas, starboard e as restantes funções do bot antigo
+  que não passaram para a versão nova.
+
+---
+
 ## [2.9.0] - 2025-11-27
 
 ### ⚡ Otimização de Comandos
