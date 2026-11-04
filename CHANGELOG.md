@@ -4,6 +4,27 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [3.2.0] - 2026-11-04
+
+### 💘 /ship renovado
+
+- **Imagem gerada**: os dois avatares em círculo, coração com a percentagem ao meio (partido abaixo
+  dos 30%), nome do casal em cima, corações a flutuar e cores que mudam com o resultado.
+- **Nome do casal** feito com os nomes dos dois (ex.: "Lord dos Chatos" + "Lorda das Pipas" → *Chapas*).
+- **Análise detalhada** com 7 barras: química, atração, humor, conversa, confiança, futuro e ciúmes.
+- **Veredito, previsão para o próximo ano, primeiro encontro ideal, música do casal e dica do bot**,
+  com várias variantes por nível (de "Zona de perigo" a "Material de casamento").
+- **O amor muda à meia-noite**: o resultado de um par é fixo durante o dia (hora de Lisboa) e muda
+  no dia seguinte — nada de repetir até dar 100%.
+- **O bot sabe da vossa vida**: casados no EPA têm pelo menos 95%, amigos ganham +10%, e quem é casado
+  com outra pessoa leva −15% (traição? 👀). Easter eggs no 69, 42, 13 e 100, ship consigo próprio e
+  com bots.
+- **Votação do servidor**: botões 💖 Aprovo / 💔 Recuso com contagem (carregar outra vez retira o voto)
+  e 📊 Ver votos com quem votou, percentagem do povo e se o povo concorda com o bot. Dura 24 horas.
+- A administração continua a poder forçar a percentagem com `forcar`.
+
+---
+
 ## [3.1.1] - 2026-11-04
 
 ### 🔒 Hierarquia de cargos em todo o lado

@@ -15,7 +15,7 @@ import { MINE_TILES, startMines } from "../../../modules/games/mines.js";
 import { playCoin, playDice, playRoulette, playSlots, ROULETTE_BETS, ROULETTE_LABELS, type RouletteBet } from "../../../modules/games/quickBets.js";
 import { startQuiz } from "../../../modules/games/quiz.js";
 import { challengeRps, startRpsVsBot } from "../../../modules/games/rps.js";
-import { buildShip } from "../../../modules/games/ship.js";
+import { buildShipMessage } from "../../../modules/games/ship.js";
 import { startTermo } from "../../../modules/games/termo.js";
 import { challengeTtt, startTttVsBot, TTT_DIFFICULTIES, TTT_DIFFICULTY_LABELS, type TttDifficulty } from "../../../modules/games/tictactoe.js";
 
@@ -241,6 +241,9 @@ createCommand({
             const allowed = hasSuperAdminAccess(interaction.member as GuildMember, config.admin_role) || interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild);
             if (!allowed) forced = null;
         }
-        await interaction.reply({ components: [buildShip(a, b, forced)], flags: CV2_FLAG, allowedMentions: { parse: [] } });
+        // A imagem (avatares + coração) demora um bocadinho a desenhar.
+        await interaction.deferReply();
+        const { container, files } = await buildShipMessage(a, b, forced, interaction.member);
+        await interaction.editReply({ components: [container], files, flags: CV2_FLAG, allowedMentions: { parse: [] } });
     },
 });

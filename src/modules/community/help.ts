@@ -79,7 +79,7 @@ const SECTIONS: Record<HelpSection, { label: string; icon: string; description: 
             ["/blackjack", tk("Blackjack contra o dealer")],
             ["/minas", tk("Abre casas sem rebentar")],
             ["/apostar", tk("Moeda, dados, slots e roleta")],
-            ["/ship", tk("Compatibilidade entre dois membros")],
+            ["/ship", tk("Compatibilidade do casal, com imagem, análise e votos")],
         ],
     },
     economia: {

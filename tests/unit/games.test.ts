@@ -4,7 +4,8 @@ import { HANGMAN_WORDS, TERMO_WORDS } from "../../src/modules/games/data/words.j
 import { QUIZ_CATEGORIES, QUIZ_QUESTIONS } from "../../src/modules/games/data/quiz.js";
 import { minesMultiplier, MINE_TILES } from "../../src/modules/games/mines.js";
 import { rouletteWins } from "../../src/modules/games/quickBets.js";
-import { shipScore } from "../../src/modules/games/ship.js";
+import { applyShipVote, shipName, shipScore } from "../../src/modules/games/ship.js";
+import { plainName } from "../../src/modules/games/shipImage.js";
 import { dailyWord, evaluateGuess } from "../../src/modules/games/termo.js";
 import { baseWord } from "../../src/modules/games/textUtil.js";
 
@@ -104,5 +105,28 @@ describe("ship", () => {
         expect(shipScore("456", "123")).toBe(score);
         expect(score).toBeGreaterThanOrEqual(0);
         expect(score).toBeLessThanOrEqual(100);
+    });
+
+    it("muda de dia para dia, mas é fixo durante o dia", () => {
+        expect(shipScore("123", "456", "2026-11-04")).toBe(shipScore("456", "123", "2026-11-04"));
+        const days = new Set(Array.from({ length: 10 }, (_, i) => shipScore("123", "456", `2026-11-${String(i + 1).padStart(2, "0")}`)));
+        expect(days.size).toBeGreaterThan(1);
+    });
+
+    it("junta os nomes do casal", () => {
+        expect(shipName("Lord dos Chatos", "Lorda das Pipas")).toBe("Chapas");
+        expect(shipName("Ana", "Rui")).toBe("Anui");
+        expect(shipName("𝓛𝓮𝓫𝓮𝓮 ✨", "Droppers")).toBe("Lebpers");
+        expect(plainName("🔥 ✨")).toBe("?");
+    });
+
+    it("votos: carregar outra vez retira, no outro botão troca", () => {
+        const up = new Set<string>();
+        const down = new Set<string>();
+        expect(applyShipVote(up, down, "a", "up")).toBe("added");
+        expect(applyShipVote(up, down, "a", "down")).toBe("switched");
+        expect([up.size, down.size]).toEqual([0, 1]);
+        expect(applyShipVote(up, down, "a", "down")).toBe("removed");
+        expect([up.size, down.size]).toEqual([0, 0]);
     });
 });
