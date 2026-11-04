@@ -8,6 +8,7 @@ import { emoji } from "../lib/emojis.js";
 import { scheduleNoticeAutoClose, touchEphemeralPanel } from "../lib/ephemeralLifecycle.js";
 import { t } from "../lib/i18n.js";
 import { handleInteractionError } from "../lib/interactionError.js";
+import { noteDmInteraction } from "../lib/dmDiagnostics.js";
 import { enterInteractionContext, runWithRequestContext } from "../lib/requestContext.js";
 
 // O EPA BOTCHI é privado: só responde nos servidores do .env (GUILD_ID + EXTRA_GUILD_IDS).
@@ -41,6 +42,7 @@ const creators = setupCreators({
             await replyPrivateNotice(interaction as RepliableInteraction);
         },
         onError: (error, interaction) => {
+            noteDmInteraction(interaction, "erro", { error: String(error) });
             void handleInteractionError(interaction as RepliableInteraction, error);
         },
     },
@@ -54,7 +56,11 @@ const creators = setupCreators({
             await replyPrivateNotice(interaction as RepliableInteraction);
         },
         onError: (error, interaction) => {
+            noteDmInteraction(interaction, "erro", { error: String(error) });
             void handleInteractionError(interaction as RepliableInteraction, error);
+        },
+        onNotFound: (interaction) => {
+            noteDmInteraction(interaction, "sem-rota");
         },
     },
 });

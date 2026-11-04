@@ -3,6 +3,7 @@ import { ResponderType } from "@constatic/base";
 import { isAllowedGuild } from "../../config.js";
 import { errorContainer } from "../../lib/containers.js";
 import { CV2_FLAG } from "../../lib/discord.js";
+import { noteDmInteraction } from "../../lib/dmDiagnostics.js";
 import { t } from "../../lib/i18n.js";
 import {
     acceptAppeal,
@@ -25,9 +26,16 @@ createResponder({
     customId: "appeal/start/:guild",
     types: [ResponderType.Button],
     async run(interaction, { guild: guildId }) {
+        noteDmInteraction(interaction, "botao-apelo");
         const guild = isAllowedGuild(guildId) ? interaction.client.guilds.cache.get(guildId) : null;
         if (!guild) return void interaction.reply({ components: [errorContainer(t("Esse servidor já não está disponível."))], flags: CV2_FLAG });
-        await showAppealForm(interaction, guild);
+        try {
+            await showAppealForm(interaction, guild);
+            noteDmInteraction(interaction, "botao-apelo-ok", { replied: interaction.replied });
+        } catch (error) {
+            noteDmInteraction(interaction, "botao-apelo-falhou", { error: String(error) });
+            throw error;
+        }
     },
 });
 

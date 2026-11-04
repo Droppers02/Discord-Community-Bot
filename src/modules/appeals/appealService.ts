@@ -74,7 +74,7 @@ export async function appealsOpen(guildId: string): Promise<boolean> {
 
 // Um formulário (modal) não pode esperar: tem de abrir em menos de 3 s. Se a verificação demorar
 // mais do que isto, o formulário abre na mesma e a verificação completa é repetida ao enviar.
-const FORM_CHECK_BUDGET_MS = 1_800;
+const FORM_CHECK_BUDGET_MS = 1_200;
 
 /** Responde, ou edita a resposta se a interação já foi adiada. */
 async function answer(interaction: RepliableInteraction, container: ContainerPlusBuilder): Promise<void> {

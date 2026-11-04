@@ -4,6 +4,16 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [3.2.2] - 2026-11-04
+
+### 🔎 Diagnóstico das interações em mensagem privada
+
+- Cada clique/comando em DM fica registado (log e `audit_log`, ações `diag.dm.*`): quando chega ao
+  bot, quantos ms depois do clique, se encontrou rota, e como acabou o botão **Pedir revisão do ban**.
+- O formulário de revisão abre ao fim de no máximo 1,2 s de verificação (antes 1,8 s).
+
+---
+
 ## [3.2.1] - 2026-11-04
 
 ### 🐛 "A aplicação não respondeu" no `/mod` e no pedido de revisão
