@@ -19,7 +19,8 @@ createCommand({
     async run(interaction) {
         const guild = interaction.client.guilds.cache.get(loadRuntimeConfig().mainGuildId);
         if (!guild) return void interaction.reply({ components: [errorContainer(t("O servidor não está disponível neste momento."))], flags: CV2_FLAG });
+        await interaction.deferReply();
         const [appeals, eligibility] = await Promise.all([appealsOf(guild.id, interaction.user.id), checkEligibility(guild, interaction.user.id)]);
-        await interaction.reply({ components: [appealStatusView(guild, appeals, eligibility)], flags: CV2_FLAG });
+        await interaction.editReply({ components: [appealStatusView(guild, appeals, eligibility)], flags: CV2_FLAG });
     },
 });

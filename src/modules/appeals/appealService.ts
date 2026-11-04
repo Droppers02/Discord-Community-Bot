@@ -15,6 +15,7 @@ import {
     type Guild,
     type GuildMember,
     type ModalSubmitInteraction,
+    type RepliableInteraction,
     type TextChannel,
 } from "discord.js";
 import type { ContainerPlusBuilder } from "@magicyan/discord";
@@ -40,9 +41,9 @@ export type Eligibility =
 export async function checkEligibility(guild: Guild, userId: string): Promise<Eligibility> {
     const settings = await getAppealSettings(guild.id);
     if (!settings.enabled || !settings.channel) return { ok: false, reason: t("Os pedidos de revisão não estão abertos em **{server}**.", { server: guild.name }) };
-    const ban = await guild.bans.fetch(userId).catch(() => null);
+    // Tudo em paralelo: o botão da DM tem de abrir o formulário em menos de 3 s.
+    const [ban, appeals, cases] = await Promise.all([guild.bans.fetch(userId).catch(() => null), appealsOf(guild.id, userId), casesOf(guild.id, userId, 20)]);
     if (!ban) return { ok: false, reason: t("Não estás banido de **{server}** — não há nada para rever.", { server: guild.name }) };
-    const appeals = await appealsOf(guild.id, userId);
     if (appeals.some((appeal) => appeal.status === "pending")) return { ok: false, reason: t("Já tens um pedido à espera de resposta. A equipa vai responder-te por aqui.") };
     if (settings.max_appeals > 0 && appeals.length >= settings.max_appeals) return { ok: false, reason: t("Já fizeste {count} pedidos, o máximo permitido.", { count: appeals.length }) };
     const lastDenied = appeals.find((appeal) => appeal.status === "denied");
@@ -50,7 +51,7 @@ export async function checkEligibility(guild: Guild, userId: string): Promise<El
         const retryAt = lastDenied.decided_at + settings.cooldown_days * 86_400_000;
         if (retryAt > Date.now()) return { ok: false, reason: t("O teu último pedido foi recusado. Podes voltar a pedir {at}.", { at: timestamp(retryAt, "R") }) };
     }
-    const banCase = (await casesOf(guild.id, userId, 20)).find((entry) => entry.action === "ban") ?? null;
+    const banCase = cases.find((entry) => entry.action === "ban") ?? null;
     if (banCase && settings.min_hours_after_ban > 0) {
         const allowedAt = banCase.created_at + settings.min_hours_after_ban * 3_600_000;
         if (allowedAt > Date.now()) return { ok: false, reason: t("Ainda é cedo para pedir revisão. Podes fazê-lo {at}.", { at: timestamp(allowedAt, "R") }) };
@@ -71,12 +72,26 @@ export async function appealsOpen(guildId: string): Promise<boolean> {
 
 // ─── Formulário (membro banido) ──────────────────────────────────────────────
 
-export async function showAppealForm(interaction: ButtonInteraction | ChatInputCommandInteraction, guild: Guild): Promise<void> {
-    const eligible = await checkEligibility(guild, interaction.user.id);
-    if (!eligible.ok) {
-        const flags = interaction.inGuild() ? CV2_FLAG | MessageFlags.Ephemeral : CV2_FLAG;
-        return void interaction.reply({ components: [errorContainer(eligible.reason)], flags });
+// Um formulário (modal) não pode esperar: tem de abrir em menos de 3 s. Se a verificação demorar
+// mais do que isto, o formulário abre na mesma e a verificação completa é repetida ao enviar.
+const FORM_CHECK_BUDGET_MS = 1_800;
+
+/** Responde, ou edita a resposta se a interação já foi adiada. */
+async function answer(interaction: RepliableInteraction, container: ContainerPlusBuilder): Promise<void> {
+    if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({ components: [container], flags: CV2_FLAG, allowedMentions: { parse: [] } });
+        return;
     }
+    const flags = interaction.inGuild() ? CV2_FLAG | MessageFlags.Ephemeral : CV2_FLAG;
+    await interaction.reply({ components: [container], flags, allowedMentions: { parse: [] } });
+}
+
+export async function showAppealForm(interaction: ButtonInteraction | ChatInputCommandInteraction, guild: Guild): Promise<void> {
+    const eligible = await Promise.race([
+        checkEligibility(guild, interaction.user.id),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), FORM_CHECK_BUDGET_MS)),
+    ]);
+    if (eligible && !eligible.ok) return answer(interaction, errorContainer(eligible.reason));
     const settings = await getAppealSettings(guild.id);
     const field = (id: string, label: string, required: boolean) => new LabelBuilder().setLabel(label).setTextInputComponent(
         new TextInputBuilder().setCustomId(id).setStyle(TextInputStyle.Paragraph).setRequired(required).setMinLength(required ? 20 : 0).setMaxLength(1000),
@@ -92,11 +107,12 @@ export async function showAppealForm(interaction: ButtonInteraction | ChatInputC
 }
 
 export async function submitAppeal(interaction: ModalSubmitInteraction, guild: Guild): Promise<void> {
+    await interaction.deferReply();
     const eligible = await checkEligibility(guild, interaction.user.id);
-    if (!eligible.ok) return void interaction.reply({ components: [errorContainer(eligible.reason)], flags: CV2_FLAG });
+    if (!eligible.ok) return answer(interaction, errorContainer(eligible.reason));
     const settings = await getAppealSettings(guild.id);
     const channel = settings.channel ? guild.channels.cache.get(settings.channel) : null;
-    if (!channel?.isTextBased()) return void interaction.reply({ components: [errorContainer(t("A equipa ainda não configurou onde recebe os pedidos. Tenta mais tarde."))], flags: CV2_FLAG });
+    if (!channel?.isTextBased()) return answer(interaction, errorContainer(t("A equipa ainda não configurou onde recebe os pedidos. Tenta mais tarde.")));
 
     const answers = (["q1", "q2", "q3"] as const)
         .map((id, i) => ({ question: settings.questions[i]!, answer: interaction.fields.getTextInputValue(id).trim() }))
@@ -133,10 +149,7 @@ export async function submitAppeal(interaction: ModalSubmitInteraction, guild: G
             await message.startThread({ name: t("Pedido de {user}", { user: interaction.user.username }).slice(0, 90), autoArchiveDuration: 1440 }).catch(() => null);
         }
     }
-    await interaction.reply({
-        components: [successContainer(t("O teu pedido foi enviado à equipa de **{server}**. Vais receber a resposta aqui, por mensagem privada. Não é preciso enviar outro.", { server: guild.name }))],
-        flags: CV2_FLAG,
-    });
+    await answer(interaction, successContainer(t("O teu pedido foi enviado à equipa de **{server}**. Vais receber a resposta aqui, por mensagem privada. Não é preciso enviar outro.", { server: guild.name })));
 }
 
 // ─── Cartão da equipa ────────────────────────────────────────────────────────
@@ -226,33 +239,35 @@ async function postInThread(client: Client, appeal: BanAppeal, text: string): Pr
 
 async function staffOnly(interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">): Promise<boolean> {
     if (await hasModAccess(interaction.member as GuildMember, PermissionFlagsBits.BanMembers)) return true;
-    await interaction.reply({ components: [errorContainer(t("Só a equipa com permissão de banir decide estes pedidos."))], flags: CV2_FLAG | MessageFlags.Ephemeral });
+    await answer(interaction, errorContainer(t("Só a equipa com permissão de banir decide estes pedidos.")));
     return false;
 }
 
 // ─── Ações da equipa ─────────────────────────────────────────────────────────
+// Todas adiam a resposta antes de ir à BD/ao Discord (o limite para responder é de 3 s).
 
 export async function voteAppeal(interaction: ButtonInteraction<"cached">, id: string, direction: "up" | "down"): Promise<void> {
     if (!(await staffOnly(interaction))) return;
+    await interaction.deferUpdate();
     const appeal = await getAppeal(id);
-    if (!appeal || appeal.status !== "pending") return void interaction.reply({ components: [errorContainer(t("Este pedido já foi decidido."))], flags: CV2_FLAG | MessageFlags.Ephemeral });
+    if (!appeal || appeal.status !== "pending") {
+        return void interaction.followUp({ components: [errorContainer(t("Este pedido já foi decidido."))], flags: CV2_FLAG | MessageFlags.Ephemeral });
+    }
     const votes = { ...appeal.votes };
     if (votes[interaction.user.id] === direction) delete votes[interaction.user.id];
     else votes[interaction.user.id] = direction;
     await setAppealVotes(id, votes);
-    await interaction.update({ components: [...(interaction.message.components.length > 1 ? [interaction.message.components[0]!] : []), await buildReviewCard(interaction.guild, { ...appeal, votes })] as never, allowedMentions: { parse: [] } });
+    const card = await buildReviewCard(interaction.guild, { ...appeal, votes });
+    await interaction.editReply({ components: [...(interaction.message.components.length > 1 ? [interaction.message.components[0]!] : []), card] as never, allowedMentions: { parse: [] } });
 }
 
 export async function showHistory(interaction: ButtonInteraction<"cached">, id: string): Promise<void> {
     if (!(await staffOnly(interaction))) return;
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const appeal = await getAppeal(id);
-    if (!appeal) return void interaction.deferUpdate();
+    if (!appeal) return answer(interaction, errorContainer(t("Este pedido já não existe.")));
     const cases = await casesOf(appeal.guild_id, appeal.user_id, 25);
-    await interaction.reply({
-        components: [buildContainer({ color: COLORS.info, title: `${e("hammer")} ${t("Histórico de {user}", { user: appeal.user_tag })}`, description: cases.length ? cases.map(caseLine).join("\n") : t("Sem casos registados.") })],
-        flags: CV2_FLAG | MessageFlags.Ephemeral,
-        allowedMentions: { parse: [] },
-    });
+    await answer(interaction, buildContainer({ color: COLORS.info, title: `${e("hammer")} ${t("Histórico de {user}", { user: appeal.user_tag })}`, description: cases.length ? cases.map(caseLine).join("\n") : t("Sem casos registados.") }));
 }
 
 export async function openDenyModal(interaction: ButtonInteraction<"cached">, id: string): Promise<void> {
@@ -264,8 +279,9 @@ export async function openDenyModal(interaction: ButtonInteraction<"cached">, id
 
 export async function denyAppeal(interaction: ModalSubmitInteraction<"cached">, id: string): Promise<void> {
     if (!(await staffOnly(interaction))) return;
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const note = interaction.fields.getTextInputValue("note").trim() || null;
-    if (!(await decideAppeal(id, "denied", interaction.user.id, note))) return void interaction.reply({ components: [errorContainer(t("Este pedido já foi decidido."))], flags: CV2_FLAG | MessageFlags.Ephemeral });
+    if (!(await decideAppeal(id, "denied", interaction.user.id, note))) return answer(interaction, errorContainer(t("Este pedido já foi decidido.")));
     const appeal = (await getAppeal(id))!;
     const settings = await getAppealSettings(appeal.guild_id);
     const user = await interaction.client.users.fetch(appeal.user_id).catch(() => null);
@@ -281,7 +297,7 @@ export async function denyAppeal(interaction: ModalSubmitInteraction<"cached">, 
     appendAuditLog({ guildId: appeal.guild_id, actorId: interaction.user.id, action: "appeal.deny", details: { appeal: id, userId: appeal.user_id } });
     await postInThread(interaction.client, appeal, t("❌ Recusado por {user}.", { user: `<@${interaction.user.id}>` }));
     await refreshCard(interaction.client, appeal);
-    await interaction.reply({ components: [successContainer(t("Pedido recusado e membro avisado."))], flags: CV2_FLAG | MessageFlags.Ephemeral });
+    await answer(interaction, successContainer(t("Pedido recusado e membro avisado.")));
 }
 
 async function createReturnInvite(guild: Guild, settings: AppealSettings): Promise<string | null> {
@@ -300,9 +316,9 @@ async function createReturnInvite(guild: Guild, settings: AppealSettings): Promi
 
 export async function acceptAppeal(interaction: ButtonInteraction<"cached">, id: string): Promise<void> {
     if (!(await staffOnly(interaction))) return;
-    const appeal = await getAppeal(id);
-    if (!appeal || appeal.status !== "pending") return void interaction.reply({ components: [errorContainer(t("Este pedido já foi decidido."))], flags: CV2_FLAG | MessageFlags.Ephemeral });
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    const appeal = await getAppeal(id);
+    if (!appeal || appeal.status !== "pending") return answer(interaction, errorContainer(t("Este pedido já foi decidido.")));
     const guild = interaction.guild;
     const unbanned = await guild.members.unban(appeal.user_id, t("Pedido de revisão aprovado por {user}", { user: interaction.user.username })).then(() => true).catch(() => false);
     const stillBanned = await guild.bans.fetch(appeal.user_id).catch(() => null);
@@ -338,8 +354,9 @@ export async function openAskModal(interaction: ButtonInteraction<"cached">, id:
 
 export async function sendQuestion(interaction: ModalSubmitInteraction<"cached">, id: string): Promise<void> {
     if (!(await staffOnly(interaction))) return;
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const appeal = await getAppeal(id);
-    if (!appeal || appeal.status !== "pending") return void interaction.reply({ components: [errorContainer(t("Este pedido já foi decidido."))], flags: CV2_FLAG | MessageFlags.Ephemeral });
+    if (!appeal || appeal.status !== "pending") return answer(interaction, errorContainer(t("Este pedido já foi decidido.")));
     const question = interaction.fields.getTextInputValue("question").trim();
     const user = await interaction.client.users.fetch(appeal.user_id).catch(() => null);
     const sent = await user?.send({
@@ -352,7 +369,7 @@ export async function sendQuestion(interaction: ModalSubmitInteraction<"cached">
         flags: CV2_FLAG,
     }).then(() => true).catch(() => false);
     await postInThread(interaction.client, appeal, t("❔ {user} perguntou: {question}{note}", { user: `<@${interaction.user.id}>`, question, note: sent ? "" : t(" (a DM falhou)") }));
-    await interaction.reply({ components: [sent ? successContainer(t("Pergunta enviada. A resposta aparece no cartão e na thread.")) : errorContainer(t("Não consegui enviar a DM ao membro."))], flags: CV2_FLAG | MessageFlags.Ephemeral });
+    await answer(interaction, sent ? successContainer(t("Pergunta enviada. A resposta aparece no cartão e na thread.")) : errorContainer(t("Não consegui enviar a DM ao membro.")));
 }
 
 /** O membro (em DM) responde a uma pergunta da equipa. */
@@ -366,14 +383,15 @@ export async function openReplyModal(interaction: ButtonInteraction, id: string)
 }
 
 export async function submitReply(interaction: ModalSubmitInteraction, id: string, client: Client): Promise<void> {
+    await interaction.deferReply();
     const appeal = await getAppeal(id);
-    if (!appeal || appeal.user_id !== interaction.user.id || appeal.status !== "pending") return void interaction.reply({ components: [errorContainer(t("Este pedido já foi decidido."))], flags: CV2_FLAG });
-    const answer = interaction.fields.getTextInputValue("answer").trim();
-    await appendAppealAnswer(id, { question: t("Resposta extra ({at})", { at: new Date().toLocaleString("pt-PT", { timeZone: "Europe/Lisbon", dateStyle: "short", timeStyle: "short" }) }), answer });
+    if (!appeal || appeal.user_id !== interaction.user.id || appeal.status !== "pending") return answer(interaction, errorContainer(t("Este pedido já foi decidido.")));
+    const text = interaction.fields.getTextInputValue("answer").trim();
+    await appendAppealAnswer(id, { question: t("Resposta extra ({at})", { at: new Date().toLocaleString("pt-PT", { timeZone: "Europe/Lisbon", dateStyle: "short", timeStyle: "short" }) }), answer: text });
     const updated = (await getAppeal(id))!;
-    await postInThread(client, updated, t("💬 Resposta de {user}: {answer}", { user: `<@${appeal.user_id}>`, answer }));
+    await postInThread(client, updated, t("💬 Resposta de {user}: {answer}", { user: `<@${appeal.user_id}>`, answer: text }));
     await refreshCard(client, updated);
-    await interaction.reply({ components: [successContainer(t("Resposta enviada à equipa."))], flags: CV2_FLAG });
+    await answer(interaction, successContainer(t("Resposta enviada à equipa.")));
 }
 
 /** Estado dos pedidos de alguém (para o /apelo). */

@@ -20,6 +20,11 @@ export const db = new Pool({
     connectionTimeoutMillis: DB_CONNECT_TIMEOUT_MS,
     query_timeout: DB_QUERY_TIMEOUT_MS,
     statement_timeout: DB_QUERY_TIMEOUT_MS,
+    // Ligações abertas durante mais tempo: por omissão o pg fecha-as ao fim de 10 s parado, e cada
+    // comando a seguir pagava uma ligação nova (TLS + autenticação até ao Neon) antes de responder.
+    min: 2,
+    idleTimeoutMillis: 5 * 60_000,
+    keepAlive: true,
 });
 
 db.on("error", (err) => logger.error("Erro inesperado no pool Postgres:", err));
@@ -135,7 +140,13 @@ export async function initDatabase(): Promise<void> {
                 return "database";
             }
         })();
-        logger.info(`Base de dados PostgreSQL pronta em ${host}`);
+        // Tempo de ida e volta até à BD (já com a ligação aberta) e a região da Railway: se passar
+        // dos ~100 ms, o bot e a BD estão longe um do outro e os comandos ficam lentos.
+        const started = performance.now();
+        await db.query("SELECT 1");
+        const pingMs = Math.round(performance.now() - started);
+        const region = process.env.RAILWAY_REPLICA_REGION ?? process.env.RAILWAY_REGION ?? null;
+        logger.info(`Base de dados PostgreSQL pronta em ${host} (ping ${pingMs} ms${region ? ` · região ${region}` : ""})`);
     })();
     return initPromise;
 }

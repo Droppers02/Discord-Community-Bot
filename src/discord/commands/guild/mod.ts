@@ -26,8 +26,10 @@ const NEEDS: Record<string, bigint> = {
     limpar: PermissionFlagsBits.ManageMessages,
 };
 
+// O /mod responde sempre em privado e adia logo a resposta: banir/expulsar/castigar envolve DM ao
+// membro, a ação no Discord e o registo do caso na BD — passa facilmente dos 3 s que o Discord dá.
 function fail(interaction: ChatInputCommandInteraction, text: string) {
-    return interaction.reply({ components: [errorContainer(text)], flags: CV2_FLAG | MessageFlags.Ephemeral });
+    return interaction.editReply({ components: [errorContainer(text)], flags: CV2_FLAG });
 }
 
 function done(interaction: ChatInputCommandInteraction, title: string, result: ModResult, extra: string[] = []) {
@@ -37,7 +39,7 @@ function done(interaction: ChatInputCommandInteraction, title: string, result: M
         ...extra,
         result.escalation ? `${e("warn")} ${result.escalation}` : null,
     ].filter(Boolean);
-    return interaction.reply({ components: [buildContainer({ color: COLORS.success, description: lines.join("\n") })], flags: CV2_FLAG | MessageFlags.Ephemeral });
+    return interaction.editReply({ components: [buildContainer({ color: COLORS.success, description: lines.join("\n") })], flags: CV2_FLAG, allowedMentions: { parse: [] } });
 }
 
 createCommand({
@@ -97,6 +99,7 @@ createCommand({
     ],
     async run(interaction) {
         if (!interaction.inCachedGuild()) return;
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         const sub = interaction.options.getSubcommand();
         const moderator = interaction.member;
         if (!(await hasModAccess(moderator, NEEDS[sub] ?? PermissionFlagsBits.ModerateMembers))) {
@@ -109,7 +112,7 @@ createCommand({
             case "avisos": {
                 const user = interaction.options.getUser("membro", true);
                 const cases = await casesOf(guild.id, user.id, 20);
-                return void interaction.reply({
+                return void interaction.editReply({
                     components: [buildContainer({
                         color: COLORS.info,
                         title: `${e("hammer")} ${t("Histórico de {name}", { name: user.username })}`,
@@ -117,7 +120,7 @@ createCommand({
                         description: cases.length ? cases.map(caseLine).join("\n") : t("Sem registos. 😇"),
                         footerText: t("Avisos riscados já foram anulados."),
                     })],
-                    flags: CV2_FLAG | MessageFlags.Ephemeral,
+                    flags: CV2_FLAG,
                     allowedMentions: { parse: [] },
                 });
             }
@@ -128,12 +131,12 @@ createCommand({
                 if (!entry.active) return void fail(interaction, t("O aviso #{n} já estava anulado.", { n: number }));
                 await setCaseActive(guild.id, number, false);
                 void modLog(guild, entry, t("Aviso anulado por {mod}.", { mod: `<@${moderator.id}>` }));
-                return void interaction.reply({ components: [successContainer(t("Aviso #{n} anulado.", { n: number }))], flags: CV2_FLAG | MessageFlags.Ephemeral });
+                return void interaction.editReply({ components: [successContainer(t("Aviso #{n} anulado.", { n: number }))], flags: CV2_FLAG });
             }
             case "limpar-avisos": {
                 const user = interaction.options.getUser("membro", true);
                 const cleared = await clearWarns(guild.id, user.id);
-                return void interaction.reply({ components: [successContainer(t("{count, plural, =0 {{user} não tinha avisos ativos.} one {# aviso de {user} anulado.} other {# avisos de {user} anulados.}}", { count: cleared, user: `<@${user.id}>` }))], flags: CV2_FLAG | MessageFlags.Ephemeral });
+                return void interaction.editReply({ components: [successContainer(t("{count, plural, =0 {{user} não tinha avisos ativos.} one {# aviso de {user} anulado.} other {# avisos de {user} anulados.}}", { count: cleared, user: `<@${user.id}>` }))], flags: CV2_FLAG, allowedMentions: { parse: [] } });
             }
             case "desbanir": {
                 const id = interaction.options.getString("id", true).trim();
@@ -153,7 +156,6 @@ createCommand({
                 const fromId = since ? messageIdFrom(since) : null;
                 const toId = until ? messageIdFrom(until) : null;
                 if ((since && !fromId) || (until && !toId)) return void fail(interaction, t("Não percebi o ID/link da mensagem."));
-                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
                 const deleted = fromId
                     ? await purgeRange(channel, moderator, fromId, toId)
                     : await purgeMessages(channel, moderator, amount!, interaction.options.getUser("membro")?.id ?? null);

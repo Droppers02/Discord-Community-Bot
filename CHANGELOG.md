@@ -4,6 +4,23 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [3.2.1] - 2026-11-04
+
+### 🐛 "A aplicação não respondeu" no `/mod` e no pedido de revisão
+
+O ban era feito (ficava registado o caso), mas a resposta chegava depois dos 3 s que o Discord dá.
+
+- `/mod` adia a resposta logo no início (DM ao membro + ação + registo do caso já não contam para
+  o limite).
+- Botão **Pedir revisão do ban** (DM): a verificação corre em paralelo e, se demorar, o formulário abre
+  na mesma (a verificação completa repete-se ao enviar).
+- Envio do pedido, respostas do membro, votos, histórico, aprovar, recusar e perguntas da equipa
+  adiam a resposta antes de ir à base de dados. `/apelo` também.
+- Base de dados: as ligações ficam abertas 5 minutos (antes fechavam aos 10 s parados e cada comando
+  pagava uma ligação nova ao Neon). O arranque mostra o ping à BD e a região da Railway.
+
+---
+
 ## [3.2.0] - 2026-11-04
 
 ### 💘 /ship renovado
