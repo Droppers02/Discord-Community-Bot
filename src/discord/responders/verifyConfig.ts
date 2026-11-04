@@ -1,5 +1,6 @@
 import { createResponder } from "#base";
 import { ResponderType } from "@constatic/base";
+import { roleGrantProblem } from "../../lib/discord.js";
 import { emoji } from "../../lib/emojis.js";
 import { t } from "../../lib/i18n.js";
 import { parseCustomId } from "../../lib/ids.js";
@@ -36,8 +37,11 @@ createResponder({
             if (action === "log") await saveVerifySettings(guildId, { log_channel: value });
         } else if (interaction.isRoleSelectMenu()) {
             const value = interaction.values[0] ?? null;
-            if (action === "verified") await saveVerifySettings(guildId, { verified_role: value });
-            if (action === "unverified") await saveVerifySettings(guildId, { unverified_role: value });
+            const role = value ? interaction.guild.roles.cache.get(value) : null;
+            const grant = role ? roleGrantProblem(interaction.member, role, { automatic: true }) : null;
+            if (grant) notice = `${emoji.error} ${grant}`;
+            else if (action === "verified") await saveVerifySettings(guildId, { verified_role: value });
+            else if (action === "unverified") await saveVerifySettings(guildId, { unverified_role: value });
         }
         await interaction.update({ components: [await buildVerifyContainer(guildId, notice)] });
     },

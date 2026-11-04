@@ -102,6 +102,9 @@ createCommand({
         if (!perms?.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages])) return void fail(t("O bot não consegue escrever em {channel}.", { channel: `<#${channel.id}>` }));
         const everyone = interaction.options.getBoolean("todos") ?? false;
         if (everyone && !interaction.memberPermissions.has(PermissionFlagsBits.MentionEveryone)) return void fail(t("Não tens permissão para mencionar @everyone."));
+        // O anúncio sai com as permissões do bot: um cargo não mencionável só para quem o podia pingar à mão.
+        const mentionRole = interaction.options.getRole("cargo");
+        if (mentionRole && !mentionRole.mentionable && !interaction.memberPermissions.has(PermissionFlagsBits.MentionEveryone)) return void fail(t("Não tens permissão para mencionar {role}.", { role: `<@&${mentionRole.id}>` }));
 
         const draftId = randomUUID().slice(0, 12);
         announcementDrafts.set(draftId, {

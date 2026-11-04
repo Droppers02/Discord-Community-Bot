@@ -164,9 +164,12 @@ createCommand({
         const balance = await spendCoins(interaction.guildId, interaction.user.id, settings.custom_role_price, "custom_role", name);
         if (balance === null) return void fail(t("Custa {price} — não tens moedas suficientes.", { price: formatCoins(settings.custom_role_price, settings) }));
         try {
+            // Nunca acima do cargo mais alto de quem compra: um cargo pessoal alto mudava a hierarquia
+            // (quem tivesse permissão de expulsar/banir passava a mandar em cargos acima do seu).
             const anchor = settings.custom_role_anchor ? interaction.guild.roles.cache.get(settings.custom_role_anchor) : null;
-            const position = anchor && anchor.position < me.roles.highest.position ? anchor.position + 1 : Math.max(1, me.roles.highest.position - 1);
-            const role = await interaction.guild.roles.create({ name, colors: { primaryColor: color ?? 0x7289da }, position, reason: t("Cargo pessoal de {user}", { user: interaction.user.username }) });
+            const ceiling = Math.min(interaction.member.roles.highest.position, me.roles.highest.position - 1);
+            const position = Math.max(1, Math.min(anchor ? anchor.position + 1 : ceiling, ceiling));
+            const role = await interaction.guild.roles.create({ name, colors: { primaryColor: color ?? 0x7289da }, permissions: [], mentionable: false, position, reason: t("Cargo pessoal de {user}", { user: interaction.user.username }) });
             await interaction.member.roles.add(role);
             await query("INSERT INTO custom_roles (guild_id, user_id, role_id, created_at) VALUES ($1, $2, $3, $4) ON CONFLICT (guild_id, user_id) DO UPDATE SET role_id = $3", [interaction.guildId, interaction.user.id, role.id, Date.now()]);
             void economyLog(interaction.guild, settings, t("{user} comprou o cargo pessoal {role}.", { user: `<@${interaction.user.id}>`, role: `<@&${role.id}>` }));

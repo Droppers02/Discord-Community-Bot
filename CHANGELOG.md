@@ -4,6 +4,23 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [3.1.1] - 2026-11-04
+
+### 🔒 Hierarquia de cargos em todo o lado
+
+O bot está no topo dos cargos, por isso nunca faz por alguém o que essa pessoa não podia fazer à mão.
+
+- `/cargotemp` só dá e tira cargos abaixo do cargo mais alto de quem usa o comando, e só a membros
+  abaixo dele; cargos com permissões de moderação só por administradores.
+- `/mod avisar` e `/mod tirar-castigo` passam a respeitar a hierarquia, como o resto do `/mod`.
+- O cargo pessoal nunca fica acima do cargo mais alto de quem o compra, e é criado sem permissões.
+- Cargos dados automaticamente (loja, recompensas de nível, verificação, boas-vindas, auto-cargos,
+  cargo de quem abre ticket) não podem ter permissões de moderação/administração — nem ao configurar,
+  nem na hora de dar.
+- `/anuncio` só menciona cargos não mencionáveis se quem o agenda os puder mencionar.
+
+---
+
 ## [3.1.0] - 2026-11-03
 
 ### ♻️ Tudo o que o bot antigo tinha, de volta

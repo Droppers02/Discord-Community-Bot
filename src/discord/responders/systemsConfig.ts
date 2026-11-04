@@ -10,7 +10,7 @@ import {
 } from "discord.js";
 import { ensureGuildConfig, upsertGuildConfig } from "../../repositories/guildConfigRepository.js";
 import { errorContainer } from "../../lib/containers.js";
-import { hasSuperAdminAccess, replyContainer } from "../../lib/discord.js";
+import { hasSuperAdminAccess, replyContainer, roleGrantProblem } from "../../lib/discord.js";
 import { parseCustomId } from "../../lib/ids.js";
 import {
     buildAntiSpamThresholdsModal,
@@ -405,9 +405,13 @@ createResponder({
             case "gwhost":
                 await saveGiveawaySettings(guildId, { host_role: values[0] ?? null });
                 return void render(interaction, "giveaways");
-            case "clientrole":
+            case "clientrole": {
+                const role = values[0] ? interaction.guild.roles.cache.get(values[0]) : null;
+                const grant = role ? roleGrantProblem(interaction.member as GuildMember, role, { automatic: true }) : null;
+                if (grant) return void replyContainer(interaction, errorContainer(grant));
                 await upsertGuildConfig({ guild_id: guildId, client_role: values[0] ?? null });
                 return void render(interaction, "support");
+            }
             case "socialmention": {
                 const { systemId: subId } = parseCustomId(interaction.customId);
                 const settings = await getSocialSettings(guildId);
@@ -419,8 +423,17 @@ createResponder({
                 const settings = await getReactionRoleSettings(guildId);
                 const panel = settings.panels.find((entry) => entry.id === panelId);
                 if (!panel) return void interaction.deferUpdate();
+                // Só cargos abaixo do cargo mais alto de quem configura (os membros vão poder tirá-los sozinhos).
+                const permitted = values.filter((roleId) => {
+                    const role = interaction.guild.roles.cache.get(roleId);
+                    return role && !roleGrantProblem(interaction.member as GuildMember, role, { automatic: true });
+                });
+                if (permitted.length < values.length) {
+                    await replyContainer(interaction, errorContainer(t("Nada foi guardado: só cargos abaixo do teu cargo mais alto (e do bot) e sem permissões de moderação.")));
+                    return;
+                }
                 // Mantém label/emoji/descrição dos cargos que já estavam no painel.
-                const roles = values.slice(0, MAX_RR_ROLES).map((roleId) => {
+                const roles = permitted.slice(0, MAX_RR_ROLES).map((roleId) => {
                     const existing = panel.roles.find((entry) => entry.role_id === roleId);
                     if (existing) return existing;
                     const roleName = interaction.guild.roles.cache.get(roleId)?.name ?? "Cargo";

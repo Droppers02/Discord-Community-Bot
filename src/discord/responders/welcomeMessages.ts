@@ -1,5 +1,9 @@
 import { createEvent, createResponder } from "#base";
 import { ResponderType } from "@constatic/base";
+import { MessageFlags, type Role } from "discord.js";
+import { errorContainer } from "../../lib/containers.js";
+import { CV2_FLAG, roleGrantProblem } from "../../lib/discord.js";
+import { t } from "../../lib/i18n.js";
 import { parseCustomId } from "../../lib/ids.js";
 import { logger } from "../../lib/logger.js";
 import { gateConfig } from "../../modules/config/panelKit.js";
@@ -24,7 +28,12 @@ createResponder({
             if (action === "welcomech") await saveWelcomeSettings(guildId, { welcome_channel: interaction.values[0] ?? null });
             if (action === "goodbyech") await saveWelcomeSettings(guildId, { goodbye_channel: interaction.values[0] ?? null });
         } else if (interaction.isRoleSelectMenu() && action === "roles") {
-            await saveWelcomeSettings(guildId, { auto_roles: [...interaction.values] });
+            const allowed = interaction.roles.filter((role) => !roleGrantProblem(interaction.member, role as Role, { automatic: true }));
+            await saveWelcomeSettings(guildId, { auto_roles: [...allowed.keys()] });
+            if (allowed.size < interaction.values.length) {
+                await interaction.update({ components: [await buildWelcomeMessagesContainer(guildId)] });
+                return void interaction.followUp({ components: [errorContainer(t("Alguns cargos ficaram de fora: só cargos abaixo do teu cargo mais alto (e do bot) e sem permissões de moderação."))], flags: CV2_FLAG | MessageFlags.Ephemeral });
+            }
         }
         await interaction.update({ components: [await buildWelcomeMessagesContainer(guildId)] });
     },

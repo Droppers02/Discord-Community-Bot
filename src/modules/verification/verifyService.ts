@@ -12,7 +12,7 @@ import {
 import { createContainer, createMediaGallery, Separator, type ContainerPlusBuilder } from "@magicyan/discord";
 import { COLORS, getEmbedColor } from "../../lib/branding.js";
 import { buildContainer, row } from "../../lib/containers.js";
-import { CV2_FLAG } from "../../lib/discord.js";
+import { CV2_FLAG, hasPowerPermissions } from "../../lib/discord.js";
 import { e, emoji } from "../../lib/emojis.js";
 import { buildCustomId } from "../../lib/ids.js";
 import { t } from "../../lib/i18n.js";
@@ -182,6 +182,11 @@ function resultView(granted: boolean): ContainerPlusBuilder {
 
 export async function completeVerification(member: GuildMember, settings: VerifySettings): Promise<boolean> {
     if (!settings.verified_role) return false;
+    const verifiedRole = member.guild.roles.cache.get(settings.verified_role);
+    if (!verifiedRole || hasPowerPermissions(verifiedRole)) {
+        logger.warn("Verificação: o cargo de verificado não existe ou tem permissões de moderação — não foi dado.");
+        return false;
+    }
     const ok = await member.roles.add(settings.verified_role, t("Verificação concluída")).then(() => true).catch((error: unknown) => {
         logger.warn("Verificação: não consegui dar o cargo:", error);
         return false;

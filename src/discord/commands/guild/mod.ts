@@ -8,7 +8,7 @@ import { t } from "../../../lib/i18n.js";
 import { humanizeDuration } from "../../../lib/time.js";
 import { casesOf, clearWarns, getCase, setCaseActive } from "../../../repositories/modCaseRepository.js";
 import { parseDuration } from "../../../modules/giveaways/giveawayCreator.js";
-import { banUser, caseLine, hasModAccess, hierarchyProblem, kickMember, MAX_TIMEOUT_MS, messageIdFrom, modLog, purgeMessages, purgeRange, removeTimeout, timeoutMember, unbanUser, warnMember, type ModResult } from "../../../modules/moderation/moderationService.js";
+import { banUser, caseLine, hasModAccess, hierarchyProblem, rankProblem, kickMember, MAX_TIMEOUT_MS, messageIdFrom, modLog, purgeMessages, purgeRange, removeTimeout, timeoutMember, unbanUser, warnMember, type ModResult } from "../../../modules/moderation/moderationService.js";
 
 const userOpt = (description: string) => ({ name: "membro", description, type: ApplicationCommandOptionType.User as const, required: true });
 const reasonOpt = { name: "motivo", description: t("Motivo (fica no registo e na mensagem ao membro)"), type: ApplicationCommandOptionType.String as const, required: false, maxLength: 400 };
@@ -177,7 +177,9 @@ createCommand({
         switch (sub) {
             case "avisar": {
                 if (target.user.bot) return void fail(interaction, t("Os bots não levam avisos."));
-                if (target.id === moderator.id) return void fail(interaction, t("Não te podes avisar a ti mesmo."));
+                // Os avisos podem levar a castigos automáticos aplicados pelo bot: só para quem está abaixo.
+                const problem = rankProblem(moderator, target);
+                if (problem) return void fail(interaction, problem);
                 const result = await warnMember(target, moderator, reason);
                 return void done(interaction, t("{user} foi avisado.", { user: `<@${target.id}>` }), result);
             }
@@ -191,6 +193,8 @@ createCommand({
             }
             case "tirar-castigo": {
                 if (!target.isCommunicationDisabled()) return void fail(interaction, t("{user} não está de castigo.", { user: `<@${target.id}>` }));
+                const problem = hierarchyProblem(moderator, target, "moderate");
+                if (problem) return void fail(interaction, problem);
                 const result = await removeTimeout(target, moderator, reason);
                 return void done(interaction, t("O castigo de {user} acabou.", { user: `<@${target.id}>` }), result);
             }

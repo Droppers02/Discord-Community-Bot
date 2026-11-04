@@ -2,7 +2,7 @@ import { randomInt } from "node:crypto";
 import type { Client, Guild, GuildMember, TextChannel } from "discord.js";
 import { COLORS } from "../../lib/branding.js";
 import { buildContainer } from "../../lib/containers.js";
-import { CV2_FLAG } from "../../lib/discord.js";
+import { CV2_FLAG, hasPowerPermissions } from "../../lib/discord.js";
 import { e } from "../../lib/emojis.js";
 import { formatNumber, t, tk } from "../../lib/i18n.js";
 import { logger } from "../../lib/logger.js";
@@ -171,6 +171,7 @@ export async function buyShopItem(member: GuildMember, itemId: string): Promise<
     const role = member.guild.roles.cache.get(item.role_id);
     if (!role) return { ok: false, reason: t("O cargo deste artigo já não existe. Avisa a administração.") };
     if (!role.editable) return { ok: false, reason: t("O bot não consegue dar o cargo {role} (está acima do cargo do bot).", { role: role.name }) };
+    if (hasPowerPermissions(role)) return { ok: false, reason: t("Este artigo está suspenso: o cargo tem permissões de moderação. Avisa a administração.") };
     if (item.duration_days === 0 && member.roles.cache.has(role.id)) return { ok: false, reason: t("Já tens o cargo {role}.", { role: `<@&${role.id}>` }) };
 
     const balance = await spendCoins(member.guild.id, member.id, item.price, "shop", item.name);

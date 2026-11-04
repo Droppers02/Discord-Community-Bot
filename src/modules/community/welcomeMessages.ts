@@ -2,7 +2,7 @@ import { ButtonBuilder, ButtonStyle, ChannelType, ModalBuilder, type GuildMember
 import type { ContainerPlusBuilder } from "@magicyan/discord";
 import { COLORS } from "../../lib/branding.js";
 import { buildContainer, row } from "../../lib/containers.js";
-import { CV2_FLAG } from "../../lib/discord.js";
+import { CV2_FLAG, hasPowerPermissions } from "../../lib/discord.js";
 import { emoji } from "../../lib/emojis.js";
 import { buildCustomId } from "../../lib/ids.js";
 import { formatNumber, t } from "../../lib/i18n.js";
@@ -86,7 +86,10 @@ export async function handleWelcome(member: GuildMember): Promise<void> {
     if (member.user.bot) return;
     const s = await getWelcomeSettings(member.guild.id);
     if (s.auto_roles.length) {
-        const roles = s.auto_roles.filter((id) => member.guild.roles.cache.get(id)?.editable);
+        const roles = s.auto_roles.filter((id) => {
+            const role = member.guild.roles.cache.get(id);
+            return Boolean(role?.editable && !hasPowerPermissions(role));
+        });
         if (roles.length) await member.roles.add(roles, t("Cargos automáticos de entrada")).catch((error) => logger.warn("Boas-vindas: cargos automáticos:", error));
     }
     if (s.welcome_enabled && s.welcome_channel) {

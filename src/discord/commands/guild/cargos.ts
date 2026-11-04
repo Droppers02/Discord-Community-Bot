@@ -1,8 +1,8 @@
 import { createCommand } from "#base";
-import { ApplicationCommandOptionType, ApplicationCommandType, GuildMember, MessageFlags } from "discord.js";
+import { ApplicationCommandOptionType, ApplicationCommandType, GuildMember, MessageFlags, type Role } from "discord.js";
 import { ensureGuildConfig } from "../../../repositories/guildConfigRepository.js";
 import { buildContainer, errorContainer, successContainer } from "../../../lib/containers.js";
-import { CV2_FLAG, hasStaffAccess } from "../../../lib/discord.js";
+import { CV2_FLAG, hasStaffAccess, outranks, roleGrantProblem } from "../../../lib/discord.js";
 import { emoji } from "../../../lib/emojis.js";
 import { getEmbedColor, getFooterText } from "../../../lib/branding.js";
 import { humanizeDuration } from "../../../lib/time.js";
@@ -67,9 +67,16 @@ createCommand({
                 return;
             }
 
-            const me = interaction.guild.members.me;
-            if (me && me.roles.highest.comparePositionTo(role.id) <= 0) {
-                await interaction.reply({ components: [errorContainer(t("Não consigo gerir {role} — o cargo está acima do meu na hierarquia.", { role: String(role) }))], flags: CV2_FLAG | MessageFlags.Ephemeral });
+            // Nunca dar por alguém um cargo que essa pessoa não podia dar à mão (o bot está no topo).
+            const actor = interaction.member as GuildMember;
+            const grant = roleGrantProblem(actor, role as Role);
+            if (grant) {
+                await interaction.reply({ components: [errorContainer(grant)], flags: CV2_FLAG | MessageFlags.Ephemeral });
+                return;
+            }
+            const targetMember = await interaction.guild.members.fetch(user.id).catch(() => null);
+            if (targetMember && targetMember.id !== actor.id && !outranks(actor, targetMember)) {
+                await interaction.reply({ components: [errorContainer(t("{user} tem um cargo igual ou acima do teu.", { user: String(user) }))], flags: CV2_FLAG | MessageFlags.Ephemeral });
                 return;
             }
 
@@ -101,6 +108,13 @@ createCommand({
         if (subcommand === "remover") {
             const user = interaction.options.getUser("utilizador", true);
             const role = interaction.options.getRole("cargo", true);
+            const actor = interaction.member as GuildMember;
+            const grant = roleGrantProblem(actor, role as Role);
+            const targetMember = await interaction.guild.members.fetch(user.id).catch(() => null);
+            if (grant || (targetMember && targetMember.id !== actor.id && !outranks(actor, targetMember))) {
+                await interaction.reply({ components: [errorContainer(grant ?? t("{user} tem um cargo igual ou acima do teu.", { user: String(user) }))], flags: CV2_FLAG | MessageFlags.Ephemeral });
+                return;
+            }
             const records = await listTempRolesByMember(interaction.guildId, user.id);
             const record = records.find((entry) => entry.role_id === role.id);
             if (!record) {

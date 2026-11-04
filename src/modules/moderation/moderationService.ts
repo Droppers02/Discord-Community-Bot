@@ -1,7 +1,7 @@
 import { type Guild, type GuildMember, type GuildTextBasedChannel, type TextChannel, type User } from "discord.js";
 import { COLORS } from "../../lib/branding.js";
 import { buildContainer } from "../../lib/containers.js";
-import { CV2_FLAG, hasSuperAdminAccess } from "../../lib/discord.js";
+import { CV2_FLAG, hasSuperAdminAccess, outranks } from "../../lib/discord.js";
 import { e, type EmojiName } from "../../lib/emojis.js";
 import { t, tk } from "../../lib/i18n.js";
 import { logger } from "../../lib/logger.js";
@@ -54,13 +54,18 @@ export async function hasModAccess(member: GuildMember, permission: bigint): Pro
 }
 
 /** Problema de hierarquia (texto para mostrar), ou null se a ação pode avançar. */
-export function hierarchyProblem(actor: GuildMember, target: GuildMember, need: "moderate" | "kick" | "ban"): string | null {
+/** Quem pede está acima do alvo? (sem olhar para o que o bot consegue — usado também nos avisos) */
+export function rankProblem(actor: GuildMember, target: GuildMember): string | null {
     if (target.id === actor.id) return t("Não te podes moderar a ti mesmo.");
     if (target.id === target.guild.ownerId) return t("Não dá para moderar o dono do servidor.");
-    if (target.user.bot && target.id === target.client.user.id) return t("Boa tentativa. 🙂");
-    if (actor.id !== actor.guild.ownerId && target.roles.highest.position >= actor.roles.highest.position) {
-        return t("{user} tem um cargo igual ou acima do teu.", { user: `<@${target.id}>` });
-    }
+    if (target.id === target.client.user.id) return t("Boa tentativa. 🙂");
+    if (!outranks(actor, target)) return t("{user} tem um cargo igual ou acima do teu.", { user: `<@${target.id}>` });
+    return null;
+}
+
+export function hierarchyProblem(actor: GuildMember, target: GuildMember, need: "moderate" | "kick" | "ban"): string | null {
+    const rank = rankProblem(actor, target);
+    if (rank) return rank;
     const able = need === "moderate" ? target.moderatable : need === "kick" ? target.kickable : target.bannable;
     if (!able) return t("O bot não tem permissão para isso em {user} (cargo do bot abaixo do dele?).", { user: `<@${target.id}>` });
     return null;

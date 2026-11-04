@@ -2,7 +2,7 @@ import { createResponder } from "#base";
 import { ResponderType } from "@constatic/base";
 import { randomUUID } from "node:crypto";
 import { errorContainer } from "../../lib/containers.js";
-import { replyContainer } from "../../lib/discord.js";
+import { replyContainer, roleGrantProblem } from "../../lib/discord.js";
 import { emoji } from "../../lib/emojis.js";
 import { t } from "../../lib/i18n.js";
 import { parseCustomId } from "../../lib/ids.js";
@@ -75,6 +75,8 @@ createResponder({
             const role = roleId ? interaction.guild.roles.cache.get(roleId) : null;
             if (!role || role.managed || role.id === interaction.guild.id) return void replyContainer(interaction, errorContainer(t("Escolhe um cargo normal (não pode ser @everyone nem cargo de bot).")));
             if (!role.editable) return void replyContainer(interaction, errorContainer(t("O cargo {role} está acima do cargo do bot — sobe o cargo do bot na lista de cargos.", { role: `<@&${role.id}>` })));
+            const grant = roleGrantProblem(interaction.member, role, { automatic: true });
+            if (grant) return void replyContainer(interaction, errorContainer(grant));
             const price = clampInt(interaction.fields.getTextInputValue("price").replace(/[\s.]/g, ""), 0, 1, 100_000_000);
             if (!price) return void replyContainer(interaction, errorContainer(t("Indica um preço válido.")));
             await saveEconomySettings(guildId, {

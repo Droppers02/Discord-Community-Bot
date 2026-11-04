@@ -1,3 +1,4 @@
+import { hasPowerPermissions } from "../../lib/discord.js";
 import { ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, type Guild, type GuildMember, type TextChannel } from "discord.js";
 import { randomUUID } from "node:crypto";
 import { buildContainer, row, type Row } from "../../lib/containers.js";
@@ -86,9 +87,18 @@ export interface RoleToggleResult { added: string[]; removed: string[]; failed: 
 /** Aplica um toggle de um cargo (botões) ou o conjunto selecionado (menu). */
 export async function applyRoleSelection(member: GuildMember, panel: ReactionRolePanel, selectedRoleIds: string[], toggleRoleId?: string): Promise<RoleToggleResult> {
     const result: RoleToggleResult = { added: [], removed: [], failed: [] };
-    const panelRoleIds = panel.roles.map((entry) => entry.role_id);
+    // Só os cargos do painel, e nunca cargos que entretanto ganharam permissões de moderação.
+    const safe = (roleId: string) => {
+        const role = member.guild.roles.cache.get(roleId);
+        return Boolean(role && role.editable && !hasPowerPermissions(role));
+    };
+    const panelRoleIds = panel.roles.map((entry) => entry.role_id).filter(safe);
 
     if (toggleRoleId) {
+        if (!panelRoleIds.includes(toggleRoleId)) {
+            result.failed.push(toggleRoleId);
+            return result;
+        }
         const has = member.roles.cache.has(toggleRoleId);
         try {
             if (has) { await member.roles.remove(toggleRoleId, t("Reaction roles")); result.removed.push(toggleRoleId); }

@@ -1,7 +1,7 @@
 import { createResponder } from "#base";
 import { ResponderType } from "@constatic/base";
 import { errorContainer } from "../../lib/containers.js";
-import { replyContainer } from "../../lib/discord.js";
+import { replyContainer, roleGrantProblem } from "../../lib/discord.js";
 import { t } from "../../lib/i18n.js";
 import { parseCustomId } from "../../lib/ids.js";
 import { clampInt, gateConfig } from "../../modules/config/panelKit.js";
@@ -68,6 +68,8 @@ createResponder({
             if (role.managed || role.id === interaction.guild.id) return void replyContainer(interaction, errorContainer(t("Esse cargo não pode ser dado pelo bot.")));
             if (action === "reward") {
                 if (!role.editable) return void replyContainer(interaction, errorContainer(t("O cargo {role} está acima do cargo do bot — sobe o cargo do bot na lista de cargos do servidor.", { role: `<@&${role.id}>` })));
+                const grant = roleGrantProblem(interaction.member, role, { automatic: true });
+                if (grant) return void replyContainer(interaction, errorContainer(grant));
                 const level = clampInt(interaction.fields.getTextInputValue("level"), 0, 1, 500);
                 if (!level) return void replyContainer(interaction, errorContainer(t("Indica um nível entre 1 e 500.")));
                 await saveLevelsSettings(guildId, { rewards: [...s.rewards.filter((r) => r.role_id !== role.id), { level, role_id: role.id }] });

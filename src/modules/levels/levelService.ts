@@ -1,7 +1,7 @@
 import type { GuildMember, Message, TextChannel } from "discord.js";
 import { COLORS } from "../../lib/branding.js";
 import { buildContainer } from "../../lib/containers.js";
-import { CV2_FLAG } from "../../lib/discord.js";
+import { CV2_FLAG, hasPowerPermissions } from "../../lib/discord.js";
 import { e } from "../../lib/emojis.js";
 import { t } from "../../lib/i18n.js";
 import { logger } from "../../lib/logger.js";
@@ -38,7 +38,7 @@ export async function syncRewardRoles(member: GuildMember, settings: LevelsSetti
     const { add, remove } = rewardChanges(settings.rewards, level, settings.stack_rewards, member.roles.cache.keys());
     const usable = (id: string) => {
         const role = member.guild.roles.cache.get(id);
-        return Boolean(role && role.editable);
+        return Boolean(role && role.editable && !hasPowerPermissions(role));
     };
     const toAdd = add.filter(usable);
     const toRemove = remove.filter(usable);
