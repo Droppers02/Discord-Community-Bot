@@ -4,6 +4,24 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [3.4.0] - 2026-11-04
+
+### 🧾 Revisão de bans por DM, sem servidor de apelos
+
+Em vez de um servidor de apelos, quem é banido **adiciona o bot à própria conta** (User Install —
+só comandos, sem permissões). A partir daí o Discord já lhe entrega o `/apelo` e os botões na DM com
+o bot, mesmo sem partilharem nenhum servidor.
+
+- DM do ban: **1)** "Adicionar o bot à minha conta" (link) e **2)** "Pedir revisão do ban" / `/apelo`.
+- `/apelo` aceita a instalação de servidor e a de utilizador (contexto: DM com o bot).
+- O `/apelo` mostra tudo: estado, **perguntas da equipa** com botão para responder, decisão e o
+  **convite de regresso** — as DMs do bot a quem já não está no servidor podem não chegar.
+- Base de dados: `ban_appeals.staff_questions` e `ban_appeals.return_invite`.
+- `/config` → Revisão de bans mostra se a instalação na conta está ligada (e como ligar).
+- Sai o servidor de apelos da 3.3.0. Ficam os trabalhos periódicos limitados aos servidores do EPA.
+
+---
+
 ## [3.3.0] - 2026-11-04
 
 ### 🧾 Revisão de bans pelo servidor de apelos

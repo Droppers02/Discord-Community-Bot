@@ -441,6 +441,10 @@ async function ensureSchema(db: Executor): Promise<void> {
         )
     `);
     await db.query("CREATE INDEX IF NOT EXISTS idx_ban_appeals_user ON ban_appeals (guild_id, user_id, created_at DESC)");
+    // O membro banido vê no /apelo as perguntas da equipa e o convite de regresso (as DMs do bot a
+    // quem já não partilha o servidor podem não chegar).
+    await db.query("ALTER TABLE ban_appeals ADD COLUMN IF NOT EXISTS staff_questions JSONB NOT NULL DEFAULT '[]'::jsonb");
+    await db.query("ALTER TABLE ban_appeals ADD COLUMN IF NOT EXISTS return_invite TEXT");
 
     // ─── Utilidades ──────────────────────────────────────────────────────────
     await db.query(`

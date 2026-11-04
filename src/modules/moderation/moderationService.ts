@@ -10,7 +10,8 @@ import { ensureGuildConfig } from "../../repositories/guildConfigRepository.js";
 import { countActiveWarns, createCase, type ModAction, type ModCase } from "../../repositories/modCaseRepository.js";
 import { appendAuditLog } from "../../services/auditService.js";
 import { getModerationSettings, type ModerationSettings, type WarnThreshold } from "./moderationSettings.js";
-import { appealInviteForBan, banAppealNotice } from "../appeals/appealService.js";
+import { banAppealNotice } from "../appeals/appealAccess.js";
+import { appealsOpen } from "../appeals/appealService.js";
 
 export const ACTION_LABELS: Record<ModAction, string> = {
     warn: tk("Aviso"),
@@ -80,10 +81,10 @@ export function caseLine(entry: ModCase): string {
 
 async function notify(user: User, guild: Guild, action: ModAction, reason: string | null, durationMs: number | null, settings: ModerationSettings): Promise<boolean> {
     if (user.bot) return false;
-    // Banimento com os pedidos de revisão abertos: a DM vai sempre, com o convite para o servidor
-    // de apelos (é lá que o pedido se faz — ver modules/appeals/appealGuild.ts).
-    const invite = action === "ban" ? await appealInviteForBan(guild) : null;
-    const appeal = invite ? banAppealNotice(invite) : null;
+    // Banimento com os pedidos de revisão abertos: a DM vai sempre, com o link para adicionar o bot
+    // à conta e o botão do pedido (ver modules/appeals/appealAccess.ts — sem adicionar o bot, o
+    // Discord não lhe entrega os cliques de quem já não está no servidor).
+    const appeal = action === "ban" && await appealsOpen(guild.id) ? banAppealNotice(guild.client, guild.id) : null;
     if (!settings.dm_on_action && !appeal) return false;
     const lines = [
         t("**Servidor:** {server}", { server: guild.name }),

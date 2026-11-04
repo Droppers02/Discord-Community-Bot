@@ -1,24 +1,20 @@
+import { ApplicationIntegrationType } from "discord.js";
 import { describe, expect, it } from "vitest";
+import { userInstallUrl } from "../../src/modules/appeals/appealAccess.js";
 import { buildAppealDefaults, normalizeAppeal, type AppealSettings } from "../../src/modules/appeals/appealSettings.js";
 
-const withPatch = (patch: Record<string, unknown>) => normalizeAppeal({ ...buildAppealDefaults(), ...patch } as AppealSettings);
-
-describe("revisão de bans — servidor de apelos", () => {
-    it("começa sem servidor de apelos nem convite", () => {
-        const s = buildAppealDefaults();
-        expect(s.appeal_guild).toBeNull();
-        expect(s.appeal_invite).toBeNull();
+describe("revisão de bans", () => {
+    it("o link de adicionar o bot à conta é de instalação de utilizador, só com comandos", () => {
+        const url = new URL(userInstallUrl("1048304118042730496"));
+        expect(url.origin + url.pathname).toBe("https://discord.com/oauth2/authorize");
+        expect(url.searchParams.get("client_id")).toBe("1048304118042730496");
+        expect(url.searchParams.get("integration_type")).toBe(String(ApplicationIntegrationType.UserInstall));
+        expect(url.searchParams.get("scope")).toBe("applications.commands");
+        expect(url.searchParams.has("permissions")).toBe(false);
     });
 
-    it("aceita só IDs de servidor válidos", () => {
-        expect(withPatch({ appeal_guild: "1440864293137420288" }).appeal_guild).toBe("1440864293137420288");
-        expect(withPatch({ appeal_guild: "não é um id" }).appeal_guild).toBeNull();
-        expect(withPatch({ appeal_guild: 123 }).appeal_guild).toBeNull();
-    });
-
-    it("guarda só convites discord.gg", () => {
-        expect(withPatch({ appeal_invite: "https://discord.gg/AbC-12x" }).appeal_invite).toBe("https://discord.gg/AbC-12x");
-        expect(withPatch({ appeal_invite: "https://evil.example/discord.gg/abc" }).appeal_invite).toBeNull();
-        expect(withPatch({ appeal_invite: "discord.gg/abc" }).appeal_invite).toBeNull();
+    it("as definições antigas do servidor de apelos são ignoradas", () => {
+        const s = normalizeAppeal({ ...buildAppealDefaults(), appeal_guild: "123456789012345678" } as AppealSettings);
+        expect("appeal_guild" in s).toBe(false);
     });
 });

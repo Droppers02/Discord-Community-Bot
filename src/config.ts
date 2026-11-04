@@ -47,7 +47,7 @@ export function isAllowedGuild(guildId: string | null | undefined): boolean {
 
 /**
  * Os servidores do bot onde os sistemas correm (só os configurados). O bot pode estar noutros —
- * p.ex. o servidor de apelos, onde só funciona a revisão de bans — e esses ficam de fora.
+ * se alguém o adicionar a outro servidor — e esses ficam de fora.
  */
 export function ourGuilds<G extends { id: string }>(client: { guilds: { cache: { values(): IterableIterator<G> } } }): G[] {
     return [...client.guilds.cache.values()].filter((guild) => isAllowedGuild(guild.id));

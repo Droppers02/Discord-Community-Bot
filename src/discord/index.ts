@@ -9,7 +9,6 @@ import { scheduleNoticeAutoClose, touchEphemeralPanel } from "../lib/ephemeralLi
 import { t } from "../lib/i18n.js";
 import { handleInteractionError } from "../lib/interactionError.js";
 import { noteDmInteraction } from "../lib/dmDiagnostics.js";
-import { isAppealGuild } from "../modules/appeals/appealGuild.js";
 import { enterInteractionContext, runWithRequestContext } from "../lib/requestContext.js";
 
 // O EPA BOTCHI é privado: só responde nos servidores do .env (GUILD_ID + EXTRA_GUILD_IDS).
@@ -37,8 +36,8 @@ const creators = setupCreators({
         middleware: async (interaction, block) => {
             enterInteractionContext(interaction);
             if (interaction.guildId && isAllowedGuild(interaction.guildId)) return;
-            // Em mensagem privada e no servidor de apelos só o /apelo (pedido de revisão de ban) funciona.
-            if (interaction.isCommand() && DM_COMMANDS.has(interaction.commandName) && (!interaction.guildId || await isAppealGuild(interaction.guildId))) return;
+            // Em mensagem privada só o /apelo (pedido de revisão de ban) funciona.
+            if (!interaction.guildId && interaction.isCommand() && DM_COMMANDS.has(interaction.commandName)) return;
             block();
             await replyPrivateNotice(interaction as RepliableInteraction);
         },
@@ -53,8 +52,6 @@ const creators = setupCreators({
             touchEphemeralPanel(interaction as MessageComponentInteraction | ModalSubmitInteraction);
             // Interações em mensagens privadas (avaliação de tickets, modmail) não têm servidor.
             if (!interaction.guildId || isAllowedGuild(interaction.guildId)) return;
-            // No servidor de apelos só os botões/formulários da revisão de bans.
-            if (interaction.customId.startsWith("appeal/") && await isAppealGuild(interaction.guildId)) return;
             block();
             await replyPrivateNotice(interaction as RepliableInteraction);
         },

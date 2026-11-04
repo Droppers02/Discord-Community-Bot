@@ -23,6 +23,16 @@ export interface BanAppeal {
     message_id: string | null;
     created_at: number;
     decided_at: number | null;
+    /** Perguntas da equipa ao membro. */
+    staff_questions: StaffQuestion[];
+    /** Convite de regresso (pedido aprovado). */
+    return_invite: string | null;
+}
+
+export interface StaffQuestion {
+    question: string;
+    by: string;
+    at: number;
 }
 
 function toAppeal(row: Record<string, unknown>): BanAppeal {
@@ -41,10 +51,12 @@ function toAppeal(row: Record<string, unknown>): BanAppeal {
         message_id: (row.message_id as string | null) ?? null,
         created_at: Number(row.created_at),
         decided_at: row.decided_at === null || row.decided_at === undefined ? null : Number(row.decided_at),
+        staff_questions: Array.isArray(row.staff_questions) ? (row.staff_questions as StaffQuestion[]) : [],
+        return_invite: typeof row.return_invite === "string" ? row.return_invite : null,
     };
 }
 
-export async function createAppeal(entry: Omit<BanAppeal, "status" | "votes" | "reviewer_id" | "reviewer_note" | "decided_at">): Promise<void> {
+export async function createAppeal(entry: Omit<BanAppeal, "status" | "votes" | "reviewer_id" | "reviewer_note" | "decided_at" | "staff_questions" | "return_invite">): Promise<void> {
     await query(
         `INSERT INTO ban_appeals (id, guild_id, user_id, user_tag, ban_reason, answers, status, votes, channel_id, message_id, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, 'pending', '{}'::jsonb, $7, $8, $9)`,
@@ -81,4 +93,14 @@ export async function decideAppeal(id: string, status: Exclude<AppealStatus, "pe
         [id, status, reviewerId, note, Date.now()],
     );
     return (result.rowCount ?? 0) > 0;
+}
+
+/** Pergunta da equipa ao membro (aparece no /apelo dele, além da DM). */
+export async function appendStaffQuestion(id: string, question: StaffQuestion): Promise<void> {
+    await query("UPDATE ban_appeals SET staff_questions = staff_questions || $2::jsonb WHERE id = $1", [id, JSON.stringify([question])]);
+}
+
+/** Convite de regresso de um pedido aprovado (aparece no /apelo do membro). */
+export async function setReturnInvite(id: string, url: string): Promise<void> {
+    await query("UPDATE ban_appeals SET return_invite = $2 WHERE id = $1", [id, url]);
 }
