@@ -416,7 +416,7 @@ export interface ReactionRolePanel {
     description: string | null;
     /** buttons = botões toggle; select = menu (respeita max_roles); */
     mode: "buttons" | "select";
-    /** Máx. de cargos em simultâneo no modo select (0 = sem limite). */
+    /** Máx. de cargos em simultâneo: no menu limita as escolhas; nos botões, 1 = escolha única (0 = sem limite). */
     max_roles: number;
     roles: ReactionRoleEntry[];
 }

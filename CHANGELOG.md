@@ -4,6 +4,19 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [3.5.0] - 2026-11-04
+
+### 🏷️ Auto-cargos do bot antigo
+
+- Os 3 painéis do `/setup_autoroles` antigo voltam como predefinições em `/config` → **Auto-cargos**,
+  já com o canal #「👷🏻」cargos, os mesmos cargos e os textos: **Jogos** (15), **Plataformas** (4) e
+  **Preferências de DM** (3). Entram uma vez no arranque (migração `2026-11-04-legacy-role-panels`),
+  sem mexer em painéis que já existam. Falta só carregar em **Publicar** em cada um.
+- **Escolha única nos botões**: com "Máx. cargos" = 1, carregar numa opção tira as outras do painel
+  (as preferências de DM vêm assim — o bot antigo só o dizia no texto).
+
+---
+
 ## [3.4.0] - 2026-11-04
 
 ### 🧾 Revisão de bans por DM, sem servidor de apelos

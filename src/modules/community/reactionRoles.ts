@@ -103,7 +103,17 @@ export async function applyRoleSelection(member: GuildMember, panel: ReactionRol
         try {
             if (has) { await member.roles.remove(toggleRoleId, t("Reaction roles")); result.removed.push(toggleRoleId); }
             else { await member.roles.add(toggleRoleId, t("Reaction roles")); result.added.push(toggleRoleId); }
-        } catch { result.failed.push(toggleRoleId); }
+        } catch {
+            result.failed.push(toggleRoleId);
+            return result;
+        }
+        // Escolha única (máx. 1, p.ex. preferências de DM): escolher uma opção tira as outras do painel.
+        if (!has && panel.max_roles === 1) {
+            for (const other of panelRoleIds) {
+                if (other === toggleRoleId || !member.roles.cache.has(other)) continue;
+                try { await member.roles.remove(other, t("Reaction roles")); result.removed.push(other); } catch { result.failed.push(other); }
+            }
+        }
         return result;
     }
 

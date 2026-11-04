@@ -1,5 +1,7 @@
 import { loadRuntimeConfig } from "../config.js";
 import { levelFromXp } from "../modules/levels/levelMath.js";
+import { mergeLegacyRolePanels } from "../modules/community/legacyRolePanels.js";
+import type { ReactionRolePanel } from "../types.js";
 
 type Executor = { query: (text: string, values?: unknown[]) => Promise<unknown> };
 type Rows<T> = { rows: T[] };
@@ -693,6 +695,24 @@ const VERSIONED_MIGRATIONS: VersionedMigration[] = [
         up: async (db) => {
             if (!(await tableExists(db, "epa_legacy", "users"))) return;
             await importLegacyProgress(db);
+        },
+    },
+    {
+        // Os 3 painéis de auto-cargos do bot antigo (jogos, plataformas, DM) como predefinições no
+        // /config → Auto-cargos. Corre antes do bot arrancar (a cache das definições ainda está vazia).
+        id: "2026-11-04-legacy-role-panels",
+        up: async (db) => {
+            const guildId = loadRuntimeConfig().mainGuildId;
+            const { rows } = (await db.query("SELECT config FROM reactionrole_settings WHERE guild_id = $1", [guildId])) as Rows<{ config: { panels?: unknown } | null }>;
+            const current = rows[0]?.config ?? {};
+            const existing = Array.isArray(current.panels) ? (current.panels as ReactionRolePanel[]) : [];
+            const panels = mergeLegacyRolePanels(existing);
+            if (panels.length === existing.length) return;
+            await db.query(
+                `INSERT INTO reactionrole_settings (guild_id, config, updated_at) VALUES ($1, $2, $3)
+                 ON CONFLICT (guild_id) DO UPDATE SET config = $2, updated_at = $3`,
+                [guildId, JSON.stringify({ ...current, panels }), Date.now()],
+            );
         },
     },
 ];

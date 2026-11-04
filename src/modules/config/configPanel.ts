@@ -587,7 +587,7 @@ export function buildReactionRolePanelModal(panel?: { id: string; name: string; 
             textField("title", t("Título mostrado aos membros"), panel?.title ?? "", { required: true, max: 100, placeholder: t("Ex.: Escolhe os teus jogos") }),
             textField("description", t("Descrição (opcional)"), panel?.description ?? "", { paragraph: true, max: 500, placeholder: t("Texto por cima dos botões/menu.") }),
             mode,
-            textField("max_roles", t("Máx. cargos em simultâneo"), String(panel?.max_roles ?? 0), { required: true, max: 2, placeholder: "0", description: t("0 = sem limite. Só se aplica ao modo de menu.") }),
+            textField("max_roles", t("Máx. cargos em simultâneo"), String(panel?.max_roles ?? 0), { required: true, max: 2, placeholder: "0", description: t("0 = sem limite. No menu: máximo de escolhas. Nos botões: 1 = só uma opção de cada vez.") }),
         );
 }
 
