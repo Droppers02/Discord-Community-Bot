@@ -1,4 +1,5 @@
 import type { Client, Collection, Guild, Invite } from "discord.js";
+import { ourGuilds } from "../../config.js";
 
 // Tracks invite usage so we can tell which invite a new member used. We keep a per-guild
 // snapshot of each invite's use count and, on join, diff it against a fresh fetch.
@@ -23,7 +24,7 @@ export async function cacheGuildInvites(guild: Guild): Promise<void> {
 
 export async function cacheAllInvites(client: Client): Promise<number> {
     let total = 0;
-    for (const guild of client.guilds.cache.values()) {
+    for (const guild of ourGuilds(client)) {
         await cacheGuildInvites(guild);
         total += cache.get(guild.id)?.size ?? 0;
     }

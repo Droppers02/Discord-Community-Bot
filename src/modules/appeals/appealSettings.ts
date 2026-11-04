@@ -1,8 +1,11 @@
 import { getSettings, saveSettings } from "../../repositories/systemSettingsRepository.js";
 
-// Pedidos de revisão de banimento (ban appeal). Quem é banido com /mod banir recebe por DM um
-// botão para pedir revisão; também pode usar /apelo em mensagem privada ao bot. A equipa vê o
-// pedido num canal próprio, discute numa thread, vota e aprova (desbane + convite) ou recusa.
+// Pedidos de revisão de banimento (ban appeal). O Discord não entrega ao bot os cliques nem os
+// comandos de quem já não partilha nenhum servidor com ele — e um banido deixa de partilhar o
+// servidor principal. Por isso os pedidos fazem-se no SERVIDOR DE APELOS: um servidor pequeno onde
+// o bot também está. Quem é banido recebe por DM o convite para lá; ao entrar, o bot manda-lhe por
+// DM o botão do pedido (e há um painel com o mesmo botão e o /apelo). A equipa vê o pedido num canal
+// do servidor principal, discute numa thread, vota e aprova (desbane + convite) ou recusa.
 
 export interface AppealSettings {
     enabled: boolean;
@@ -23,6 +26,10 @@ export interface AppealSettings {
     /** Abrir uma thread de discussão em cada pedido. */
     discussion_threads: boolean;
     questions: [string, string, string];
+    /** Servidor de apelos (o bot tem de lá estar). */
+    appeal_guild: string | null;
+    /** Convite permanente para o servidor de apelos (criado pelo bot). */
+    appeal_invite: string | null;
 }
 
 export const DEFAULT_QUESTIONS: [string, string, string] = [
@@ -43,6 +50,8 @@ export function buildAppealDefaults(): AppealSettings {
         invite_channel: null,
         discussion_threads: true,
         questions: [...DEFAULT_QUESTIONS],
+        appeal_guild: null,
+        appeal_invite: null,
     };
 }
 
@@ -71,6 +80,8 @@ export function normalizeAppeal(value: AppealSettings): AppealSettings {
             const text = questions[i];
             return typeof text === "string" && text.trim() ? text.trim().slice(0, 45) : fallback;
         }) as [string, string, string],
+        appeal_guild: idOrNull(value.appeal_guild),
+        appeal_invite: typeof value.appeal_invite === "string" && /^https:\/\/discord\.gg\/[\w-]{2,32}$/.test(value.appeal_invite) ? value.appeal_invite : null,
     };
 }
 

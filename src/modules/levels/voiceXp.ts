@@ -1,5 +1,5 @@
 import { ChannelType, type Client, type VoiceBasedChannel } from "discord.js";
-import { isAllowedGuild } from "../../config.js";
+import { isAllowedGuild, ourGuilds } from "../../config.js";
 import { logger } from "../../lib/logger.js";
 import { addVoiceTime } from "../../repositories/levelRepository.js";
 import { recordVoiceActivity } from "../../repositories/activityRepository.js";
@@ -21,7 +21,7 @@ function eligibleMembers(channel: VoiceBasedChannel) {
 }
 
 async function tick(client: Client<true>): Promise<void> {
-    for (const guild of client.guilds.cache.values()) {
+    for (const guild of ourGuilds(client)) {
         if (!isAllowedGuild(guild.id)) continue;
         const settings = await getLevelsSettings(guild.id);
         const giveXp = settings.enabled && settings.voice_xp_per_minute > 0;

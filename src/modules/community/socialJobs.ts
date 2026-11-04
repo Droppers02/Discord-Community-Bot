@@ -1,5 +1,5 @@
 import type { Client, Guild, TextChannel } from "discord.js";
-import { isAllowedGuild } from "../../config.js";
+import { isAllowedGuild, ourGuilds } from "../../config.js";
 import { COLORS } from "../../lib/branding.js";
 import { buildContainer } from "../../lib/containers.js";
 import { CV2_FLAG } from "../../lib/discord.js";
@@ -32,7 +32,7 @@ async function tick(client: Client<true>): Promise<void> {
     const today = lisbonDay(now);
     const hour = Number(hourFormatter.format(new Date(now)));
 
-    for (const guild of client.guilds.cache.values()) {
+    for (const guild of ourGuilds(client)) {
         if (!isAllowedGuild(guild.id)) continue;
         if (hour >= 9 && await startDaily(guild.id, "_", "birthday-announce", today)) {
             const dayMonth = `${today.slice(8, 10)}/${today.slice(5, 7)}`;

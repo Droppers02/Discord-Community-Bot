@@ -4,6 +4,27 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [3.3.0] - 2026-11-04
+
+### 🧾 Revisão de bans pelo servidor de apelos
+
+O diagnóstico da 3.2.2 confirmou: o clique no botão da DM nem chegava ao bot. O Discord não entrega
+ao bot os cliques nem os comandos de quem já não partilha nenhum servidor com ele — e quem é banido
+deixa de partilhar o servidor principal. (Pelo mesmo motivo, o bot também não lhe consegue mandar DMs.)
+
+- **Servidor de apelos**: um servidor pequeno onde o bot também está. Configura-se em `/config` →
+  Revisão de bans (ID do servidor + link para adicionar o bot). O bot cria um convite permanente e
+  publica lá um painel com o botão do pedido.
+- A DM do ban leva agora o **convite para o servidor de apelos** (botão-link) em vez do botão que
+  não funcionava. Ao entrar, quem está banido recebe logo por DM o estado do pedido e o botão.
+- `/apelo` funciona no servidor de apelos e em DM (enquanto a pessoa lá estiver).
+- No servidor de apelos só funciona a revisão de bans; os outros sistemas (alertas, XP de voz,
+  convites, tickets, estatísticas, modmail) correm só nos servidores do EPA.
+- Pedido aprovado: depois da DM com o convite de regresso, a pessoa sai do servidor de apelos.
+- O diagnóstico das interações em DM (3.2.2) fica ativo.
+
+---
+
 ## [3.2.2] - 2026-11-04
 
 ### 🔎 Diagnóstico das interações em mensagem privada

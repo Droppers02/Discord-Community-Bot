@@ -1,7 +1,7 @@
 import { t, tk } from "../../lib/i18n.js";
 import { ChannelType, type Client, type Guild } from "discord.js";
 import { getBroadcastSettings, getStatsSettings, saveStatsSettings } from "./communitySettings.js";
-import { isAllowedGuild } from "../../config.js";
+import { isAllowedGuild, ourGuilds } from "../../config.js";
 import { PermissionFlagsBits } from "discord.js";
 import type { StatKey } from "../../types.js";
 
@@ -92,7 +92,7 @@ async function updateGuildStats(guild: Guild): Promise<void> {
 
 export function startStatsChannelsUpdater(client: Client<true>): void {
     const tick = async () => {
-        for (const guild of client.guilds.cache.values()) await updateGuildStats(guild).catch(() => null);
+        for (const guild of ourGuilds(client)) await updateGuildStats(guild).catch(() => null);
     };
     const timer = setInterval(() => void tick(), STATS_INTERVAL_MS);
     timer.unref?.();

@@ -13,6 +13,7 @@ import { maybeSendRatingPrompt } from "./rating.js";
 import { syncTicketOverviewMessage } from "./ticketOverview.js";
 import { clearCloseRequestTimer } from "./closeRequestManager.js";
 import { t } from "../../lib/i18n.js";
+import { ourGuilds } from "../../config.js";
 
 const SWEEP_INTERVAL_MS = 10 * 60 * 1000;
 const DB_WRITE_THROTTLE_MS = 30_000;
@@ -92,7 +93,7 @@ async function autoCloseInactiveTicket(client: Client, channelId: string): Promi
 }
 
 async function sweep(client: Client): Promise<void> {
-    for (const guild of client.guilds.cache.values()) {
+    for (const guild of ourGuilds(client)) {
         const config = await ensureGuildConfig(guild.id).catch(() => null);
         if (!config || config.ticket_auto_close_hours <= 0) continue;
 

@@ -10,7 +10,7 @@ import { ensureGuildConfig } from "../../repositories/guildConfigRepository.js";
 import { countActiveWarns, createCase, type ModAction, type ModCase } from "../../repositories/modCaseRepository.js";
 import { appendAuditLog } from "../../services/auditService.js";
 import { getModerationSettings, type ModerationSettings, type WarnThreshold } from "./moderationSettings.js";
-import { appealButtonRow, appealsOpen } from "../appeals/appealService.js";
+import { appealInviteForBan, banAppealNotice } from "../appeals/appealService.js";
 
 export const ACTION_LABELS: Record<ModAction, string> = {
     warn: tk("Aviso"),
@@ -80,17 +80,19 @@ export function caseLine(entry: ModCase): string {
 
 async function notify(user: User, guild: Guild, action: ModAction, reason: string | null, durationMs: number | null, settings: ModerationSettings): Promise<boolean> {
     if (user.bot) return false;
-    // Banimento com os pedidos de revisão abertos: a DM vai sempre, com o botão para pedir.
-    const appeal = action === "ban" && await appealsOpen(guild.id);
+    // Banimento com os pedidos de revisão abertos: a DM vai sempre, com o convite para o servidor
+    // de apelos (é lá que o pedido se faz — ver modules/appeals/appealGuild.ts).
+    const invite = action === "ban" ? await appealInviteForBan(guild) : null;
+    const appeal = invite ? banAppealNotice(invite) : null;
     if (!settings.dm_on_action && !appeal) return false;
     const lines = [
         t("**Servidor:** {server}", { server: guild.name }),
         reason ? t("**Motivo:** {reason}", { reason }) : null,
         durationMs ? t("**Duração:** {duration} (até {until})", { duration: humanizeDuration(durationMs), until: timestamp(Date.now() + durationMs, "f") }) : null,
-        appeal ? `\n${t("Achas que foi injusto? Pede a revisão do ban no botão abaixo (ou mais tarde com `/apelo` aqui na DM).")}` : null,
+        appeal ? `\n${appeal.text}` : null,
     ].filter(Boolean);
     return user.send({
-        components: [buildContainer({ color: ACTION_COLORS[action], title: `${e(ACTION_ICONS[action])} ${t(ACTION_LABELS[action])}`, description: lines.join("\n"), rows: appeal ? [appealButtonRow(guild.id)] : [] })],
+        components: [buildContainer({ color: ACTION_COLORS[action], title: `${e(ACTION_ICONS[action])} ${t(ACTION_LABELS[action])}`, description: lines.join("\n"), rows: appeal ? [appeal.row] : [] })],
         flags: CV2_FLAG,
     }).then(() => true).catch(() => false);
 }

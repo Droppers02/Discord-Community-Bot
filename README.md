@@ -16,8 +16,10 @@ PixelTickets, sem licenças, sem painel web e sem nada de venda.
   quem não se verifica, regra de contas recentes.
 - **Moderação** — `/mod` com casos numerados (avisar, castigo, expulsar, banir, limpar por
   quantidade ou intervalo), castigos automáticos por avisos acumulados e registo próprio.
-- **Revisão de bans (ban appeal)** — quem é banido recebe por DM um botão para pedir revisão (ou usa
-  `/apelo` na DM). A equipa recebe o pedido com as respostas, o motivo do ban e o histórico, discute
+- **Revisão de bans (ban appeal)** — quem é banido recebe por DM o convite para o **servidor de
+  apelos** (um servidor pequeno onde o bot também está: o Discord não entrega ao bot os cliques de
+  quem já não partilha nenhum servidor com ele). Ao entrar, o bot manda-lhe o formulário por DM; lá
+  também há um painel e o `/apelo`. A equipa recebe o pedido com as respostas, o motivo do ban e o histórico, discute
   numa thread, vota 👍/👎, pode fazer perguntas ao membro (que responde por DM) e aprova (desbane e
   envia convite de uso único) ou recusa (com motivo e espera até ao próximo pedido).
 - **Proteção** — filtro de palavras (acentos, maiúsculas e "l33t" não escapam), links de conteúdo

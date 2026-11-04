@@ -19,6 +19,7 @@ import { generateTranscript } from "../transcripts/transcriptManager.js";
 import { syncTicketOverviewMessage } from "./ticketOverview.js";
 import { ValidationError } from "../../errors/index.js";
 import { appendAuditLog } from "../../services/auditService.js";
+import { ourGuilds } from "../../config.js";
 
 const DEFAULT_CLOSE_REQUEST_HOURS = 120;
 const MIN_CLOSE_REQUEST_HOURS = 12;
@@ -267,7 +268,7 @@ export async function requestTicketClosure(
 }
 
 export async function restoreCloseRequestSchedulers(client: Client): Promise<void> {
-    for (const guild of client.guilds.cache.values()) {
+    for (const guild of ourGuilds(client)) {
         const tickets = await getTicketsWithPendingCloseRequest(guild.id);
         for (const ticket of tickets) {
             scheduleCloseRequestForTicket(ticket, client);

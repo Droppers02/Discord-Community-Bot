@@ -20,7 +20,7 @@ import { t, withGuildLocale } from "../../lib/i18n.js";
 import { logger } from "../../lib/logger.js";
 import { ensureGuildConfig } from "../../repositories/guildConfigRepository.js";
 import { updateTicketByChannel } from "../../repositories/ticketRepository.js";
-import { isAllowedGuild } from "../../config.js";
+import { isAllowedGuild, ourGuilds } from "../../config.js";
 import type { TicketRecord } from "../../types.js";
 import { touchTicketActivity } from "../tickets/autoCloseManager.js";
 import { getTicketCategories } from "../tickets/categories.js";
@@ -53,7 +53,7 @@ export function openModmailFor(userId: string, guildId?: string): TicketRecord |
 
 async function eligibleGuilds(client: Client<true>, userId: string): Promise<Guild[]> {
     const out: Guild[] = [];
-    for (const guild of client.guilds.cache.values()) {
+    for (const guild of ourGuilds(client)) {
         if (!isAllowedGuild(guild.id)) continue;
         const settings = await getModmailSettings(guild.id).catch(() => null);
         if (!settings?.enabled) continue;

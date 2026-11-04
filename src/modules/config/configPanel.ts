@@ -769,7 +769,7 @@ export async function buildConfigComponents(section: ConfigSection, guildId: str
         case "moderation": return [await buildModerationContainer(guildId)];
         case "welcomemsg": return [await buildWelcomeMessagesContainer(guildId)];
         case "starboard": return [await buildStarboardContainer(guildId)];
-        case "appeals": return [await buildAppealContainer(guildId)];
+        case "appeals": return [await buildAppealContainer(guildId, guild.client)];
         case "protection": return [await buildProtectionContainer(guildId)];
         case "hub":
         default: return [buildHubContainer()];

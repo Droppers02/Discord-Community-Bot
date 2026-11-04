@@ -2,7 +2,7 @@ import type { Client, TextChannel } from "discord.js";
 import { logger } from "../../lib/logger.js";
 import { env } from "#env";
 import { getSocialSettings, saveSocialSettings } from "./communitySettings.js";
-import { isAllowedGuild } from "../../config.js";
+import { isAllowedGuild, ourGuilds } from "../../config.js";
 import type { SocialSubscription } from "../../types.js";
 import { t } from "../../lib/i18n.js";
 
@@ -281,7 +281,7 @@ async function pollGuild(client: Client<true>, guildId: string): Promise<void> {
 export function startSocialAlertsPoller(client: Client<true>): void {
     if (timer) return;
     const tick = async () => {
-        for (const guild of client.guilds.cache.values()) {
+        for (const guild of ourGuilds(client)) {
             await pollGuild(client, guild.id).catch(() => null);
         }
     };

@@ -30,6 +30,7 @@ import { appealsOf, appendAppealAnswer, createAppeal, decideAppeal, getAppeal, s
 import { casesOf, createCase } from "../../repositories/modCaseRepository.js";
 import { appendAuditLog } from "../../services/auditService.js";
 import { caseLine, hasModAccess, modLog } from "../moderation/moderationService.js";
+import { appealChannel, appealGuild, appealInviteRow, appealInviteUrl, leaveAppealGuild } from "./appealGuild.js";
 import { getAppealSettings, type AppealSettings } from "./appealSettings.js";
 
 // ─── Elegibilidade ───────────────────────────────────────────────────────────
@@ -59,15 +60,55 @@ export async function checkEligibility(guild: Guild, userId: string): Promise<El
     return { ok: true, banReason: ban.reason ?? banCase?.reason ?? null, banCase: banCase?.case_number ?? null };
 }
 
-/** Botão que vai na DM do banimento. */
+/** Botão do pedido (no painel do servidor de apelos, no /apelo e na DM de quem lá entra). */
 export function appealButtonRow(guildId: string): Row {
     return row(new ButtonBuilder().setCustomId(`appeal/start/${guildId}`).setLabel(t("Pedir revisão do ban")).setEmoji(ei("receipt")).setStyle(ButtonStyle.Primary));
 }
 
-/** Os pedidos estão abertos neste servidor? (para pôr ou não o botão na DM) */
+/** Os pedidos estão abertos neste servidor? */
 export async function appealsOpen(guildId: string): Promise<boolean> {
     const settings = await getAppealSettings(guildId);
     return settings.enabled && Boolean(settings.channel);
+}
+
+/**
+ * Convite para o servidor de apelos, se os pedidos estiverem abertos e o servidor pronto — é o
+ * que vai na DM do ban (um botão na DM não serve: depois do ban o Discord já não entrega o clique).
+ */
+export async function appealInviteForBan(guild: Guild): Promise<string | null> {
+    if (!(await appealsOpen(guild.id))) return null;
+    return appealInviteUrl(guild.client);
+}
+
+/** Texto e botão da DM do ban. */
+export function banAppealNotice(inviteUrl: string): { text: string; row: Row } {
+    return {
+        text: t("Achas que foi injusto? Entra no **servidor de apelos** (botão abaixo): ao entrar, o bot manda-te o formulário por mensagem privada. Depois do ban é a única forma de falares com o bot — não saias de lá até teres resposta."),
+        row: appealInviteRow(inviteUrl),
+    };
+}
+
+/** Painel com o botão do pedido, publicado no servidor de apelos. */
+export function buildAppealPanel(mainGuild: Guild): ContainerPlusBuilder {
+    return buildContainer({
+        color: COLORS.info,
+        title: `${e("receipt")} ${t("Revisão de bans — {server}", { server: mainGuild.name })}`,
+        description: [
+            t("Foste banido de **{server}** e achas que foi injusto? Carrega no botão (ou usa `/apelo`) e responde às perguntas.", { server: mainGuild.name }),
+            t("A equipa analisa o pedido e responde-te **por mensagem privada** — fica neste servidor até teres resposta, senão o bot não te consegue escrever."),
+        ].join("\n\n"),
+        rows: [appealButtonRow(mainGuild.id)],
+    });
+}
+
+/** Publica (ou volta a publicar) o painel no servidor de apelos. Devolve o canal, ou o motivo da falha. */
+export async function postAppealPanel(client: Client, mainGuild: Guild): Promise<{ ok: true; channelId: string } | { ok: false; reason: string }> {
+    const guild = await appealGuild(client);
+    if (!guild) return { ok: false, reason: t("O bot não está no servidor de apelos configurado.") };
+    const channel = appealChannel(guild, PermissionFlagsBits.SendMessages);
+    if (!channel) return { ok: false, reason: t("O bot não consegue escrever em nenhum canal de texto do servidor de apelos.") };
+    const sent = await channel.send({ components: [buildAppealPanel(mainGuild)], flags: CV2_FLAG, allowedMentions: { parse: [] } }).catch(() => null);
+    return sent ? { ok: true, channelId: channel.id } : { ok: false, reason: t("Não consegui publicar o painel (permissões do bot?).") };
 }
 
 // ─── Formulário (membro banido) ──────────────────────────────────────────────
@@ -107,7 +148,8 @@ export async function showAppealForm(interaction: ButtonInteraction | ChatInputC
 }
 
 export async function submitAppeal(interaction: ModalSubmitInteraction, guild: Guild): Promise<void> {
-    await interaction.deferReply();
+    // No servidor de apelos a confirmação só é vista por quem fez o pedido.
+    await interaction.deferReply(interaction.inGuild() ? { flags: MessageFlags.Ephemeral } : {});
     const eligible = await checkEligibility(guild, interaction.user.id);
     if (!eligible.ok) return answer(interaction, errorContainer(eligible.reason));
     const settings = await getAppealSettings(guild.id);
@@ -149,7 +191,7 @@ export async function submitAppeal(interaction: ModalSubmitInteraction, guild: G
             await message.startThread({ name: t("Pedido de {user}", { user: interaction.user.username }).slice(0, 90), autoArchiveDuration: 1440 }).catch(() => null);
         }
     }
-    await answer(interaction, successContainer(t("O teu pedido foi enviado à equipa de **{server}**. Vais receber a resposta aqui, por mensagem privada. Não é preciso enviar outro.", { server: guild.name })));
+    await answer(interaction, successContainer(t("O teu pedido foi enviado à equipa de **{server}**. Vais receber a resposta por mensagem privada — não saias do servidor de apelos até lá. Não é preciso enviar outro.", { server: guild.name })));
 }
 
 // ─── Cartão da equipa ────────────────────────────────────────────────────────
@@ -339,6 +381,8 @@ export async function acceptAppeal(interaction: ButtonInteraction<"cached">, id:
         flags: CV2_FLAG,
     }).then(() => true).catch(() => false);
     appendAuditLog({ guildId: guild.id, actorId: interaction.user.id, action: "appeal.accept", details: { appeal: id, userId: appeal.user_id } });
+    // Já recebeu o convite de volta: sai do servidor de apelos (se a DM falhou, fica lá para a equipa o avisar).
+    if (dmSent) await leaveAppealGuild(interaction.client, appeal.user_id);
     const updated = (await getAppeal(id))!;
     await postInThread(interaction.client, updated, t("✅ Aprovado por {user}.", { user: `<@${interaction.user.id}>` }));
     await refreshCard(interaction.client, updated);
