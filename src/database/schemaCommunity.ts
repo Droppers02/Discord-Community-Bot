@@ -152,6 +152,7 @@ export async function ensureCommunitySchema(db: Executor): Promise<void> {
             PRIMARY KEY (guild_id, offer_id)
         )
     `);
+    await db.query("ALTER TABLE free_game_posts ADD COLUMN IF NOT EXISTS data JSONB");
 
     // ─── Previsões com moedas ───────────────────────────────────────────────
     await db.query(`

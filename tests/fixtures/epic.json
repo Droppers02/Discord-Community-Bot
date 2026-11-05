@@ -1,0 +1,665 @@
+{
+ "data": {
+  "Catalog": {
+   "searchStore": {
+    "elements": [
+     {
+      "title": "Idle Champions of the Forgotten Realms",
+      "id": "a9748abde1c94b66aae5250bb9fc5503",
+      "namespace": "7e508f543b05465abe3a935960eb70ac",
+      "description": "Idle Champions of the Forgotten Realms is a Dungeons & Dragons strategy management game uniting characters from throughout the D&D multiverse into a grand adventure.",
+      "productSlug": "idle-champions-of-the-forgotten-realms",
+      "offerType": "BASE_GAME",
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn1.epicgames.com/spt-assets/a53f91e55c6840018cb5de0b204f1ad9/idle-champions-of-the-forgotten-realms-1cv5z.jpg"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/spt-assets/a53f91e55c6840018cb5de0b204f1ad9/idle-champions-of-the-forgotten-realms-sykbg.jpg"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "idle-champions-of-the-forgotten-realms",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "offerMappings": [
+       {
+        "pageSlug": "idle-champions-of-the-forgotten-realms",
+        "pageType": "productHome"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "originalPrice": 0,
+        "fmtPrice": {
+         "originalPrice": "0"
+        }
+       }
+      },
+      "promotions": {
+       "promotionalOffers": [],
+       "upcomingPromotionalOffers": [
+        {
+         "promotionalOffers": [
+          {
+           "startDate": "2026-11-05T16:00:00.000Z",
+           "endDate": "2026-11-12T16:00:00.000Z",
+           "discountSetting": {
+            "discountType": "PERCENTAGE",
+            "discountPercentage": 0
+           }
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "title": "Them's Fightin' Herds",
+      "id": "1f723b00df58467998c4984ca39915ad",
+      "namespace": "a567c32599bf4d4fb609e424f3691b39",
+      "description": "Them's Fightin' Herds",
+      "productSlug": "thems-fightin-herds/home",
+      "offerType": "BASE_GAME",
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn1.epicgames.com/offer/a567c32599bf4d4fb609e424f3691b39/EGS_ThemsFightinHerds_Mane6Inc_S1_2560x1440-da3a940faafe30c602d3966d2c295825"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/offer/a567c32599bf4d4fb609e424f3691b39/EGS_ThemsFightinHerds_Mane6Inc_S2_1200x1600-9793ee024c43026c5c2b1612c7a487d0_1200x1600-9793ee024c43026c5c2b1612c7a487d0"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "thems-fightin-herds",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "offerMappings": [
+       {
+        "pageSlug": "thems-fightin-herds",
+        "pageType": "productHome"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "originalPrice": 1999,
+        "fmtPrice": {
+         "originalPrice": "19,99 €"
+        }
+       }
+      },
+      "promotions": null
+     },
+     {
+      "title": "Model Builder: Complete Edition",
+      "id": "d3e5b556640144bfa5de2d5d3b283d68",
+      "namespace": "23499f64e5304139b514c3e674c5c0d6",
+      "description": "Join the latest trend in simulation games, bring out your creativity and make awesome-looking models with the base game and all available DLCs. Assemble, customize and display your creations, whether you’re a veteran or a novice. Get building, and get creative!",
+      "productSlug": null,
+      "offerType": "BASE_GAME",
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn1.epicgames.com/spt-assets/7472ec268e344e77a85e95976c0ffc6d/model-builder-1vfgr.png"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/spt-assets/7472ec268e344e77a85e95976c0ffc6d/model-builder-1ca62.png"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "model-builder-complete-edition-f9b456",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "offerMappings": [
+       {
+        "pageSlug": "model-builder-complete-edition-f9b456",
+        "pageType": "productHome"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "originalPrice": 1679,
+        "fmtPrice": {
+         "originalPrice": "16,79 €"
+        }
+       }
+      },
+      "promotions": null
+     },
+     {
+      "title": "Eternal Threads",
+      "id": "921e40c4c69f4d728914ca2a4f0aa407",
+      "namespace": "35eda4ff87f94a7491dc28175b8f3b4f",
+      "description": "Eternal Threads is a single-player, first-person story-driven puzzle game of time manipulation, choice and consequence.",
+      "productSlug": null,
+      "offerType": "BASE_GAME",
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn1.epicgames.com/spt-assets/08813e055af64315b8a55b2e521f4e04/eternal-threads-1vm6i.jpg"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/spt-assets/08813e055af64315b8a55b2e521f4e04/eternal-threads-1v92y.jpg"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "eternal-threads-197169",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "offerMappings": [
+       {
+        "pageSlug": "eternal-threads-197169",
+        "pageType": "productHome"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "originalPrice": 1799,
+        "fmtPrice": {
+         "originalPrice": "17,99 €"
+        }
+       }
+      },
+      "promotions": null
+     },
+     {
+      "title": "Ghostrunner 2",
+      "id": "be5600439b434624802764f704755cde",
+      "namespace": "708f57aaa04b42ef885be16c8288f0ac",
+      "description": "Ghostrunner 2 is a hardcore FPP slasher set in a post-apocalyptic, cyberpunk world. Featuring everything fans loved about Ghostrunner plus incredible boss fights, new interactive story, thrilling motorbike levels, improved skills, and more cyber ninja action. ",
+      "productSlug": "ghostrunner-2",
+      "offerType": "BASE_GAME",
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn1.epicgames.com/offer/708f57aaa04b42ef885be16c8288f0ac/EGS_Ghostrunner2_OneMoreLevel_S1_2560x1440-15845148fae1d0cfd7f3e98c9b3ba6ba"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/offer/708f57aaa04b42ef885be16c8288f0ac/EGS_Ghostrunner2_OneMoreLevel_S2_1200x1600-12ae7597b946ad94ac75680eb735be07"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "ghostrunner-2",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "offerMappings": [
+       {
+        "pageSlug": "ghostrunner-2",
+        "pageType": "productHome"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "originalPrice": 3999,
+        "fmtPrice": {
+         "originalPrice": "39,99 €"
+        }
+       }
+      },
+      "promotions": {
+       "promotionalOffers": [],
+       "upcomingPromotionalOffers": [
+        {
+         "promotionalOffers": [
+          {
+           "startDate": "2026-12-10T17:00:00.000Z",
+           "endDate": "2027-01-07T23:59:00.000Z",
+           "discountSetting": {
+            "discountType": "PERCENTAGE",
+            "discountPercentage": 20
+           }
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "title": "Lost Castle: The Old Ones Awaken",
+      "id": "4a88d0dc64114b20b67339c74543f859",
+      "namespace": "ab29925a0a9a49598adba45d108ceb3e",
+      "description": "The Old Ones Awaken adds new levels to explore, new enemies to defeat, and new bosses to face along with a host exciting new weapons and equipment to wield and wear.",
+      "productSlug": null,
+      "offerType": "ADD_ON",
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn1.epicgames.com/spt-assets/a6d76157ad884f2c9aa470b30da9e2ff/lost-castle-r390n.png"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/spt-assets/a6d76157ad884f2c9aa470b30da9e2ff/lost-castle-1qvy6.jpg"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "lost-castle-abb2e2",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "offerMappings": [
+       {
+        "pageSlug": "lost-castle-lost-castle-the-old-ones-awaken-db1545",
+        "pageType": "offer"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "originalPrice": 359,
+        "fmtPrice": {
+         "originalPrice": "3,59 €"
+        }
+       }
+      },
+      "promotions": null
+     },
+     {
+      "title": "LISA: The Definitive Edition",
+      "id": "944b5b5d646d46bc92bc33edfe983d26",
+      "namespace": "ca3a9d16d131478c97fd56c138a6511a",
+      "description": "Explore Olathe and unmask its twisted secrets with LISA: The Definitive Edition, including the original narrative-driven RPG LISA: The Painful and its sequel LISA: The Joyful.",
+      "productSlug": "lisa-the-definitive-edition",
+      "offerType": "BUNDLE",
+      "keyImages": [
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/offer/ca3a9d16d131478c97fd56c138a6511a/EGS_LISATheDefinitiveEdition_DingalingProductions_Bundles_S2_1200x1600-4a9b4fc6e06e8aff136c1a3cf18292ae"
+       },
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn2.unrealengine.com/egs-lisathedefinitiveedition-dingalingproductions-bundles-s1-2560x1440-5be18c558828.jpg"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "lisa-the-definitive-edition",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "offerMappings": [
+       {
+        "pageSlug": "lisa-the-definitive-edition",
+        "pageType": "productHome"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "originalPrice": 2419,
+        "fmtPrice": {
+         "originalPrice": "24,19 €"
+        }
+       }
+      },
+      "promotions": {
+       "promotionalOffers": [
+        {
+         "promotionalOffers": [
+          {
+           "startDate": "2026-11-01T06:00:00.000Z",
+           "endDate": "2026-11-10T06:59:00.000Z",
+           "discountSetting": {
+            "discountType": "PERCENTAGE",
+            "discountPercentage": 60
+           }
+          }
+         ]
+        }
+       ],
+       "upcomingPromotionalOffers": [
+        {
+         "promotionalOffers": [
+          {
+           "startDate": "2026-12-10T16:00:00.000Z",
+           "endDate": "2027-01-07T16:00:00.000Z",
+           "discountSetting": {
+            "discountType": "PERCENTAGE",
+            "discountPercentage": 55
+           }
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "title": "Castlevania Anniversary Collection",
+      "id": "8f80897c0b6e4e678fed08da169d44be",
+      "namespace": "247d4d4b4e424afd9b474334fe450a43",
+      "description": "Konami's Castlevania Anniversary Collection traces the origins of the historic vampire franchise. Included is a unique eBook with details provided by developers, artists and others inspired by the Castlevania legacy which sheds a fresh light into the world of Castlevania.",
+      "productSlug": null,
+      "offerType": "BASE_GAME",
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn1.epicgames.com/spt-assets/1ff2f74ba0ef4019b6905d8abe268819/castlevania-anniversary-collection-yex6f.jpg"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/spt-assets/1ff2f74ba0ef4019b6905d8abe268819/castlevania-anniversary-collection-z3ev6.png"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "castlevania-anniversary-collection-a61f94",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "offerMappings": [
+       {
+        "pageSlug": "castlevania-anniversary-collection-a61f94",
+        "pageType": "productHome"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "originalPrice": 1999,
+        "fmtPrice": {
+         "originalPrice": "19,99 €"
+        }
+       }
+      },
+      "promotions": null
+     },
+     {
+      "title": "Sorry We're Closed",
+      "id": "4e469c7d8bbf49bcabc2c07127d3d946",
+      "namespace": "489af623d8284d518502f8ee9d33b828",
+      "description": "Sorry We're Closed é um jogo de terror e sobrevivência para jogador individual, com uma história rica, personagens profundas e múltiplos finais. Explora locais inquietantes com ângulos de câmara fixos. Abre o Terceiro Olho, vê entre mundos, desvenda segredos e resolve puzzles.",
+      "productSlug": null,
+      "offerType": "BASE_GAME",
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn1.epicgames.com/spt-assets/9ab7eaaeb2f041969b350955b789f0f7/sorry-were-closed-1orqh.png"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/spt-assets/9ab7eaaeb2f041969b350955b789f0f7/sorry-were-closed-16sj7.png"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "sorry-were-closed-724c86",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "offerMappings": [
+       {
+        "pageSlug": "sorry-were-closed-724c86",
+        "pageType": "productHome"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "originalPrice": 2239,
+        "fmtPrice": {
+         "originalPrice": "22,39 €"
+        }
+       }
+      },
+      "promotions": {
+       "promotionalOffers": [
+        {
+         "promotionalOffers": [
+          {
+           "startDate": "2026-10-29T15:00:00.000Z",
+           "endDate": "2026-11-05T16:00:00.000Z",
+           "discountSetting": {
+            "discountType": "PERCENTAGE",
+            "discountPercentage": 0
+           }
+          }
+         ]
+        }
+       ],
+       "upcomingPromotionalOffers": [
+        {
+         "promotionalOffers": [
+          {
+           "startDate": "2026-12-10T16:00:00.000Z",
+           "endDate": "2027-01-07T16:00:00.000Z",
+           "discountSetting": {
+            "discountType": "PERCENTAGE",
+            "discountPercentage": 70
+           }
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "title": "Monument Valley",
+      "id": "f967cff9761c4198b4e972cfd71e40d7",
+      "namespace": "e236e73a294b462d85715f5ba23a6346",
+      "description": "Embark on a journey of forgiveness through impossible environments and illusionary puzzles. Experience this meditative and calming puzzle game by manipulating monuments and creating evolving paths to explore new, surreal, and mysterious worlds.",
+      "productSlug": null,
+      "offerType": "BASE_GAME",
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn1.epicgames.com/spt-assets/e56a7411805046d3b5b7253a6e4e0faa/monument-valley-1gys5.jpg"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/spt-assets/e56a7411805046d3b5b7253a6e4e0faa/monument-valley-bp09k.jpg"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "monument-valley-1d99d3",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "offerMappings": [
+       {
+        "pageSlug": "monument-valley-1d99d3",
+        "pageType": "productHome"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "originalPrice": 699,
+        "fmtPrice": {
+         "originalPrice": "6,99 €"
+        }
+       }
+      },
+      "promotions": {
+       "promotionalOffers": [],
+       "upcomingPromotionalOffers": [
+        {
+         "promotionalOffers": [
+          {
+           "startDate": "2026-12-10T16:00:00.000Z",
+           "endDate": "2027-01-07T16:00:00.000Z",
+           "discountSetting": {
+            "discountType": "PERCENTAGE",
+            "discountPercentage": 35
+           }
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "title": "Luftrausers",
+      "id": "c76046dddcdb43619c33ce0395941033",
+      "namespace": "639daf403b554ee9b02eee5eedafc302",
+      "description": "The skies are aflame and the seas will overflow with wreckage in Vlambeer’s stylish arcade shooter LUFTRAUSERS! Take to the skies in customized fighter planes to battle battleships, submarines, and rival aces for glory, honor, and high scores.",
+      "productSlug": null,
+      "offerType": "BASE_GAME",
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn1.epicgames.com/spt-assets/85ddeeec9d4243b3a2d78aab87bfae7f/luftrausers-1mxb1.png"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/spt-assets/85ddeeec9d4243b3a2d78aab87bfae7f/luftrausers-11phb.png"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "luftrausers-51e5e9",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "offerMappings": [
+       {
+        "pageSlug": "luftrausers-51e5e9",
+        "pageType": "productHome"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "originalPrice": 899,
+        "fmtPrice": {
+         "originalPrice": "8,99 €"
+        }
+       }
+      },
+      "promotions": null
+     },
+     {
+      "title": "TerraScape",
+      "id": "af6b823b8698465f9aedc3bddf2e8686",
+      "namespace": "bfb80547289b477193ce3b14d83cd292",
+      "description": "Construa reinos deslumbrantes em ilhas flutuantes posicionando edifícios estrategicamente neste aconchegante puzzle medieval de construção de cidades. Descubra combinações secretas, enfrente desafios semanais e explore mapas gerados proceduralmente em diversos modos para um jogador e multijogador.",
+      "productSlug": null,
+      "offerType": "BASE_GAME",
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn1.epicgames.com/spt-assets/a740a2eed807469f88b9dff17e7cd3a3/terrascape-j7p8d.png"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/spt-assets/a740a2eed807469f88b9dff17e7cd3a3/terrascape-x908b.png"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "terrascape-2b12b1",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "offerMappings": [
+       {
+        "pageSlug": "terrascape-2b12b1",
+        "pageType": "productHome"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "originalPrice": 1529,
+        "fmtPrice": {
+         "originalPrice": "15,29 €"
+        }
+       }
+      },
+      "promotions": null
+     },
+     {
+      "title": "Flotsam",
+      "id": "3be0a0d8479946d78f60d90c9442a0b4",
+      "namespace": "27e33143fc9e4de8bbf76782292933d4",
+      "description": "O jogo de sobrevivência da cidade flutuante de lixo! Recolhe o lixo precioso que conseguires da superfície do oceano e faz a tua cidade crescer, enquanto te esforças ao máximo para sobreviver neste colorido mundo pós-apocalíptico.",
+      "productSlug": null,
+      "offerType": "BASE_GAME",
+      "keyImages": [
+       {
+        "type": "OfferImageWide",
+        "url": "https://cdn1.epicgames.com/spt-assets/5c36b876e80d4285b9993947efeeaf2b/flotsam-1yczl.jpg"
+       },
+       {
+        "type": "Thumbnail",
+        "url": "https://cdn1.epicgames.com/spt-assets/5c36b876e80d4285b9993947efeeaf2b/flotsam-12rh8.jpg"
+       }
+      ],
+      "catalogNs": {
+       "mappings": [
+        {
+         "pageSlug": "flotsam-266287",
+         "pageType": "productHome"
+        }
+       ]
+      },
+      "offerMappings": [
+       {
+        "pageSlug": "flotsam-266287",
+        "pageType": "productHome"
+       }
+      ],
+      "price": {
+       "totalPrice": {
+        "originalPrice": 1999,
+        "fmtPrice": {
+         "originalPrice": "19,99 €"
+        }
+       }
+      },
+      "promotions": {
+       "promotionalOffers": [],
+       "upcomingPromotionalOffers": [
+        {
+         "promotionalOffers": [
+          {
+           "startDate": "2026-11-05T16:00:00.000Z",
+           "endDate": "2026-11-12T16:00:00.000Z",
+           "discountSetting": {
+            "discountType": "PERCENTAGE",
+            "discountPercentage": 0
+           }
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ }
+}
