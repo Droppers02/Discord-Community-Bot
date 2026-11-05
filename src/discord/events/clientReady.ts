@@ -20,6 +20,7 @@ import { startScheduler } from "../../modules/utility/scheduler.js";
 import { startSocialJobs } from "../../modules/community/socialJobs.js";
 import { musicAvailable } from "../../modules/music/ytdlp.js";
 import { startLockdownJobs } from "../../modules/moderation/lockdown.js";
+import { startLfgJobs } from "../../modules/lfg/lfgService.js";
 
 createEvent({
     name: "Arranque: emojis, caches e tarefas de fundo",
@@ -70,6 +71,7 @@ createEvent({
         startScheduler(client);
         startSocialJobs(client);
         startLockdownJobs(client);
+        startLfgJobs(client);
         musicAvailable();
 
         logger.info(`EPA BOTCHI pronto como ${client.user.tag} — ${openTickets} ticket(s) aberto(s) em cache.`);

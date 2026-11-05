@@ -123,6 +123,19 @@ export function channelField(id: string, label: string, selected: string[], kind
     return built;
 }
 
+/** Cargo(s) num modal. */
+export function roleField(id: string, label: string, selected: string[], opts?: { min?: number; max?: number; description?: string }): LabelBuilder {
+    const select = new RoleSelectMenuBuilder()
+        .setCustomId(id)
+        .setMinValues(opts?.min ?? 0)
+        .setMaxValues(opts?.max ?? 1)
+        .setRequired((opts?.min ?? 0) > 0);
+    if (selected.length) select.setDefaultRoles(...selected.slice(0, opts?.max ?? 1));
+    const built = new LabelBuilder().setLabel(label).setRoleSelectMenuComponent(select);
+    if (opts?.description) built.setDescription(opts.description);
+    return built;
+}
+
 /** Envio de ficheiros num modal (imagens das confissões, provas das denúncias…). */
 export function uploadField(id: string, label: string, opts?: { max?: number; required?: boolean; description?: string }): LabelBuilder {
     const upload = new FileUploadBuilder().setCustomId(id).setMinValues(opts?.required ? 1 : 0).setMaxValues(opts?.max ?? 1).setRequired(opts?.required ?? false);

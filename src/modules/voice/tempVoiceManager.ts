@@ -14,6 +14,8 @@ import { t } from "../../lib/i18n.js";
 
 /** Prefixo das salas de voz criadas por /voz dentro de um ticket. */
 const TICKET_VOICE_PREFIX = "🎫・voz-";
+/** Prefixo das salas dos grupos (/grupo) — também temporárias. */
+export const LFG_VOICE_PREFIX = "🎮・";
 
 /**
  * Tempo que uma sala temporária pode ficar vazia antes de ser apagada.
@@ -42,6 +44,11 @@ function untrackTempChannel(channelId: string): void {
     for (const [ticketId, voiceId] of ticketVoiceByTicketChannel) {
         if (voiceId === channelId) ticketVoiceByTicketChannel.delete(ticketId);
     }
+}
+
+/** Passa a seguir uma sala criada noutro sítio (ex.: grupos): é apagada quando ficar vazia. */
+export function adoptTempChannel(channelId: string): void {
+    trackTempChannel(channelId, Date.now());
 }
 
 export function getTicketVoiceChannel(ticketChannelId: string): string | null {
@@ -178,7 +185,7 @@ export async function sweepOrphanTempChannels(guild: Guild): Promise<number> {
         if (channel.type !== ChannelType.GuildVoice) continue;
         if (channel.id === settings.hub_channel) continue;
 
-        const isTicketVoice = channel.name.startsWith(TICKET_VOICE_PREFIX);
+        const isTicketVoice = channel.name.startsWith(TICKET_VOICE_PREFIX) || channel.name.startsWith(LFG_VOICE_PREFIX);
         const isHubRoom = Boolean(settings.hub_channel)
             && Boolean(settings.category_id)
             && channel.parentId === settings.category_id
