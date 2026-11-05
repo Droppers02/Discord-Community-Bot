@@ -4,6 +4,48 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [4.0.0] - 2026-11-05
+
+### 🚀 Dez sistemas novos
+
+**Moderação**
+- **Trancar e destrancar** (`/trancar canal|servidor|estado`, `/destrancar`): com duração, aviso no
+  canal e reposição exata das permissões (guardadas em `channel_locks`). O anti-raid pode trancar o
+  servidor sozinho durante X minutos. `/config` → Trancas e horário de silêncio.
+- **Horário de silêncio**: até 8 regras de canais que fecham ou ficam em slowmode a certas horas
+  (Lisboa), em todos os dias ou só em alguns, mesmo atravessando a meia-noite.
+- **Ficha do membro** (botão direito e `/mod ficha`): conta, convite, atividade, casos, denúncias,
+  apelos, equipa, notas da equipa (`/mod nota`) e selo de risco, com ações rápidas.
+- **Denúncias** (botão direito → Reportar mensagem): motivo, detalhes e capturas; cartão para a
+  equipa com cópia, imagens guardadas, histórico do autor e menu "Resolver"; denúncias juntam-se;
+  esconder automaticamente com N denúncias; `/mod denuncias`.
+
+**Comunidade**
+- **Procurar grupo** (`/grupo criar|lista`): vagas, lista de espera, sala de voz, lembretes,
+  expiração; jogos importados dos auto-cargos.
+- **Equipas** (`/equipa …`): cargo e canais próprios, oficiais, convites, banco e guerra semanal
+  alimentada pelo XP.
+- **Previsões** (`/previsao`): apostas parimutuel em EPA Coins, fecho automático, taxa opcional.
+- **Contagem**: contas seguras, recordes por ronda, vidas, prémios, marcos e cargo da vergonha;
+  avisa quando o último número é apagado ou editado.
+- **Confissões anónimas** (`/confissao`): texto e imagem, revisão, respostas num fio, bloqueio
+  sem revelar e revelação só pela administração (fica na auditoria).
+- **Jogos grátis**: Epic (API oficial) + GamerPower, sem repetir, com resumo à quinta.
+- **Adivinha a música** (`/musica quiz`): amostras do Deezer, 13 categorias ou um artista,
+  palpites tolerantes a erros, dicas e moedas; aparece no `/jogos`.
+- **EPA Wrapped** (`/wrapped`): retrospetiva em imagem do membro e do servidor (este mês, o
+  passado, o ano), com publicação automática no dia 1.
+
+**Base**
+- `/config` com dois menus (gestão e comunidade) — já não cabia tudo num só.
+- Campos novos nos modais: escolhas, canais, cargos e envio de ficheiros.
+- Base de dados: `channel_locks`, `member_staff_notes`, `message_reports`, `counting_state`,
+  `counting_members`, `confessions`, `lfg_groups`, `free_game_posts`, `predictions`,
+  `prediction_bets`, `teams`, `team_members`, `team_invites`, `team_weekly`, `wrapped_counts`,
+  `voice_pairs` e 9 tabelas de definições.
+
+---
+
 ## [3.6.0] - 2026-11-05
 
 ### 🧹 `/limpar` — limpeza de mensagens completa

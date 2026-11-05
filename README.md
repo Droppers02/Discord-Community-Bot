@@ -28,6 +28,16 @@ PixelTickets, sem licenças, sem painel web e sem nada de venda.
   aprova (desbane e dá um convite de uso único) ou recusa (com motivo e espera até ao próximo pedido).
   O membro vê tudo no `/apelo` — perguntas, decisão e convite. Requer **User Install** ligado no
   Developer Portal (Installation → Installation Contexts).
+- **Trancas e horário de silêncio** — `/trancar canal|servidor` (com duração e aviso no canal) e
+  `/destrancar`; ao destrancar, as permissões voltam exatamente ao que eram. O anti-raid pode
+  trancar o servidor sozinho, e há horários em que canais fecham ou ficam em slowmode (ex.: 3h–8h).
+- **Ficha do membro** — botão direito → Apps → **Ficha do membro** (ou `/mod ficha`): conta, convite,
+  atividade, casos, denúncias, apelos, equipa, notas privadas da equipa e um selo de risco, com
+  botões para avisar, castigar, limpar 24 h e deixar notas.
+- **Denúncias** — qualquer membro denuncia uma mensagem (botão direito → **Reportar mensagem**) com
+  motivo, detalhes e capturas. A equipa recebe um cartão com a cópia da mensagem e das imagens, o
+  histórico do autor e um menu "Resolver" (apagar, avisar, castigar, expulsar, banir); denúncias da
+  mesma mensagem juntam-se e quem denunciou é avisado.
 - **Proteção** — filtro de palavras (acentos, maiúsculas e "l33t" não escapam), links de conteúdo
   adulto, anti-raid (pausa os convites ou expulsa a vaga) e slowmode automático.
 - **Anti-spam**, **logs do servidor**, **log de entradas/saídas** com convites, **boas-vindas e
@@ -45,6 +55,23 @@ PixelTickets, sem licenças, sem painel web e sem nada de venda.
 - **Utilidades** — lembretes, notas pessoais, AFK, timestamps, emojis em grande, sondagens.
 - **Música** — YouTube, SoundCloud e links do Spotify; fila, pausa, repetir, baralhar, votar para
   pular, letras e playlists pessoais.
+- **Adivinha a música** (`/musica quiz`) — 30 s de cada música na voz (amostras do Deezer), 13
+  categorias (Top Portugal, anos 80 a 2010, rock, rap, anime, videojogos, Disney…) ou um artista;
+  palpites no chat com erros de escrita tolerados, dicas, revelação com a capa e moedas no fim.
+- **Procurar grupo** (`/grupo`) — cartão com vagas, entrar/sair, lista de espera, menção ao cargo do
+  jogo, sala de voz quando enche, lembrete à hora marcada e expiração automática.
+- **Equipas** (`/equipa`) — nome, tag, cor, cargo e canais próprios, oficiais, convites, banco de
+  moedas e a **guerra semanal**: o XP dos membros soma pontos e à segunda a vencedora ganha moedas.
+- **Previsões** (`/previsao`) — apostas de EPA Coins no resultado de qualquer coisa (estilo Twitch),
+  com percentagens e multiplicadores em direto; quem acerta divide o bolo.
+- **Contagem** — canal onde se conta à vez, com contas (6*7), recordes, vidas compradas com moedas,
+  prémios, marcos e cargo da vergonha para quem estraga.
+- **Confissões anónimas** (`/confissao`) — texto e imagem, revisão opcional da equipa sem saber quem
+  escreveu, respostas anónimas num fio e bloqueio de autores sem os revelar.
+- **Jogos grátis** — Epic Games, Steam, GOG, Prime Gaming e mais, anunciados quando ficam grátis,
+  com resumo da Epic à quinta e `/jogosgratis`.
+- **EPA Wrapped** (`/wrapped`) — retrospetiva em imagem de cada membro (mensagens, voz, XP, dias
+  seguidos, favoritos, com quem mais fala, parceiro de voz, persona) e do servidor, todos os meses.
 
 ## Requisitos
 

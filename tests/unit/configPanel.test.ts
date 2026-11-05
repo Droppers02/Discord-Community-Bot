@@ -39,7 +39,9 @@ function fakeGuild(): Guild {
 const SECTIONS: ConfigSection[] = [
     "hub", "giveaways", "logs", "suggestions", "antispam", "support", "welcome",
     "voice", "roles", "ai", "custombot", "reactionroles", "social", "aimod", "stats", "broadcast",
-];
+    // 4.0
+    "lockdown", "reports", "counting", "confessions", "lfg", "freegames", "predictions", "teams", "wrapped",
+] as ConfigSection[];
 
 describe("config panel", () => {
     for (const section of SECTIONS) {
