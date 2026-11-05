@@ -1,4 +1,5 @@
 import { createEvent } from "#base";
+import { recordWrappedMessage } from "../../modules/wrapped/wrappedTracker.js";
 import { COLORS } from "../../lib/branding.js";
 import { buildContainer } from "../../lib/containers.js";
 import { CV2_FLAG } from "../../lib/discord.js";
@@ -19,6 +20,7 @@ createEvent({
     async run(message) {
         if (!message.inGuild() || message.author.bot || message.webhookId) return;
         recordMessageActivity(message.guildId, message.author.id);
+        recordWrappedMessage(message);
 
         const back = await clearAfk(message.guildId, message.author.id);
         if (back) {

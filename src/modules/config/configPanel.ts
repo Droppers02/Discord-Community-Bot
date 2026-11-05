@@ -53,6 +53,7 @@ import { buildLfgContainer } from "../lfg/lfgConfigView.js";
 import { buildFreeGamesContainer } from "../freegames/freeGamesConfigView.js";
 import { buildPredictionsContainer } from "../predictions/predictionConfigView.js";
 import { buildTeamsContainer } from "../teams/teamConfigView.js";
+import { buildWrappedContainer } from "../wrapped/wrappedService.js";
 
 export type ConfigSection = "hub" | "giveaways" | "logs" | "suggestions" | "antispam" | "support" | "welcome" | "voice" | "roles" | "reactionroles" | "social" | "stats" | "broadcast" | "sla" | "modmail" | "verify" | "levels" | "economy" | "games" | "moderation" | "welcomemsg" | "starboard" | "appeals" | "protection"
     | "lockdown" | "reports" | "counting" | "confessions" | "lfg" | "freegames" | "predictions" | "teams" | "wrapped";
@@ -160,6 +161,7 @@ const SECTION_OPTIONS: Array<{ value: Exclude<ConfigSection, "hub"> | "tickets";
     { value: "logs", label: tk("Logs do servidor"), description: tk("Registo de eventos do servidor por categoria."), group: "gestao", icon: "newspaper" },
     { value: "reports", label: tk("Denúncias"), description: tk("Membros denunciam mensagens; a equipa resolve num cartão com provas."), group: "gestao", icon: "report" },
     { value: "lockdown", label: tk("Trancas e horário de silêncio"), description: tk("Trancar canais/servidor, anti-raid e canais que fecham a certas horas."), group: "gestao", icon: "lock" },
+    { value: "wrapped", label: tk("EPA Wrapped"), description: tk("Retrospetivas em imagem de cada membro e do servidor, todos os meses."), group: "comunidade", icon: "gift" },
     { value: "levels", label: tk("Níveis e XP"), description: tk("XP por mensagem e voz, cargos de recompensa e ranking."), group: "comunidade", icon: "trophy" },
     { value: "economy", label: tk("Economia"), description: tk("EPA Coins: diário, trabalho, apostas máximas e lojas."), group: "comunidade", icon: "coin" },
     { value: "teams", label: tk("Equipas"), description: tk("Equipas com cargo, banco, convites e guerra semanal de pontos."), group: "comunidade", icon: "shield" },
@@ -808,6 +810,7 @@ export async function buildConfigComponents(section: ConfigSection, guildId: str
         case "freegames": return [await buildFreeGamesContainer(guildId)];
         case "predictions": return [await buildPredictionsContainer(guildId)];
         case "teams": return [await buildTeamsContainer(guildId)];
+        case "wrapped": return [await buildWrappedContainer(guildId)];
         case "hub":
         default: return [buildHubContainer()];
     }

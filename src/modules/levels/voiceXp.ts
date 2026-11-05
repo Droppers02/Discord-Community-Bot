@@ -1,4 +1,5 @@
 import { ChannelType, type Client, type VoiceBasedChannel } from "discord.js";
+import { recordVoicePairs } from "../wrapped/wrappedTracker.js";
 import { isAllowedGuild, ourGuilds } from "../../config.js";
 import { logger } from "../../lib/logger.js";
 import { addVoiceTime } from "../../repositories/levelRepository.js";
@@ -28,7 +29,9 @@ async function tick(client: Client<true>): Promise<void> {
         const channels = guild.channels.cache.filter((channel): channel is VoiceBasedChannel =>
             (channel.type === ChannelType.GuildVoice || channel.type === ChannelType.GuildStageVoice) && channel.id !== guild.afkChannelId);
         for (const channel of channels.values()) {
-            for (const member of eligibleMembers(channel)) {
+            const eligible = eligibleMembers(channel);
+            recordVoicePairs(guild.id, eligible.map((member) => member.id), 60);
+            for (const member of eligible) {
                 const ignored = isIgnored(settings, channel.id, channel.parentId, member.roles.cache.keys());
                 if (!giveXp || ignored) {
                     recordVoiceActivity(guild.id, member.id, 60);

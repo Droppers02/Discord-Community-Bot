@@ -1,4 +1,6 @@
 import { commandPayload, createEvent } from "#base";
+import { startWrappedTracker } from "../../modules/wrapped/wrappedTracker.js";
+import { startWrappedJobs } from "../../modules/wrapped/wrappedService.js";
 import { isAllowedGuild, loadRuntimeConfig } from "../../config.js";
 import { registerProcessLifecycle } from "../../lib/lifecycle.js";
 import { logger } from "../../lib/logger.js";
@@ -78,6 +80,8 @@ createEvent({
         startFreeGamesJobs(client);
         startPredictionJobs(client);
         startTeamJobs(client);
+        startWrappedTracker(client);
+        startWrappedJobs(client);
         musicAvailable();
 
         logger.info(`EPA BOTCHI pronto como ${client.user.tag} — ${openTickets} ticket(s) aberto(s) em cache.`);
