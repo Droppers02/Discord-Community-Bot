@@ -69,6 +69,7 @@ export async function ensureCommunitySchema(db: Executor): Promise<void> {
             last_message_id TEXT,
             record BIGINT NOT NULL DEFAULT 0,
             record_at BIGINT NOT NULL DEFAULT 0,
+            run_record BIGINT NOT NULL DEFAULT 0,
             saves INTEGER NOT NULL DEFAULT 0,
             total_counts BIGINT NOT NULL DEFAULT 0,
             fails INTEGER NOT NULL DEFAULT 0,

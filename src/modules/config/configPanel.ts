@@ -47,6 +47,7 @@ import { buildAppealContainer } from "../appeals/appealConfigView.js";
 import { buildProtectionContainer } from "../protection/protectionConfigView.js";
 import { buildLockdownContainer } from "../moderation/lockdownConfigView.js";
 import { buildReportsContainer } from "../reports/reportConfigView.js";
+import { buildCountingContainer } from "../counting/countingConfigView.js";
 
 export type ConfigSection = "hub" | "giveaways" | "logs" | "suggestions" | "antispam" | "support" | "welcome" | "voice" | "roles" | "reactionroles" | "social" | "stats" | "broadcast" | "sla" | "modmail" | "verify" | "levels" | "economy" | "games" | "moderation" | "welcomemsg" | "starboard" | "appeals" | "protection"
     | "lockdown" | "reports" | "counting" | "confessions" | "lfg" | "freegames" | "predictions" | "teams" | "wrapped";
@@ -161,6 +162,7 @@ const SECTION_OPTIONS: Array<{ value: Exclude<ConfigSection, "hub"> | "tickets";
     { value: "suggestions", label: tk("Sugestões"), description: tk("Canal, votação e moderação das sugestões."), group: "comunidade", icon: "megaphone" },
     { value: "starboard", label: tk("Starboard"), description: tk("Mensagens com mais ⭐ vão para um canal de destaque."), group: "comunidade", icon: "star" },
     { value: "reactionroles", label: tk("Auto-cargos"), description: tk("Painéis de cargos por botões ou menu."), group: "comunidade", icon: "role" },
+    { value: "counting", label: tk("Contagem"), description: tk("Canal onde se conta à vez, com recordes, vidas, prémios e vergonha."), group: "comunidade", icon: "chart" },
     { value: "social", label: tk("Alertas sociais"), description: tk("YouTube, TikTok, Twitch e Kick anunciados automaticamente."), group: "comunidade", icon: "megaphone" },
     { value: "stats", label: tk("Estatísticas"), description: tk("Contadores de membros, canais e boosts em nomes de canais."), group: "gestao", icon: "chart" },
     { value: "broadcast", label: tk("Publicação automática"), description: tk("Auto-publish dos canais de anúncios."), group: "gestao", icon: "bell" },
@@ -790,6 +792,7 @@ export async function buildConfigComponents(section: ConfigSection, guildId: str
         case "protection": return [await buildProtectionContainer(guildId)];
         case "lockdown": return [await buildLockdownContainer(guildId)];
         case "reports": return [await buildReportsContainer(guildId)];
+        case "counting": return [await buildCountingContainer(guildId)];
         case "hub":
         default: return [buildHubContainer()];
     }
