@@ -14,7 +14,7 @@ import { getGamesSettings, type GamesSettings } from "./gamesSettings.js";
 
 // ─── Catálogo ────────────────────────────────────────────────────────────────
 
-export const GAME_KEYS = ["galo", "4emlinha", "ppt", "forca", "quiz", "termo", "blackjack", "minas", "moeda", "dados", "slots", "roleta"] as const;
+export const GAME_KEYS = ["galo", "4emlinha", "ppt", "forca", "quiz", "termo", "blackjack", "minas", "moeda", "dados", "slots", "roleta", "musica"] as const;
 export type GameKey = (typeof GAME_KEYS)[number];
 
 export const GAMES: Record<GameKey, { label: string; icon: string; command: string; description: string }> = {
@@ -30,6 +30,7 @@ export const GAMES: Record<GameKey, { label: string; icon: string; command: stri
     dados: { label: tk("Dados"), icon: "🎲", command: "/apostar dados", description: tk("Acerta no número do dado e ganha 5,5×.") },
     slots: { label: tk("Slots"), icon: "🎰", command: "/apostar slots", description: tk("Três iguais pagam até 250×.") },
     roleta: { label: tk("Roleta"), icon: "🎡", command: "/apostar roleta", description: tk("Cor, par/ímpar, metade ou número certo (36×).") },
+    musica: { label: tk("Adivinha a música"), icon: "🎵", command: "/musica quiz", description: tk("30 segundos de música na voz: acerta no título e no artista antes dos outros.") },
 };
 
 export function isGameKey(value: string): value is GameKey {

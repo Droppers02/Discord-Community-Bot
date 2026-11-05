@@ -1,4 +1,7 @@
 import { createCommand } from "#base";
+import { controlQuiz, QUIZ_CATEGORIES, quizRunning, startMusicQuiz, type QuizCategory } from "../../../modules/musicquiz/musicQuiz.js";
+
+const QUIZ_CATEGORY_KEYS = Object.keys(QUIZ_CATEGORIES) as QuizCategory[];
 import { ApplicationCommandOptionType, ApplicationCommandType, MessageFlags, PermissionFlagsBits, type ChatInputCommandInteraction } from "discord.js";
 import { query, queryOne } from "#database";
 import { COLORS } from "../../../lib/branding.js";
@@ -21,6 +24,7 @@ async function play(interaction: ChatInputCommandInteraction<"cached">, input: s
     if (!voice) return void fail(interaction, t("Entra primeiro num canal de voz."));
     const me = interaction.guild.members.me;
     if (me && !voice.permissionsFor(me).has([PermissionFlagsBits.Connect, PermissionFlagsBits.Speak])) return void fail(interaction, t("Não tenho permissão para entrar ou falar em {channel}.", { channel: `<#${voice.id}>` }));
+    if (quizRunning(interaction.guildId)) return void fail(interaction, t("Está a decorrer um quiz de música — espera que acabe (ou `/musica quiz-parar`)."));
     const existing = getQueue(interaction.guildId);
     if (existing && existing.voiceChannelId !== voice.id) return void fail(interaction, t("Já estou a tocar em {channel}.", { channel: `<#${existing.voiceChannelId}>` }));
     await interaction.deferReply();
@@ -53,12 +57,40 @@ createCommand({
         { name: "remover", description: t("Tira uma música da fila."), type: ApplicationCommandOptionType.Subcommand, options: [{ name: "posicao", description: t("Posição na fila"), type: ApplicationCommandOptionType.Integer, required: true, minValue: 1 }] },
         { name: "baralhar", description: t("Baralha a fila."), type: ApplicationCommandOptionType.Subcommand },
         { name: "repetir", description: t("Repetição: nenhuma, a música ou a fila."), type: ApplicationCommandOptionType.Subcommand, options: [{ name: "modo", description: t("Modo"), type: ApplicationCommandOptionType.String, required: false, choices: LOOP_MODES.map((value) => ({ name: t(LOOP_LABELS[value]), value })) }] },
+        {
+            name: "quiz",
+            description: t("Adivinha a música: 30 s de cada música na voz, ganha quem acertar primeiro."),
+            type: ApplicationCommandOptionType.Subcommand,
+            options: [
+                { name: "categoria", description: t("Que músicas"), type: ApplicationCommandOptionType.String, required: false, choices: QUIZ_CATEGORY_KEYS.map((key) => ({ name: `${QUIZ_CATEGORIES[key].emoji} ${t(QUIZ_CATEGORIES[key].label)}`, value: key })) },
+                { name: "rondas", description: t("Quantas músicas (5 a 20, por defeito 10)"), type: ApplicationCommandOptionType.Integer, required: false, minValue: 5, maxValue: 20 },
+                { name: "artista", description: t("Só músicas deste artista (em vez de uma categoria)"), type: ApplicationCommandOptionType.String, required: false, maxLength: 80 },
+            ],
+        },
+        { name: "quiz-parar", description: t("Termina o quiz de música (mostra a classificação)."), type: ApplicationCommandOptionType.Subcommand },
         { name: "letra", description: t("A letra da música (a que está a tocar ou outra)."), type: ApplicationCommandOptionType.Subcommand, options: [{ name: "musica", description: t("Outra música (vazio = a que está a tocar)"), type: ApplicationCommandOptionType.String, required: false, maxLength: 200 }] },
     ],
     async run(interaction) {
         if (!interaction.inCachedGuild()) return;
         const sub = interaction.options.getSubcommand();
         if (sub === "tocar") return play(interaction, interaction.options.getString("pesquisa", true));
+
+        if (sub === "quiz") {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            if (!interaction.channel) return void fail(interaction, t("Usa o comando num canal de texto."));
+            const problem = await startMusicQuiz({
+                member: interaction.member,
+                channel: interaction.channel,
+                category: (interaction.options.getString("categoria") as QuizCategory | null) ?? "top-pt",
+                artist: interaction.options.getString("artista")?.trim() || null,
+                rounds: interaction.options.getInteger("rondas") ?? 10,
+            });
+            return void interaction.editReply({ components: [problem ? errorContainer(problem) : successContainer(t("🎵 Quiz a começar! Vai ao chat e ao canal de voz."))], flags: CV2_FLAG });
+        }
+        if (sub === "quiz-parar") {
+            const problem = await controlQuiz(interaction.member, "stop");
+            return void interaction.reply({ components: [problem ? errorContainer(problem) : successContainer(t("Quiz terminado — a classificação vem já."))], flags: CV2_FLAG | MessageFlags.Ephemeral });
+        }
 
         if (sub === "letra") {
             const custom = interaction.options.getString("musica");

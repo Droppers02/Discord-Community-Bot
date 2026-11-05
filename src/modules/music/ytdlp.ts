@@ -143,6 +143,23 @@ export function openAudio(track: Track): { stream: Readable; kill: () => void } 
     return { stream: ffmpeg.stdout as Readable, kill };
 }
 
+/** Áudio de um link direto (ex.: as amostras de 30 s do Deezer), só com o ffmpeg. */
+export function openRemoteAudio(url: string, maxSeconds = 30): { stream: Readable; kill: () => void } {
+    const ffmpeg: ChildProcess = spawn(FFMPEG, [
+        "-loglevel", "error", "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "3",
+        "-i", url, "-t", String(maxSeconds), "-vn", "-ac", "2", "-ar", "48000", "-c:a", "libopus", "-b:a", "128k", "-f", "ogg", "pipe:1",
+    ], { windowsHide: true });
+    ffmpeg.on("error", (error) => logger.warn("Áudio: ffmpeg falhou a arrancar:", error));
+    return { stream: ffmpeg.stdout as Readable, kill: () => void ffmpeg.kill("SIGKILL") };
+}
+
+/** Só o ffmpeg (sem o yt-dlp) — chega para as amostras do quiz de música. */
+let ffmpegOk: boolean | null = null;
+export function ffmpegAvailable(): boolean {
+    if (ffmpegOk === null) ffmpegOk = spawnSync(FFMPEG, ["-version"], { timeout: 10_000, windowsHide: true }).status === 0;
+    return ffmpegOk;
+}
+
 export function formatDuration(seconds: number | null): string {
     if (seconds === null || !Number.isFinite(seconds)) return "—";
     const h = Math.floor(seconds / 3600);
