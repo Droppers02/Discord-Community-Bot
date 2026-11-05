@@ -113,7 +113,9 @@ const SECTIONS: Record<HelpSection, { label: string; icon: string; description: 
         icon: "shield",
         description: tk("Moderação e gestão do dia a dia."),
         commands: [
-            ["/mod", tk("Avisar, castigar, expulsar, banir e limpar mensagens")],
+            ["/mod", tk("Avisar, castigar, expulsar e banir (com casos numerados)")],
+            ["/limpar", tk("Apagar mensagens: últimas N, desde uma, intervalo, por tempo ou de um membro — com filtros, pré-visualização e cópia")],
+            [tk("Botão direito → Apps"), tk("Limpar a partir daqui · Limpar intervalo · Limpar mensagens 24h (num membro)")],
             ["/cargotemp", tk("Cargos com prazo (caem sozinhos)")],
             ["/blacklist", tk("Impedir alguém de abrir tickets")],
             ["/dashboard-staff", tk("Métricas dos tickets")],

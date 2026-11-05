@@ -1,4 +1,4 @@
-import { type Guild, type GuildMember, type GuildTextBasedChannel, type TextChannel, type User } from "discord.js";
+import { FileBuilder, type AttachmentBuilder, type Guild, type GuildMember, type TextChannel, type User } from "discord.js";
 import { COLORS } from "../../lib/branding.js";
 import { buildContainer } from "../../lib/containers.js";
 import { CV2_FLAG, hasSuperAdminAccess, outranks } from "../../lib/discord.js";
@@ -98,26 +98,35 @@ async function notify(user: User, guild: Guild, action: ModAction, reason: strin
     }).then(() => true).catch(() => false);
 }
 
-export async function modLog(guild: Guild, entry: ModCase, extra: string | null = null): Promise<void> {
+/** Publica o caso no canal de registo de moderação. Devolve se ficou lá (com o ficheiro, se houver). */
+export async function modLog(guild: Guild, entry: ModCase, extra: string | null = null, file: AttachmentBuilder | null = null): Promise<boolean> {
     const settings = await getModerationSettings(guild.id);
-    if (!settings.log_channel) return;
+    if (!settings.log_channel) return false;
     const channel = guild.channels.cache.get(settings.log_channel);
-    if (!channel?.isTextBased()) return;
-    await (channel as TextChannel).send({
-        components: [buildContainer({
-            color: ACTION_COLORS[entry.action],
-            title: `${e(ACTION_ICONS[entry.action])} ${t("Caso #{n} — {action}", { n: entry.case_number, action: t(ACTION_LABELS[entry.action]) })}`,
-            fields: [
-                { name: t("Membro"), value: `<@${entry.user_id}> (\`${entry.user_tag}\` · ${entry.user_id})` },
-                { name: t("Moderador"), value: `<@${entry.moderator_id}>` },
-                { name: t("Motivo"), value: entry.reason ?? t("*Sem motivo*") },
-                ...(entry.duration_seconds ? [{ name: t("Duração"), value: humanizeDuration(entry.duration_seconds * 1000) }] : []),
-                ...(extra ? [{ name: t("Nota"), value: extra }] : []),
-            ],
-        })],
+    if (!channel?.isTextBased()) return false;
+    const purge = entry.action === "purge";
+    const container = buildContainer({
+        color: ACTION_COLORS[entry.action],
+        title: `${e(ACTION_ICONS[entry.action])} ${t("Caso #{n} — {action}", { n: entry.case_number, action: t(ACTION_LABELS[entry.action]) })}`,
+        fields: [
+            // Numa limpeza o "membro" é o filtrado (ou o próprio moderador): o que conta é o resumo.
+            ...(purge && entry.user_id === entry.moderator_id ? [] : [{ name: purge ? t("Mensagens de") : t("Membro"), value: `<@${entry.user_id}> (\`${entry.user_tag}\` · ${entry.user_id})` }]),
+            { name: t("Moderador"), value: `<@${entry.moderator_id}>` },
+            { name: purge ? t("O que foi apagado") : t("Motivo"), value: entry.reason ?? t("*Sem motivo*") },
+            ...(entry.duration_seconds ? [{ name: t("Duração"), value: humanizeDuration(entry.duration_seconds * 1000) }] : []),
+            ...(extra ? [{ name: t("Nota"), value: extra }] : []),
+        ],
+    });
+    if (file) container.addFileComponents(new FileBuilder().setURL(`attachment://${file.name}`));
+    return (channel as TextChannel).send({
+        components: [container],
+        files: file ? [file] : [],
         flags: CV2_FLAG,
         allowedMentions: { parse: [] },
-    }).catch((error) => logger.warn("Moderação: falha a registar o caso:", error));
+    }).then(() => true).catch((error) => {
+        logger.warn("Moderação: falha a registar o caso:", error);
+        return false;
+    });
 }
 
 async function record(guild: Guild, user: User, moderatorId: string, action: ModAction, reason: string | null, durationMs: number | null, extra: string | null = null): Promise<ModCase> {
@@ -216,55 +225,14 @@ export async function unbanUser(guild: Guild, user: User, moderator: GuildMember
     return { entry: await record(guild, user, moderator.id, "unban", reason, null), dmSent: false, escalation: null };
 }
 
-/** Apaga até 100 mensagens recentes (o Discord só deixa apagar em massa até 14 dias). */
-export async function purgeMessages(channel: GuildTextBasedChannel, moderator: GuildMember, amount: number, filterUserId: string | null): Promise<number> {
-    const fetched = await channel.messages.fetch({ limit: filterUserId ? 100 : Math.min(100, amount) });
-    const cutoff = Date.now() - 14 * 86_400_000 + 60_000;
-    const targets = [...fetched.values()]
-        .filter((message) => message.createdTimestamp > cutoff && !message.pinned)
-        .filter((message) => !filterUserId || message.author.id === filterUserId)
-        .slice(0, amount);
-    if (!targets.length) return 0;
-    const deleted = await channel.bulkDelete(targets, true);
-    const target = filterUserId ? await channel.client.users.fetch(filterUserId).catch(() => null) : null;
-    await record(channel.guild, target ?? moderator.user, moderator.id, "purge", t("{count} mensagens em {channel}", { count: deleted.size, channel: `<#${channel.id}>` }), null);
-    return deleted.size;
-}
-
-/** ID de mensagem a partir de um ID ou de um link de mensagem. */
-export function messageIdFrom(input: string): string | null {
-    const match = input.trim().match(/(\d{15,25})\s*$/);
-    return match ? match[1]! : null;
-}
-
 /**
- * Apaga as mensagens entre `fromId` e `toId` (inclusive; sem `toId`, até à mais recente) — o
- * "apartir" e o "intervalo" do bot antigo. No máximo 500, e só as com menos de 14 dias.
+ * Regista uma limpeza feita pelo /limpar: caso numerado, auditoria e o registo de moderação com a
+ * cópia (HTML) das mensagens apagadas. `logged` diz se a cópia ficou no canal de registo.
  */
-export async function purgeRange(channel: GuildTextBasedChannel, moderator: GuildMember, fromId: string, toId: string | null): Promise<number> {
-    const from = BigInt(fromId);
-    const to = toId ? BigInt(toId) : null;
-    const [low, high] = to !== null && to < from ? [to, from] : [from, to];
-    const cutoff = Date.now() - 14 * 86_400_000 + 60_000;
-    const collected: string[] = [];
-    let after = (low - 1n).toString();
-    for (let page = 0; page < 5; page++) {
-        const batch = await channel.messages.fetch({ limit: 100, after });
-        if (!batch.size) break;
-        const sorted = [...batch.values()].sort((a, b) => (BigInt(a.id) < BigInt(b.id) ? -1 : 1));
-        for (const message of sorted) {
-            if (high !== null && BigInt(message.id) > high) break;
-            if (message.createdTimestamp > cutoff && !message.pinned) collected.push(message.id);
-        }
-        const last = sorted.at(-1)!;
-        if ((high !== null && BigInt(last.id) >= high) || batch.size < 100) break;
-        after = last.id;
-    }
-    let deleted = 0;
-    for (let i = 0; i < collected.length; i += 100) {
-        const result = await channel.bulkDelete(collected.slice(i, i + 100), true);
-        deleted += result.size;
-    }
-    if (deleted) await record(channel.guild, moderator.user, moderator.id, "purge", t("{count} mensagens em {channel} (por intervalo)", { count: deleted, channel: `<#${channel.id}>` }), null);
-    return deleted;
+export async function recordPurge(guild: Guild, moderator: GuildMember, target: User | null, summary: string, backup: AttachmentBuilder | null): Promise<{ caseNumber: number; logged: boolean }> {
+    const user = target ?? moderator.user;
+    const entry = await createCase(guild.id, { user_id: user.id, user_tag: user.tag, moderator_id: moderator.id, action: "purge", reason: summary, duration_seconds: null });
+    appendAuditLog({ guildId: guild.id, actorId: moderator.id, action: "mod.purge", details: { userId: user.id, case: entry.case_number, reason: summary } });
+    const logged = await modLog(guild, entry, null, backup);
+    return { caseNumber: entry.case_number, logged };
 }

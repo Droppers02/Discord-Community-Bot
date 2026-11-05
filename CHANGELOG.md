@@ -4,6 +4,36 @@ Todas as mudanças notáveis neste projeto serão documentadas neste ficheiro.
 
 ---
 
+## [3.6.0] - 2026-11-05
+
+### 🧹 `/limpar` — limpeza de mensagens completa
+
+Substitui o `/mod limpar` (que só fazia as últimas 100 ou um intervalo de 500, sem filtros).
+
+- **5 modos**: `recentes` (as últimas N, até 1000) · `desde` (a partir de uma mensagem, inclusive,
+  até à mais recente) · `intervalo` (entre duas, as duas inclusive, por qualquer ordem) · `periodo`
+  (os últimos 15m/2h/1d…, até 30 dias) · `membro` (as mensagens de alguém, neste canal ou em **todos
+  os canais** — também com o ID de quem já saiu).
+- **Filtros** em todos: membro, só bots / só pessoas, tipo (links, convites, ficheiros, imagens e
+  vídeos, embeds, stickers, menções, só texto, mensagens do sistema), "contém o texto" e fixadas
+  (por defeito ficam). Opção `canal` para limpar outro canal sem lá ir.
+- Aceita **link da mensagem, ID, ou o "canal-mensagem"** do Shift + Copiar ID; se o link for de
+  outro canal, limpa nesse canal.
+- **Pré-visualização** a partir de 20 mensagens: quantas, quem escreveu, onde, de quando a quando,
+  filtros, fixadas que ficam e as que têm mais de 14 dias. Botões **Apagar**, **Apagar + antigas**
+  (o Discord só as deixa apagar uma a uma — até 100), **Só as de X** e **Cancelar**.
+- **Cópia HTML** das mensagens apagadas, com as imagens até 1 MB embutidas (depois de apagadas, os
+  links do Discord deixam de abrir), anexada ao caso no registo de moderação — ou entregue a quem
+  limpou, se não houver canal de registo. Cada limpeza fica como caso numerado.
+- **Botão direito → Apps**: **Limpar a partir daqui** (numa mensagem), **Limpar intervalo** (1.º
+  clique marca o início, 2.º clique noutra mensagem limpa entre as duas) e **Limpar mensagens 24h**
+  (num membro: tudo o que escreveu nas últimas 24 h, em todos os canais — para raids e spam).
+- As antigas apagadas uma a uma já não enchem o registo de mensagens com entradas soltas.
+- Proteções: uma limpeza de cada vez por canal; o bot confirma as permissões dele e se quem pede
+  vê o canal; os pedidos expiram ao fim de 5 minutos.
+
+---
+
 ## [3.5.0] - 2026-11-04
 
 ### 🏷️ Auto-cargos do bot antigo

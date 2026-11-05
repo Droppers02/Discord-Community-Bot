@@ -14,8 +14,13 @@ PixelTickets, sem licenças, sem painel web e sem nada de venda.
 - **Transcripts em ficheiro** — ao fechar, a conversa vira um `.html` anexado ao log do fecho.
 - **Verificação à entrada** — captcha de figuras, cargo de verificado/não verificado, expulsão de
   quem não se verifica, regra de contas recentes.
-- **Moderação** — `/mod` com casos numerados (avisar, castigo, expulsar, banir, limpar por
-  quantidade ou intervalo), castigos automáticos por avisos acumulados e registo próprio.
+- **Moderação** — `/mod` com casos numerados (avisar, castigo, expulsar, banir), castigos
+  automáticos por avisos acumulados e registo próprio.
+- **Limpeza de mensagens** — `/limpar` com as últimas N (até 1000), desde uma mensagem, um
+  intervalo, por tempo ou de um membro (num canal ou em todos), com filtros (bots/pessoas, links,
+  convites, imagens, ficheiros, texto, fixadas…). Pré-visualização antes de apagar, mensagens com
+  mais de 14 dias uma a uma, e uma cópia HTML (com as imagens) no registo de moderação. No botão
+  direito: **Limpar a partir daqui**, **Limpar intervalo** e **Limpar mensagens 24h** (num membro).
 - **Revisão de bans (ban appeal)** — quem é banido recebe por DM um link para **adicionar o bot à
   conta** (User Install: o Discord não entrega ao bot os cliques nem os comandos de quem já não
   partilha nenhum servidor com ele) e depois usa o `/apelo` na DM com o bot. A equipa recebe o pedido

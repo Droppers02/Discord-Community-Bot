@@ -4,6 +4,7 @@ import { COLORS } from "../../../lib/branding.js";
 import { row } from "../../../lib/containers.js";
 import { emoji } from "../../../lib/emojis.js";
 import { logContainer, sendServerLog } from "../../../modules/logs/eventLogger.js";
+import { wasDeletedByPurge } from "../../../modules/moderation/purgeFilters.js";
 import { t } from "../../../lib/i18n.js";
 
 function truncate(value: string | null | undefined, max = 1000): string {
@@ -21,6 +22,8 @@ createEvent({
     event: "messageDelete",
     async run(message) {
         if (!message.guildId || message.author?.bot) return;
+        // Apagada pelo /limpar (as antigas vão uma a uma): fica no caso, com a cópia, e não aqui.
+        if (wasDeletedByPurge(message.id)) return;
         await sendServerLog(message.client, message.guildId, "messages", logContainer({
             color: COLORS.danger,
             title: `${emoji.trash} ${t("Mensagem apagada")}`,

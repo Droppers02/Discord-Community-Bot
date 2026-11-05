@@ -81,71 +81,116 @@ function componentText(message: Message): string {
     return parts.join("\n");
 }
 
-function renderHtml(channel: TextChannel, ticket: TicketRecord, transcriptId: string, messages: Message[]): string {
-    const rows = messages.map((message) => {
+export interface MessagesHtmlOptions {
+    /** Título do separador do browser. */
+    title: string;
+    /** Título no topo da página. */
+    heading: string;
+    /** Pares "nome: valor" do cabeçalho. */
+    meta: Array<[string, string]>;
+    /** Da mais antiga para a mais recente. */
+    messages: Message[];
+    /** Mostrar o #canal em cada mensagem (cópias com mensagens de vários canais). */
+    showChannel?: boolean;
+    /** Imagens já descarregadas (id do anexo → data URI): continuam a abrir depois de apagadas. */
+    images?: Map<string, string>;
+    footer?: string;
+}
+
+/** Página HTML autónoma com uma lista de mensagens (transcripts dos tickets e cópias das limpezas). */
+export function renderMessagesHtml(options: MessagesHtmlOptions): string {
+    const rows = options.messages.map((message) => {
         const content = message.content || componentText(message);
-        const attachments = [...message.attachments.values()].map((attachment) => {
+        const files = [...message.attachments.values()].map((attachment) => {
             const isImage = attachment.contentType?.startsWith("image/");
             const name = escapeHtml(attachment.name ?? "ficheiro");
+            const src = options.images?.get(attachment.id) ?? attachment.url;
             return isImage
-                ? `<a href="${attachment.url}" target="_blank" rel="noreferrer noopener"><img class="attachment" src="${attachment.url}" alt="${name}"></a>`
+                ? `<a href="${attachment.url}" target="_blank" rel="noreferrer noopener"><img class="attachment" src="${src}" alt="${name}"></a>`
                 : `<a class="file" href="${attachment.url}" target="_blank" rel="noreferrer noopener">📎 ${name}</a>`;
+        });
+        const stickers = [...message.stickers.values()].map((sticker) => `<span class="file">🏷️ ${escapeHtml(sticker.name)}</span>`);
+        const extras = [...files, ...stickers].join("");
+        const embeds = message.embeds.map((embed) => {
+            const parts = [
+                embed.title ? `<strong>${escapeHtml(embed.title)}</strong>` : "",
+                embed.description ? renderContent(embed.description, message) : "",
+                embed.url ? `<a href="${escapeHtml(embed.url)}" target="_blank" rel="noreferrer noopener">${escapeHtml(embed.url)}</a>` : "",
+            ].filter(Boolean);
+            return parts.length ? `<div class="embed">${parts.join("<br>")}</div>` : "";
         }).join("");
         const avatar = message.author.displayAvatarURL({ extension: "png", size: 64 });
         const time = message.createdAt.toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" });
         const botTag = message.author.bot ? `<span class="bot">BOT</span>` : "";
+        const channelName = options.showChannel && "name" in message.channel ? String(message.channel.name) : null;
+        const channelTag = channelName ? `<span class="chan">#${escapeHtml(channelName)}</span>` : "";
+        const empty = embeds || extras ? "" : `<span class="muted">${escapeHtml(t("[sem texto]"))}</span>`;
         return `<div class="msg">
   <img class="avatar" src="${avatar}" alt="">
   <div class="body">
-    <div class="head"><span class="name">${escapeHtml(message.member?.displayName ?? message.author.username)}</span>${botTag}<span class="time">${escapeHtml(time)}</span></div>
-    <div class="content">${content ? renderContent(content, message) : `<span class="muted">${escapeHtml(t("[sem texto]"))}</span>`}</div>
-    ${attachments ? `<div class="attachments">${attachments}</div>` : ""}
+    <div class="head"><span class="name">${escapeHtml(message.member?.displayName ?? message.author.username)}</span>${botTag}<span class="time">${escapeHtml(time)}</span>${channelTag}<span class="id">${escapeHtml(message.author.username)} · ${message.author.id}</span></div>
+    <div class="content">${content ? renderContent(content, message) : empty}</div>
+    ${embeds}
+    ${extras ? `<div class="attachments">${extras}</div>` : ""}
   </div>
 </div>`;
     }).join("\n");
 
-    const opened = new Date(ticket.created_at).toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" });
-    const closed = new Date().toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" });
+    const meta = options.meta.map(([name, value]) => `<div><dt>${escapeHtml(name)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("\n");
     return `<!doctype html>
 <html lang="pt-PT">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>${escapeHtml(transcriptId)} · #${escapeHtml(channel.name)}</title>
+<title>${escapeHtml(options.title)}</title>
 <style>
 :root{--bg:#313338;--panel:#2b2d31;--text:#dbdee1;--muted:#949ba4;--accent:#7c5cff;--mention:rgba(124,92,255,.25)}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 "gg sans","Segoe UI",system-ui,sans-serif}
 header{background:var(--panel);padding:20px 24px;border-bottom:1px solid #1e1f22}
 h1{margin:0 0 6px;font-size:20px}dl{display:flex;flex-wrap:wrap;gap:6px 24px;margin:0;color:var(--muted);font-size:13px}dt{font-weight:600;color:var(--text)}dd{margin:0}
 main{padding:12px 16px 40px;max-width:1100px}.msg{display:flex;gap:14px;padding:8px;border-radius:6px}.msg:hover{background:#2e3035}
-.avatar{width:40px;height:40px;border-radius:50%;flex:none}.body{min-width:0;flex:1}.head{display:flex;align-items:baseline;gap:8px}
-.name{font-weight:600;color:#fff}.time{color:var(--muted);font-size:12px}.bot{background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px}
+.avatar{width:40px;height:40px;border-radius:50%;flex:none}.body{min-width:0;flex:1}.head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
+.name{font-weight:600;color:#fff}.time,.id{color:var(--muted);font-size:12px}.chan{color:#c9bcff;font-size:12px}.bot{background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px}
 .content{word-wrap:break-word;white-space:normal}.muted{color:var(--muted);font-style:italic}code{background:#1e1f22;padding:1px 4px;border-radius:4px}
 pre{background:#1e1f22;padding:8px;border-radius:6px;overflow:auto}.mention{background:var(--mention);color:#c9bcff;border-radius:3px;padding:0 2px}
+.embed{border-left:4px solid var(--accent);background:var(--panel);padding:8px 12px;border-radius:4px;margin-top:6px;max-width:560px;word-wrap:break-word}
 a{color:#00a8fc}.attachments{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.attachment{max-width:min(420px,100%);max-height:320px;border-radius:6px}
 .file{display:inline-block;background:var(--panel);padding:8px 12px;border-radius:6px}footer{color:var(--muted);font-size:12px;padding:0 24px 24px}
 </style>
 </head>
 <body>
 <header>
-<h1>#${escapeHtml(channel.name)}</h1>
+<h1>${escapeHtml(options.heading)}</h1>
 <dl>
-<div><dt>Transcript</dt><dd>${escapeHtml(transcriptId)}</dd></div>
-<div><dt>Categoria</dt><dd>${escapeHtml(ticket.category)}</dd></div>
-<div><dt>Criador</dt><dd>${escapeHtml(ticket.owner_tag)} (${escapeHtml(ticket.owner_id)})</dd></div>
-<div><dt>Staff</dt><dd>${escapeHtml(ticket.staff_tag ?? "—")}</dd></div>
-<div><dt>Aberto</dt><dd>${escapeHtml(opened)}</dd></div>
-<div><dt>Fechado</dt><dd>${escapeHtml(closed)}</dd></div>
-<div><dt>Mensagens</dt><dd>${messages.length}</dd></div>
+${meta}
 </dl>
 </header>
 <main>
 ${rows}
 </main>
-<footer>EPA BOTCHI · as imagens e anexos apontam para o Discord e podem deixar de abrir quando o canal for apagado.</footer>
+<footer>${escapeHtml(options.footer ?? "EPA BOTCHI")}</footer>
 </body>
 </html>`;
+}
+
+function renderHtml(channel: TextChannel, ticket: TicketRecord, transcriptId: string, messages: Message[]): string {
+    const lisbon = (value: string | number | Date) => new Date(value).toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" });
+    return renderMessagesHtml({
+        title: `${transcriptId} · #${channel.name}`,
+        heading: `#${channel.name}`,
+        meta: [
+            ["Transcript", transcriptId],
+            ["Categoria", ticket.category],
+            ["Criador", `${ticket.owner_tag} (${ticket.owner_id})`],
+            ["Staff", ticket.staff_tag ?? "—"],
+            ["Aberto", lisbon(ticket.created_at)],
+            ["Fechado", lisbon(Date.now())],
+            ["Mensagens", String(messages.length)],
+        ],
+        messages,
+        footer: "EPA BOTCHI · as imagens e anexos apontam para o Discord e podem deixar de abrir quando o canal for apagado.",
+    });
 }
 
 /**
