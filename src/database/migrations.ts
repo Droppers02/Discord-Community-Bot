@@ -2,6 +2,7 @@ import { loadRuntimeConfig } from "../config.js";
 import { levelFromXp } from "../modules/levels/levelMath.js";
 import { mergeLegacyRolePanels } from "../modules/community/legacyRolePanels.js";
 import type { ReactionRolePanel } from "../types.js";
+import { ensureCommunitySchema } from "./schemaCommunity.js";
 
 type Executor = { query: (text: string, values?: unknown[]) => Promise<unknown> };
 type Rows<T> = { rows: T[] };
@@ -21,6 +22,9 @@ const SETTINGS_TABLES = [
     "broadcast_settings", "sla_settings", "modmail_settings", "verify_settings", "levels_settings",
     "economy_settings", "games_settings", "moderation_settings", "appeal_settings", "protection_settings",
     "welcome_settings", "starboard_settings",
+    // 4.0
+    "lockdown_settings", "report_settings", "counting_settings", "confession_settings", "lfg_settings",
+    "freegames_settings", "prediction_settings", "team_settings", "wrapped_settings",
 ];
 
 /** Tabelas do bot Python (v2.x). */
@@ -597,6 +601,8 @@ async function ensureSchema(db: Executor): Promise<void> {
             UNIQUE (guild_id, user_id, name)
         )
     `);
+
+    await ensureCommunitySchema(db);
 }
 
 // ─── Migrações de uma só vez ─────────────────────────────────────────────────

@@ -45,8 +45,11 @@ import { buildWelcomeMessagesContainer } from "../community/welcomeMessages.js";
 import { buildStarboardContainer } from "../community/starboard.js";
 import { buildAppealContainer } from "../appeals/appealConfigView.js";
 import { buildProtectionContainer } from "../protection/protectionConfigView.js";
+import { buildLockdownContainer } from "../moderation/lockdownConfigView.js";
+import { buildReportsContainer } from "../reports/reportConfigView.js";
 
-export type ConfigSection = "hub" | "giveaways" | "logs" | "suggestions" | "antispam" | "support" | "welcome" | "voice" | "roles" | "reactionroles" | "social" | "stats" | "broadcast" | "sla" | "modmail" | "verify" | "levels" | "economy" | "games" | "moderation" | "welcomemsg" | "starboard" | "appeals" | "protection";
+export type ConfigSection = "hub" | "giveaways" | "logs" | "suggestions" | "antispam" | "support" | "welcome" | "voice" | "roles" | "reactionroles" | "social" | "stats" | "broadcast" | "sla" | "modmail" | "verify" | "levels" | "economy" | "games" | "moderation" | "welcomemsg" | "starboard" | "appeals" | "protection"
+    | "lockdown" | "reports" | "counting" | "confessions" | "lfg" | "freegames" | "predictions" | "teams" | "wrapped";
 
 interface ConfigState {
     section: ConfigSection;
@@ -134,43 +137,57 @@ function categoryChannelSelect(_guild: Guild, customId: string, placeholder: str
 }
 
 // ─── Hub ──────────────────────────────────────────────────────────────────────
-const SECTION_OPTIONS: Array<{ value: Exclude<ConfigSection, "hub"> | "tickets"; label: string; description: string; icon: string }> = [
-    { value: "tickets", label: tk("Tickets"), description: tk("Categorias, formulários, painel e equipa."), icon: "ticket" },
-    { value: "support", label: tk("Atendimento"), description: tk("Horário e mensagens de boas-vindas por categoria."), icon: "clock" },
-    { value: "sla", label: tk("Avisos de tickets parados"), description: tk("Avisar a equipa quando um ticket fica sem resposta."), icon: "hourglass" },
-    { value: "modmail", label: tk("Modmail"), description: tk("Membros falam com a equipa por mensagem privada ao bot."), icon: "message" },
-    { value: "verify", label: tk("Verificação à entrada"), description: tk("Captcha de figuras para quem entra no servidor."), icon: "shield" },
-    { value: "welcomemsg", label: tk("Boas-vindas"), description: tk("Mensagens de boas-vindas/despedida, DM e cargos automáticos."), icon: "heart" },
-    { value: "welcome", label: tk("Log de entradas e saídas"), description: tk("Cartões de registo com o convite usado."), icon: "join" },
-    { value: "moderation", label: tk("Moderação"), description: tk("Avisos, castigos automáticos e registo de moderação."), icon: "hammer" },
-    { value: "appeals", label: tk("Revisão de bans"), description: tk("Pedidos de unban por DM, votação e decisão da equipa."), icon: "receipt" },
-    { value: "protection", label: tk("Proteção"), description: tk("Filtro de palavras, conteúdo adulto, anti-raid e slowmode automático."), icon: "shield" },
-    { value: "antispam", label: tk("Anti-spam"), description: tk("Proteção automática contra flood, links e menções."), icon: "shield" },
-    { value: "logs", label: tk("Logs do servidor"), description: tk("Registo de eventos do servidor por categoria."), icon: "newspaper" },
-    { value: "levels", label: tk("Níveis e XP"), description: tk("XP por mensagem e voz, cargos de recompensa e ranking."), icon: "trophy" },
-    { value: "economy", label: tk("Economia"), description: tk("EPA Coins: diário, trabalho, apostas máximas e lojas."), icon: "coin" },
-    { value: "games", label: tk("Mini-jogos"), description: tk("Canal dos jogos, prémios e limites de apostas."), icon: "jigsaw" },
-    { value: "giveaways", label: tk("Sorteios"), description: tk("Canal e cargo de organizador dos sorteios."), icon: "gift" },
-    { value: "suggestions", label: tk("Sugestões"), description: tk("Canal, votação e moderação das sugestões."), icon: "megaphone" },
-    { value: "starboard", label: tk("Starboard"), description: tk("Mensagens com mais ⭐ vão para um canal de destaque."), icon: "star" },
-    { value: "reactionroles", label: tk("Auto-cargos"), description: tk("Painéis de cargos por botões ou menu."), icon: "role" },
-    { value: "social", label: tk("Alertas sociais"), description: tk("YouTube, TikTok, Twitch e Kick anunciados automaticamente."), icon: "megaphone" },
-    { value: "stats", label: tk("Estatísticas"), description: tk("Contadores de membros, canais e boosts em nomes de canais."), icon: "chart" },
-    { value: "broadcast", label: tk("Publicação automática"), description: tk("Auto-publish dos canais de anúncios."), icon: "bell" },
-    { value: "voice", label: tk("Canais de voz"), description: tk("Salas temporárias e voz privada por ticket."), icon: "voice" },
-    { value: "roles", label: tk("Cargos"), description: tk("Cargos que voltam ao regressar e cargos temporários."), icon: "role" },
+type HubGroup = "gestao" | "comunidade";
+
+const SECTION_OPTIONS: Array<{ value: Exclude<ConfigSection, "hub"> | "tickets"; label: string; description: string; group: HubGroup; icon: string }> = [
+    { value: "tickets", label: tk("Tickets"), description: tk("Categorias, formulários, painel e equipa."), group: "gestao", icon: "ticket" },
+    { value: "support", label: tk("Atendimento"), description: tk("Horário e mensagens de boas-vindas por categoria."), group: "gestao", icon: "clock" },
+    { value: "sla", label: tk("Avisos de tickets parados"), description: tk("Avisar a equipa quando um ticket fica sem resposta."), group: "gestao", icon: "hourglass" },
+    { value: "modmail", label: tk("Modmail"), description: tk("Membros falam com a equipa por mensagem privada ao bot."), group: "gestao", icon: "message" },
+    { value: "verify", label: tk("Verificação à entrada"), description: tk("Captcha de figuras para quem entra no servidor."), group: "gestao", icon: "shield" },
+    { value: "welcomemsg", label: tk("Boas-vindas"), description: tk("Mensagens de boas-vindas/despedida, DM e cargos automáticos."), group: "gestao", icon: "heart" },
+    { value: "welcome", label: tk("Log de entradas e saídas"), description: tk("Cartões de registo com o convite usado."), group: "gestao", icon: "join" },
+    { value: "moderation", label: tk("Moderação"), description: tk("Avisos, castigos automáticos e registo de moderação."), group: "gestao", icon: "hammer" },
+    { value: "appeals", label: tk("Revisão de bans"), description: tk("Pedidos de unban por DM, votação e decisão da equipa."), group: "gestao", icon: "receipt" },
+    { value: "protection", label: tk("Proteção"), description: tk("Filtro de palavras, conteúdo adulto, anti-raid e slowmode automático."), group: "gestao", icon: "shield" },
+    { value: "antispam", label: tk("Anti-spam"), description: tk("Proteção automática contra flood, links e menções."), group: "gestao", icon: "shield" },
+    { value: "logs", label: tk("Logs do servidor"), description: tk("Registo de eventos do servidor por categoria."), group: "gestao", icon: "newspaper" },
+    { value: "reports", label: tk("Denúncias"), description: tk("Membros denunciam mensagens; a equipa resolve num cartão com provas."), group: "gestao", icon: "report" },
+    { value: "lockdown", label: tk("Trancas e horário de silêncio"), description: tk("Trancar canais/servidor, anti-raid e canais que fecham a certas horas."), group: "gestao", icon: "lock" },
+    { value: "levels", label: tk("Níveis e XP"), description: tk("XP por mensagem e voz, cargos de recompensa e ranking."), group: "comunidade", icon: "trophy" },
+    { value: "economy", label: tk("Economia"), description: tk("EPA Coins: diário, trabalho, apostas máximas e lojas."), group: "comunidade", icon: "coin" },
+    { value: "games", label: tk("Mini-jogos"), description: tk("Canal dos jogos, prémios e limites de apostas."), group: "comunidade", icon: "jigsaw" },
+    { value: "giveaways", label: tk("Sorteios"), description: tk("Canal e cargo de organizador dos sorteios."), group: "comunidade", icon: "gift" },
+    { value: "suggestions", label: tk("Sugestões"), description: tk("Canal, votação e moderação das sugestões."), group: "comunidade", icon: "megaphone" },
+    { value: "starboard", label: tk("Starboard"), description: tk("Mensagens com mais ⭐ vão para um canal de destaque."), group: "comunidade", icon: "star" },
+    { value: "reactionroles", label: tk("Auto-cargos"), description: tk("Painéis de cargos por botões ou menu."), group: "comunidade", icon: "role" },
+    { value: "social", label: tk("Alertas sociais"), description: tk("YouTube, TikTok, Twitch e Kick anunciados automaticamente."), group: "comunidade", icon: "megaphone" },
+    { value: "stats", label: tk("Estatísticas"), description: tk("Contadores de membros, canais e boosts em nomes de canais."), group: "gestao", icon: "chart" },
+    { value: "broadcast", label: tk("Publicação automática"), description: tk("Auto-publish dos canais de anúncios."), group: "gestao", icon: "bell" },
+    { value: "voice", label: tk("Canais de voz"), description: tk("Salas temporárias e voz privada por ticket."), group: "gestao", icon: "voice" },
+    { value: "roles", label: tk("Cargos"), description: tk("Cargos que voltam ao regressar e cargos temporários."), group: "gestao", icon: "role" },
 ];
 
+const HUB_GROUPS: Array<{ id: HubGroup; label: string; placeholder: string }> = [
+    { id: "gestao", label: tk("Gestão e moderação"), placeholder: tk("Gestão e moderação…") },
+    { id: "comunidade", label: tk("Comunidade e diversão"), placeholder: tk("Comunidade e diversão…") },
+];
+
+// Dois menus (o Discord só deixa 25 opções por menu): um para a gestão do servidor, outro para
+// a comunidade. Os dois mandam para `cfg/hub/<grupo>`, tratado como `hub` pelo responder.
 function buildHubContainer(): ContainerPlusBuilder {
     return buildContainer({
         color: COLORS.primary,
         title: `${emoji.settings} ${t("Configuração — EPA BOTCHI")}`,
         description: t("Escolhe o sistema que queres configurar. Tudo fica guardado em direto."),
-        fields: SECTION_OPTIONS.map((option) => ({ name: `${e(option.icon)} ${t(option.label)}`.trim(), value: t(option.description) })),
-        rows: [row(new StringSelectMenuBuilder()
-            .setCustomId(cid("hub"))
-            .setPlaceholder(t("Ir para a secção…"))
-            .addOptions(SECTION_OPTIONS.map((option) => ({ label: t(option.label), value: option.value, description: t(option.description).slice(0, 100), emoji: ei(option.icon) }))))],
+        fields: HUB_GROUPS.map((group) => ({
+            name: t(group.label),
+            value: SECTION_OPTIONS.filter((option) => option.group === group.id).map((option) => `${e(option.icon)} ${t(option.label)}`.trim()).join(" · "),
+        })),
+        rows: HUB_GROUPS.map((group) => row(new StringSelectMenuBuilder()
+            .setCustomId(cid("hub", group.id))
+            .setPlaceholder(t(group.placeholder))
+            .addOptions(SECTION_OPTIONS.filter((option) => option.group === group.id).slice(0, 25).map((option) => ({ label: t(option.label), value: option.value, description: t(option.description).slice(0, 100), emoji: ei(option.icon) }))))),
     });
 }
 
@@ -771,6 +788,8 @@ export async function buildConfigComponents(section: ConfigSection, guildId: str
         case "starboard": return [await buildStarboardContainer(guildId)];
         case "appeals": return [await buildAppealContainer(guildId, guild.client)];
         case "protection": return [await buildProtectionContainer(guildId)];
+        case "lockdown": return [await buildLockdownContainer(guildId)];
+        case "reports": return [await buildReportsContainer(guildId)];
         case "hub":
         default: return [buildHubContainer()];
     }

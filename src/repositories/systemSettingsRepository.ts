@@ -24,6 +24,15 @@ export const SETTINGS_TABLES = [
     "protection_settings",
     "welcome_settings",
     "starboard_settings",
+    "lockdown_settings",
+    "report_settings",
+    "counting_settings",
+    "confession_settings",
+    "lfg_settings",
+    "freegames_settings",
+    "prediction_settings",
+    "team_settings",
+    "wrapped_settings",
 ] as const;
 export type SettingsTable = (typeof SETTINGS_TABLES)[number];
 

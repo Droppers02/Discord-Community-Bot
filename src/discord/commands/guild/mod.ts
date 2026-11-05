@@ -8,6 +8,9 @@ import { t } from "../../../lib/i18n.js";
 import { humanizeDuration } from "../../../lib/time.js";
 import { casesOf, clearWarns, getCase, setCaseActive } from "../../../repositories/modCaseRepository.js";
 import { parseDuration } from "../../../modules/giveaways/giveawayCreator.js";
+import { addStaffNote, buildMemberFile } from "../../../modules/moderation/memberFile.js";
+import { openReports, openReportsView } from "../../../modules/reports/reportService.js";
+import { getReportSettings } from "../../../modules/reports/reportSettings.js";
 import { banUser, caseLine, hasModAccess, hierarchyProblem, rankProblem, kickMember, MAX_TIMEOUT_MS, modLog, removeTimeout, timeoutMember, unbanUser, warnMember, type ModResult } from "../../../modules/moderation/moderationService.js";
 
 const userOpt = (description: string) => ({ name: "membro", description, type: ApplicationCommandOptionType.User as const, required: true });
@@ -16,6 +19,9 @@ const reasonOpt = { name: "motivo", description: t("Motivo (fica no registo e na
 const NEEDS: Record<string, bigint> = {
     avisar: PermissionFlagsBits.ModerateMembers,
     avisos: PermissionFlagsBits.ModerateMembers,
+    ficha: PermissionFlagsBits.ModerateMembers,
+    denuncias: PermissionFlagsBits.ModerateMembers,
+    nota: PermissionFlagsBits.ModerateMembers,
     "remover-aviso": PermissionFlagsBits.ModerateMembers,
     "limpar-avisos": PermissionFlagsBits.ModerateMembers,
     castigo: PermissionFlagsBits.ModerateMembers,
@@ -49,6 +55,14 @@ createCommand({
     options: [
         { name: "avisar", description: t("Dá um aviso a um membro."), type: ApplicationCommandOptionType.Subcommand, options: [userOpt(t("Quem avisar")), reasonOpt] },
         { name: "avisos", description: t("Histórico de moderação de um membro."), type: ApplicationCommandOptionType.Subcommand, options: [userOpt(t("Membro a consultar"))] },
+        { name: "denuncias", description: t("Denúncias de mensagens por tratar."), type: ApplicationCommandOptionType.Subcommand },
+        { name: "ficha", description: t("Ficha completa de um membro: conta, atividade, casos, denúncias e notas."), type: ApplicationCommandOptionType.Subcommand, options: [userOpt(t("Membro"))] },
+        {
+            name: "nota",
+            description: t("Deixa uma nota sobre um membro (só a equipa vê)."),
+            type: ApplicationCommandOptionType.Subcommand,
+            options: [userOpt(t("Sobre quem")), { name: "texto", description: t("A nota"), type: ApplicationCommandOptionType.String, required: true, maxLength: 1000 }],
+        },
         {
             name: "remover-aviso",
             description: t("Anula um aviso pelo número do caso."),
@@ -111,6 +125,19 @@ createCommand({
                     flags: CV2_FLAG,
                     allowedMentions: { parse: [] },
                 });
+            }
+            case "denuncias": {
+                const settings = await getReportSettings(guild.id);
+                return void interaction.editReply({ components: [openReportsView(guild.id, await openReports(guild.id), settings.channel)], flags: CV2_FLAG, allowedMentions: { parse: [] } });
+            }
+            case "ficha": {
+                const user = interaction.options.getUser("membro", true);
+                return void interaction.editReply({ components: [await buildMemberFile(guild, user)], flags: CV2_FLAG, allowedMentions: { parse: [] } });
+            }
+            case "nota": {
+                const user = interaction.options.getUser("membro", true);
+                await addStaffNote(guild.id, user.id, moderator.id, interaction.options.getString("texto", true).trim());
+                return void interaction.editReply({ components: [await buildMemberFile(guild, user)], flags: CV2_FLAG, allowedMentions: { parse: [] } });
             }
             case "remover-aviso": {
                 const number = interaction.options.getInteger("caso", true);

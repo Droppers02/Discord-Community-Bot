@@ -3,9 +3,11 @@ import {
     ButtonStyle,
     ChannelSelectMenuBuilder,
     ChannelType,
+    FileUploadBuilder,
     GuildMember,
     LabelBuilder,
     RoleSelectMenuBuilder,
+    StringSelectMenuBuilder,
     TextInputBuilder,
     TextInputStyle,
     type RepliableInteraction,
@@ -89,6 +91,42 @@ export function textField(id: string, label: string, value: string, opts?: { req
     if (opts?.placeholder) input.setPlaceholder(opts.placeholder);
     if (value) input.setValue(value);
     const built = new LabelBuilder().setLabel(label).setTextInputComponent(input);
+    if (opts?.description) built.setDescription(opts.description);
+    return built;
+}
+
+/** Escolha num modal (menu de opções dentro de um Label). */
+export function selectField(id: string, label: string, options: Array<{ label: string; value: string; description?: string; emoji?: string }>, current: string | string[] | null, opts?: { min?: number; max?: number; description?: string; required?: boolean }): LabelBuilder {
+    const chosen = new Set(Array.isArray(current) ? current : current ? [current] : []);
+    const select = new StringSelectMenuBuilder()
+        .setCustomId(id)
+        .setMinValues(opts?.min ?? 1)
+        .setMaxValues(Math.min(opts?.max ?? 1, options.length))
+        .setRequired(opts?.required ?? (opts?.min ?? 1) > 0)
+        .addOptions(options.slice(0, 25).map((option) => ({ ...option, label: option.label.slice(0, 100), description: option.description?.slice(0, 100), default: chosen.has(option.value) })));
+    const built = new LabelBuilder().setLabel(label).setStringSelectMenuComponent(select);
+    if (opts?.description) built.setDescription(opts.description);
+    return built;
+}
+
+/** Canais num modal (seletor nativo, com pesquisa). */
+export function channelField(id: string, label: string, selected: string[], kinds: ChannelType[], opts?: { min?: number; max?: number; description?: string }): LabelBuilder {
+    const select = new ChannelSelectMenuBuilder()
+        .setCustomId(id)
+        .addChannelTypes(...kinds)
+        .setMinValues(opts?.min ?? 1)
+        .setMaxValues(opts?.max ?? 1)
+        .setRequired((opts?.min ?? 1) > 0);
+    if (selected.length) select.setDefaultChannels(...selected.slice(0, opts?.max ?? 1));
+    const built = new LabelBuilder().setLabel(label).setChannelSelectMenuComponent(select);
+    if (opts?.description) built.setDescription(opts.description);
+    return built;
+}
+
+/** Envio de ficheiros num modal (imagens das confissões, provas das denúncias…). */
+export function uploadField(id: string, label: string, opts?: { max?: number; required?: boolean; description?: string }): LabelBuilder {
+    const upload = new FileUploadBuilder().setCustomId(id).setMinValues(opts?.required ? 1 : 0).setMaxValues(opts?.max ?? 1).setRequired(opts?.required ?? false);
+    const built = new LabelBuilder().setLabel(label).setFileUploadComponent(upload);
     if (opts?.description) built.setDescription(opts.description);
     return built;
 }

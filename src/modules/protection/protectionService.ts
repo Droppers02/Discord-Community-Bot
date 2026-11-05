@@ -1,4 +1,6 @@
 import { ChannelType, type Guild, type GuildMember, type Message, type TextChannel } from "discord.js";
+import { lockServer } from "../moderation/lockdown.js";
+import { getLockdownSettings } from "../moderation/lockdownSettings.js";
 import { COLORS } from "../../lib/branding.js";
 import { buildContainer } from "../../lib/containers.js";
 import { CV2_FLAG } from "../../lib/discord.js";
@@ -171,6 +173,12 @@ export async function trackJoinForRaid(member: GuildMember): Promise<void> {
     } catch (error) {
         logger.warn("Anti-raid: falha a aplicar a ação:", error);
         action = t("a ação falhou (permissões do bot?)");
+    }
+    // Trancas (/config → Trancas): fechar o servidor enquanto o raid passa.
+    const lockdown = await getLockdownSettings(guild.id);
+    if (lockdown.raid_lockdown) {
+        const locked = await lockServer(guild, { source: "raid", reason: t("Raid detetado"), by: guild.client.user.id, until: now + lockdown.raid_lockdown_minutes * 60_000 }).catch(() => null);
+        if (locked?.channels) action += ` · ${t("servidor trancado ({n} canais, {min} min)", { n: locked.channels, min: lockdown.raid_lockdown_minutes })}`;
     }
     void protectionLog(guild, t("🚨 Raid detetado"), [
         t("{count} entradas em {seconds} s — {action}.", { count: joins.length, seconds: settings.raid_seconds, action }),
