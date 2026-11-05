@@ -1,4 +1,5 @@
 import type { GuildMember, Message, TextChannel } from "discord.js";
+import { addTeamPoints } from "../teams/teamService.js";
 import { COLORS } from "../../lib/branding.js";
 import { buildContainer } from "../../lib/containers.js";
 import { CV2_FLAG, hasPowerPermissions } from "../../lib/discord.js";
@@ -82,6 +83,7 @@ export async function handleLevelMessage(message: Message<true>): Promise<void> 
 
     const gained = rollXp(settings, member.roles.cache.keys());
     recordXpActivity(message.guildId, member.id, gained);
+    void addTeamPoints(message.guildId, member.id, gained).catch(() => null);
     const { xp, storedLevel } = await addMemberXp(message.guildId, member.id, gained, true, now);
     const level = levelFromXp(xp);
     if (level === storedLevel) return;
@@ -95,7 +97,10 @@ export async function handleLevelMessage(message: Message<true>): Promise<void> 
 /** XP de voz (ver voiceXp.ts): trata da subida de nível como as mensagens. */
 export async function handleVoiceMinute(member: GuildMember, channel: { isTextBased(): boolean }, settings: LevelsSettings, seconds: number, xp: number): Promise<void> {
     recordVoiceActivity(member.guild.id, member.id, seconds);
-    if (xp > 0) recordXpActivity(member.guild.id, member.id, xp);
+    if (xp > 0) {
+        recordXpActivity(member.guild.id, member.id, xp);
+        void addTeamPoints(member.guild.id, member.id, xp).catch(() => null);
+    }
     const { xp: total, storedLevel } = await addVoiceTime(member.guild.id, member.id, seconds, xp);
     const level = levelFromXp(total);
     if (level === storedLevel) return;

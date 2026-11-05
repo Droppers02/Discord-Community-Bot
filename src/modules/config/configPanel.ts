@@ -52,6 +52,7 @@ import { buildConfessionsContainer } from "../confessions/confessionConfigView.j
 import { buildLfgContainer } from "../lfg/lfgConfigView.js";
 import { buildFreeGamesContainer } from "../freegames/freeGamesConfigView.js";
 import { buildPredictionsContainer } from "../predictions/predictionConfigView.js";
+import { buildTeamsContainer } from "../teams/teamConfigView.js";
 
 export type ConfigSection = "hub" | "giveaways" | "logs" | "suggestions" | "antispam" | "support" | "welcome" | "voice" | "roles" | "reactionroles" | "social" | "stats" | "broadcast" | "sla" | "modmail" | "verify" | "levels" | "economy" | "games" | "moderation" | "welcomemsg" | "starboard" | "appeals" | "protection"
     | "lockdown" | "reports" | "counting" | "confessions" | "lfg" | "freegames" | "predictions" | "teams" | "wrapped";
@@ -161,6 +162,7 @@ const SECTION_OPTIONS: Array<{ value: Exclude<ConfigSection, "hub"> | "tickets";
     { value: "lockdown", label: tk("Trancas e horário de silêncio"), description: tk("Trancar canais/servidor, anti-raid e canais que fecham a certas horas."), group: "gestao", icon: "lock" },
     { value: "levels", label: tk("Níveis e XP"), description: tk("XP por mensagem e voz, cargos de recompensa e ranking."), group: "comunidade", icon: "trophy" },
     { value: "economy", label: tk("Economia"), description: tk("EPA Coins: diário, trabalho, apostas máximas e lojas."), group: "comunidade", icon: "coin" },
+    { value: "teams", label: tk("Equipas"), description: tk("Equipas com cargo, banco, convites e guerra semanal de pontos."), group: "comunidade", icon: "shield" },
     { value: "predictions", label: tk("Previsões"), description: tk("Apostas de EPA Coins no resultado de qualquer coisa (estilo Twitch)."), group: "comunidade", icon: "coin" },
     { value: "games", label: tk("Mini-jogos"), description: tk("Canal dos jogos, prémios e limites de apostas."), group: "comunidade", icon: "jigsaw" },
     { value: "giveaways", label: tk("Sorteios"), description: tk("Canal e cargo de organizador dos sorteios."), group: "comunidade", icon: "gift" },
@@ -805,6 +807,7 @@ export async function buildConfigComponents(section: ConfigSection, guildId: str
         case "lfg": return [await buildLfgContainer(guildId)];
         case "freegames": return [await buildFreeGamesContainer(guildId)];
         case "predictions": return [await buildPredictionsContainer(guildId)];
+        case "teams": return [await buildTeamsContainer(guildId)];
         case "hub":
         default: return [buildHubContainer()];
     }
